@@ -2,6 +2,18 @@
 
 A VS Code extension that acts as a real-time GPS for BMAD V6 projects. It monitors workflow artifacts, tracks sprint progress, and recommends next actions — all without leaving the editor.
 
+## Repository structure
+
+This repository hosts two BMAD UI surfaces, intentionally side-by-side
+without a workspace orchestrator:
+
+- **`src/`** — The VS Code extension documented below (BMAD Dashboard inside the IDE).
+- **`web/`** — A standalone Next.js dashboard (`MyBMAD`) for visualizing BMAD projects from GitHub repositories or local folders, in any browser. See [`web/README.md`](./web/README.md) for its own setup and feature list.
+
+Each subproject keeps its own `package.json`, lockfile, configs, and tests. Running `pnpm install` at the root installs **only** the extension. To work on the web dashboard, `cd web && pnpm install` separately. Tests, type-check, build, and lint run independently per subproject.
+
+Both subprojects are MIT-licensed.
+
 ## Features
 
 ### Sidebar Dashboard
