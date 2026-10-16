@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Copy, Check, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-function extractTextFromChildren(children: React.ReactNode): string {
+export function extractTextFromChildren(children: React.ReactNode): string {
   if (typeof children === "string") return children;
   if (typeof children === "number") return String(children);
   if (Array.isArray(children)) return children.map(extractTextFromChildren).join("");

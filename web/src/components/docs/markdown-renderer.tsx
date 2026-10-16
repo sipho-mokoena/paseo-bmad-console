@@ -8,7 +8,9 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeHighlight from "rehype-highlight";
 import type { Components } from "react-markdown";
-import { CodeBlockWithCopy } from "./code-block-with-copy";
+import { CodeBlockWithCopy, extractTextFromChildren } from "./code-block-with-copy";
+import { MermaidDiagram } from "./mermaid-diagram";
+import { isMermaidLanguage } from "./mermaid-utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { bmadSanitizeSchema } from "@/lib/bmad/sanitize-schema";
@@ -229,8 +231,25 @@ function ScrollableTable(props: React.ComponentProps<"table">) {
   );
 }
 
+/** Fenced code: `mermaid` blocks become diagrams, everything else stays a code block. */
+export function PreBlock(props: React.ComponentProps<"pre">) {
+  const code = React.Children.toArray(props.children).find(
+    (child): child is React.ReactElement =>
+      React.isValidElement(child) && child.type === "code"
+  );
+  const codeProps = code?.props as Record<string, unknown> | undefined;
+  if (code && isMermaidLanguage(codeProps?.className as string | undefined)) {
+    return (
+      <MermaidDiagram
+        source={extractTextFromChildren(codeProps?.children as React.ReactNode).replace(/\n$/, "")}
+      />
+    );
+  }
+  return <CodeBlockWithCopy {...props} />;
+}
+
 const components: Components = {
-  pre: CodeBlockWithCopy,
+  pre: PreBlock,
   blockquote: CalloutBlockquote,
   a: SmartLink,
   img: LazyImage,
