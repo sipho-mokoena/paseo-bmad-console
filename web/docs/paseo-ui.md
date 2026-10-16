@@ -1,6 +1,6 @@
 # Paseo UI reference
 
-Extracted from `getpaseo/paseo` (main) for restyling MyBMAD. Two sources are used:
+Extracted from `getpaseo/paseo` (main) for restyling BMAD Console. Two sources are used:
 
 - **Website** (`packages/website`): dark-only marketing/docs site.
 - **App** (`packages/app`): the product UI, with light and dark themes.
@@ -11,7 +11,7 @@ Paths below are relative to the `getpaseo/paseo` repo root.
 
 Website tokens, `packages/website/src/styles.css` (`@theme`, lines 670-690):
 
-| Token | Value | Use in MyBMAD |
+| Token | Value | Use in BMAD Console |
 | --- | --- | --- |
 | background | `#101615` | page background |
 | foreground | `#fafafa` | primary text |
@@ -26,7 +26,7 @@ Website tokens, `packages/website/src/styles.css` (`@theme`, lines 670-690):
 
 App surfaces, `packages/app/src/styles/theme.ts` `paseoDarkColors` (line 460):
 
-| Token | Value | Use in MyBMAD |
+| Token | Value | Use in BMAD Console |
 | --- | --- | --- |
 | surface0 | `#181B1A` | popovers, dialogs |
 | surface1 | `#1E2120` | raised panels |
@@ -41,7 +41,7 @@ App surfaces, `packages/app/src/styles/theme.ts` `paseoDarkColors` (line 460):
 
 App tokens, `packages/app/src/styles/theme.ts` `lightSemanticColors` (line 323):
 
-| Token | Value | Use in MyBMAD |
+| Token | Value | Use in BMAD Console |
 | --- | --- | --- |
 | surface0 | `#FFFFFF` | background, cards |
 | surface1 | `#FAFAFA` | raised panels |

@@ -1,6 +1,6 @@
 # Getting Started
 
-Step-by-step guide to run MyBMAD Dashboard locally.
+Step-by-step guide to run BMAD Console locally.
 
 ## Prerequisites
 
@@ -84,7 +84,7 @@ Required for "Login with GitHub". Follow these steps:
 1. Go to [github.com/settings/developers](https://github.com/settings/developers)
 2. Click **New OAuth App**
 3. Fill in the form:
-   - **Application name:** `MyBMAD` (or anything you like)
+   - **Application name:** `BMAD Console` (or anything you like)
    - **Homepage URL:** `http://localhost:3002`
    - **Authorization callback URL:** `http://localhost:3002/api/auth/callback/github`
 4. Click **Register application**

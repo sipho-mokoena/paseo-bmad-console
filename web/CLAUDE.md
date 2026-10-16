@@ -1,4 +1,4 @@
-# MyBMAD Dashboard
+# BMAD Console
 
 ## Tailwind CSS
 

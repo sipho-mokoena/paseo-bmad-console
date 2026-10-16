@@ -1,4 +1,4 @@
-# MyBMAD Dashboard
+# BMAD Console
 
 A web dashboard - https://mybmad.hichem.cloud/ - to visualize and track [BMAD (Breakthrough Method of Agile AI-Driven Development)](https://github.com/bmad-method/bmad-method) projects from your GitHub repositories — or directly from local folders.
 
@@ -8,7 +8,7 @@ A web dashboard - https://mybmad.hichem.cloud/ - to visualize and track [BMAD (B
 
 ## Table of Contents
 
-- [What is MyBMAD Dashboard?](#what-is-mybmad-dashboard)
+- [What is BMAD Console?](#what-is-bmad-console)
 - [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
@@ -20,9 +20,9 @@ A web dashboard - https://mybmad.hichem.cloud/ - to visualize and track [BMAD (B
 
 ---
 
-## What is MyBMAD Dashboard?
+## What is BMAD Console?
 
-MyBMAD Dashboard connects to your GitHub repositories (or local folders), reads the BMAD project structure (epics, stories, sprint status, docs), and displays everything in a clean, real-time dashboard. It is designed for solo developers and small teams who use the BMAD methodology with AI coding agents.
+BMAD Console connects to your GitHub repositories (or local folders), reads the BMAD project structure (epics, stories, sprint status, docs), and displays everything in a clean, real-time dashboard. It is designed for solo developers and small teams who use the BMAD methodology with AI coding agents.
 
 **Key features:**
 - Import any GitHub repository that follows the BMAD structure

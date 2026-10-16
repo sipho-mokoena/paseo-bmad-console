@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyBMAD Dashboard",
+  title: "BMAD Console",
   description: "Visualize BMAD projects from GitHub",
 };
 

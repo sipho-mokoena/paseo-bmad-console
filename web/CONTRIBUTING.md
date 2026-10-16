@@ -1,4 +1,4 @@
-# Contributing to MyBMAD Dashboard
+# Contributing to BMAD Console
 
 Thank you for your interest in contributing! This document explains how to get started.
 

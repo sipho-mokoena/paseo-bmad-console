@@ -70,7 +70,7 @@ Please provide as much of the following as possible:
 
 ## Security Best Practices for Deployment
 
-When self-hosting MyBMAD Dashboard:
+When self-hosting BMAD Console:
 
 - **Never commit** `.env` or `.env.local` files to version control
 - Use strong, randomly generated secrets for `BETTER_AUTH_SECRET` and `REVALIDATE_SECRET`
