@@ -2,24 +2,36 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Eye, FileText, Map } from "lucide-react";
+import { Eye, FileText, Map, PenTool, ScrollText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { label: "Overview", segment: "", icon: Eye },
   { label: "Epics", segment: "epics", icon: Map },
+  { label: "Specs", segment: "specs", icon: ScrollText },
+  { label: "Design", segment: "design", icon: PenTool },
   { label: "Library", segment: "docs", icon: FileText },
 ];
 
-export function ProjectTabs({ basePath }: { basePath: string }) {
+interface ProjectTabsProps {
+  basePath: string;
+  /** Tabs without documents are hidden. */
+  hasSpecs?: boolean;
+  hasDesign?: boolean;
+}
+
+export function ProjectTabs({ basePath, hasSpecs = false, hasDesign = false }: ProjectTabsProps) {
   const pathname = usePathname();
+  const visible = tabs.filter(
+    (t) => (t.segment !== "specs" || hasSpecs) && (t.segment !== "design" || hasDesign),
+  );
 
   return (
     <nav
       aria-label="Project sections"
       className="sticky top-[calc(var(--app-header-h)+env(safe-area-inset-top))] z-20 flex h-12 shrink-0 md:h-9 items-center gap-1 overflow-x-auto border-b bg-background px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      {tabs.map((tab) => {
+      {visible.map((tab) => {
         const href = tab.segment ? `${basePath}/${tab.segment}` : basePath;
         const active = tab.segment
           ? pathname.startsWith(href)
