@@ -4,6 +4,7 @@ import { parseSprintStatus } from "./parse-sprint-status";
 import { parseEpics } from "./parse-epics";
 import { parseEpicFile } from "./parse-epic-file";
 import { parseStory } from "./parse-story";
+import { parseTicketTree } from "./parse-tickets";
 import { correlate, computeProjectStats } from "./correlate";
 import { buildFileTree } from "./utils";
 import { resolveBmadOutputDir } from "./parse-config";
@@ -268,6 +269,22 @@ export async function getBmadProject(
       if (story.id.startsWith(oldPrefix)) {
         story.id = newPrefix + story.id.slice(oldPrefix.length);
       }
+    }
+  }
+
+  // Ticket-tree layout (initiative-*/epic-*/tickets.toml) when no BMad v6 epics were found
+  if (rawEpics.length === 0 && rawStories.length === 0) {
+    try {
+      const tree = await parseTicketTree(provider, bmadPaths);
+      rawEpics = tree.epics;
+      rawStories.push(...tree.stories);
+      totalFiles += tree.files;
+    } catch (e) {
+      parseErrors.push({
+        file: outputDir,
+        error: e instanceof Error ? e.message : "Failed to parse ticket tree.",
+        contentType: "epic",
+      });
     }
   }
 
