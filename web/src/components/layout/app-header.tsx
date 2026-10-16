@@ -18,7 +18,6 @@ const routeLabels: Record<string, string> = {
   profile: "Profile",
   overview: "Overview",
   epics: "Epics",
-  stories: "Stories",
   docs: "Library",
   search: "Search",
   admin: "Admin",

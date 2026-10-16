@@ -1570,7 +1570,7 @@ export function Filters<T = unknown>({
           >
             <DropdownMenuTrigger asChild>
               {trigger || (
-                <Button variant="outline">
+                <Button variant="outline" className="h-10 md:h-8">
                   <PlusIcon
                   />
                   {mergedI18n.addFilter}

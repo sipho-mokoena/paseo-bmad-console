@@ -174,7 +174,7 @@ Our own rules:
 - Status badges never shrink (`shrink-0 whitespace-nowrap`); titles wrap or clamp instead. `min-w-24` only from `md`.
 - Breadcrumb shows the last two crumbs below `sm`; the Search button is icon-only below `md`.
 - Epic timeline rail is hidden below `md`; the status badge moves next to the title.
-- Stories table is a stacked list (ID and status, title, epic and tasks) below `md`, with "Show more"; the Board is a horizontal scroll-snap strip at 85% column width.
+- Epics is the single browse page (the old Stories tab redirects to it, keeping `?epic=`). Inside an epic, the stories table is a stacked list (ID and status, title, epic and tasks) below `md`, with "Show more"; the Board is a horizontal scroll-snap strip at 85% column width.
 - Library: the file tree is a collapsible section that closes after picking a file; content takes the full width and the page scrolls (no fixed inner height below `md`).
 - Dialog: top-anchored on mobile (keyboard-safe), `max-h-[calc(100dvh-2rem)]`, 16px side margins. Sheet: `h-dvh`, safe-area padding.
 - `viewport` export in `app/layout.tsx`: `width=device-width`, `initialScale=1`, `viewportFit=cover`, `themeColor` per colour scheme.

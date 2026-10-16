@@ -89,7 +89,7 @@ export function PillToggle<T extends string>({
             aria-label={o.ariaLabel}
             onClick={() => onChange(o.value)}
             className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-6 md:px-2.5 [&_svg]:size-3.5",
+              "inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-xs text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-6 md:px-2.5 [&_svg]:size-3.5",
               active && "bg-secondary text-foreground",
             )}
           >
