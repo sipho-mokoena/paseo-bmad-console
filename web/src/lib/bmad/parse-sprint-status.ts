@@ -1,8 +1,9 @@
 import yaml from "js-yaml";
 import { SprintStatus, SprintStoryEntry, EpicStatus } from "./types";
 import { normalizeStoryStatus } from "./utils";
+import { parseEpicId, parseStoryId } from "./ids";
 
-function normalizeEpicStatus(raw: string | undefined): EpicStatus {
+export function normalizeEpicStatus(raw: string | undefined): EpicStatus {
   if (!raw) return "not-started";
   const s = raw.toLowerCase().trim();
   if (s === "done" || s === "complete" || s === "completed") return "done";
@@ -37,30 +38,25 @@ export function parseSprintStatus(content: string): ParsedSprintData | null {
       for (const [key, value] of Object.entries(devStatus)) {
         const statusStr = String(value);
 
-        // Epic entries: "epic-N: status"
-        const epicMatch = key.match(/^epic-(\d+)$/);
-        if (epicMatch) {
-          epicStatuses.push({
-            id: epicMatch[1],
-            status: normalizeEpicStatus(statusStr),
-          });
+        // Retrospective entries: skip ("epic-1-retrospective", "E1-retrospective")
+        if (key.includes("retrospective")) continue;
+
+        // Epic entries: "epic-N: status" (v6 default) or "E1: status" / "DEFERRED-E10: status"
+        const epicId = parseEpicId(key);
+        if (epicId) {
+          epicStatuses.push({ id: epicId, status: normalizeEpicStatus(statusStr) });
           continue;
         }
 
-        // Retrospective entries: skip
-        if (key.includes("retrospective")) continue;
-
-        // Story entries: "N-N-title: status" (e.g., "1-1-project-initialization: done")
-        const storyMatch = key.match(/^(\d+)-(\d+)-(.+)$/);
-        if (storyMatch) {
-          const epicId = storyMatch[1];
-          const storyNum = storyMatch[2];
-          const id = `${epicId}.${storyNum}`;
+        // Story entries: "N-N-title: status" (e.g. "1-1-project-initialization")
+        // or "E1-S1-title: status" (project-specific ids)
+        const story = parseStoryId(key);
+        if (story) {
           stories.push({
-            id,
+            id: story.id,
             title: key,
             status: normalizeStoryStatus(statusStr),
-            epicId,
+            epicId: story.epicId,
           });
           continue;
         }
@@ -97,4 +93,25 @@ export function parseSprintStatus(content: string): ParsedSprintData | null {
     console.error("Failed to parse sprint status YAML:", e);
     return null;
   }
+}
+
+/**
+ * Raw status words of the `development_status` map, keyed by canonical story id.
+ * Lets layouts tell "retired" from "backlog", which normalizeStoryStatus folds together.
+ */
+export function sprintRawStatuses(content: string): Map<string, string> {
+  const out = new Map<string, string>();
+  try {
+    const data = yaml.load(content) as Record<string, unknown> | undefined;
+    const dev = data?.development_status;
+    if (!dev || typeof dev !== "object") return out;
+    for (const [key, value] of Object.entries(dev as Record<string, unknown>)) {
+      if (key.includes("retrospective") || parseEpicId(key)) continue;
+      const story = parseStoryId(key);
+      if (story) out.set(story.id, String(value));
+    }
+  } catch {
+    // parseSprintStatus reports the syntax error
+  }
+  return out;
 }

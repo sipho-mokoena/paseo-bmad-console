@@ -1,6 +1,7 @@
 import matter from "gray-matter";
 import { StoryDetail, StoryTask } from "./types";
 import { normalizeStoryStatus } from "./utils";
+import { frontmatterStoryId, parseStoryId } from "./ids";
 
 export function parseStory(
   content: string,
@@ -13,12 +14,18 @@ export function parseStory(
     // Legacy pattern: "story-N.md" or "story_N.md"
     const legacyMatch = filename.match(/story[_-]?(\d+(?:[._-]\d+)?)/i);
 
+    // Project-style names: "E1-S1-slug.md"
+    const projectMatch = parseStoryId(filename)?.id.includes("-S") ? parseStoryId(filename) : null;
+
     let id: string;
     let epicId: string;
 
     if (numericMatch) {
       id = `${numericMatch[1]}.${numericMatch[2]}`;
       epicId = numericMatch[1];
+    } else if (projectMatch) {
+      id = projectMatch.id;
+      epicId = projectMatch.epicId;
     } else if (legacyMatch) {
       id = legacyMatch[1].replace(/[._-]/, ".");
       epicId = id.includes(".") ? id.split(".")[0] : "";
@@ -43,8 +50,14 @@ export function parseStory(
         ? String(parsed.data.epic_id)
         : parsed.data.epic
           ? String(parsed.data.epic)
-          : undefined;
+          : parsed.data.epicId
+            ? String(parsed.data.epicId)
+            : undefined;
       if (parsed.data.id) id = String(parsed.data.id);
+      else {
+        const fmStory = frontmatterStoryId(parsed.data);
+        if (fmStory) id = fmStory.id;
+      }
       if (frontmatterEpicId) epicId = frontmatterEpicId;
     } else {
       body = content;

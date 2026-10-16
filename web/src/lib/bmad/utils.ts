@@ -1,19 +1,35 @@
 import { FileTreeNode, StoryStatus } from "./types";
 
 /**
+ * Statuses that take a story out of the project: it is neither counted nor part of any
+ * progress figure. Adapters filter these out and report the count in `layout.notes`.
+ */
+export function isExcludedStatus(raw: string | undefined): boolean {
+  if (!raw) return false;
+  const s = raw.toLowerCase().trim();
+  return s === "retired" || s === "superseded" || s === "dropped" || s === "deferred";
+}
+
+/**
  * Canonical normalizeStoryStatus used across all BMAD parsers.
- * Default fallback is "backlog".
+ * Default fallback is "backlog". Excluded words (see isExcludedStatus) also map to
+ * "backlog" here; callers that care check isExcludedStatus first.
+ *
+ *   done, complete(d)                              -> done
+ *   in-progress, started, partially-implemented    -> in-progress
+ *   review, in-review, reviewed, built             -> review
+ *   blocked                                        -> blocked
+ *   ready, ready-for-dev                           -> ready-for-dev
+ *   backlog, planned, draft, todo, pending, optional, anything else -> backlog
  */
 export function normalizeStoryStatus(raw: string | undefined): StoryStatus {
   if (!raw) return "backlog";
   const s = raw.toLowerCase().trim();
   if (s === "done" || s === "complete" || s === "completed") return "done";
-  if (s.includes("progress") || s === "started") return "in-progress";
-  if (s === "review" || s.includes("review")) return "review";
+  if (s.includes("progress") || s === "started" || s.startsWith("partially")) return "in-progress";
+  if (s === "review" || s === "built" || s.includes("review")) return "review";
   if (s === "blocked") return "blocked";
   if (s === "ready-for-dev" || s === "ready") return "ready-for-dev";
-  if (s === "backlog" || s === "todo" || s === "pending") return "backlog";
-  if (s === "optional") return "backlog";
   return "backlog";
 }
 

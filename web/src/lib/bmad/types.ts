@@ -110,6 +110,21 @@ export interface ParseHealthReport {
   successfulFiles: number;
 }
 
+export type LayoutId = "v6-default" | "v6-project" | "ticket-tree" | "v4" | "unknown";
+
+/** Which project layout the parser detected, and whether it found anything in it. */
+export interface LayoutInfo {
+  id: LayoutId;
+  /** Short human label, e.g. "BMad v6 · project layout". */
+  label: string;
+  /** Observations worth showing: exclusions, status disagreements, skipped files. */
+  notes: string[];
+  /** False when no layout matched or the matching layout produced no epics. */
+  recognised: boolean;
+  /** Where epics were looked for (output-dir relative or repo-relative patterns). */
+  lookedFor: string[];
+}
+
 export interface BmadProject {
   owner: string;
   repo: string;
@@ -123,6 +138,12 @@ export interface BmadProject {
   docsTree: FileTreeNode[];
   docsFolderName: string | null;
   parseHealth?: ParseHealthReport;
+  layout: LayoutInfo;
+  /**
+   * Adapter-declared roots outside the output folder (e.g. ".agentic"), with their
+   * file trees, for the Library. Empty for most layouts.
+   */
+  extraTrees?: { root: string; tree: FileTreeNode[] }[];
   totalStories: number;
   completedStories: number;
   inProgressStories: number;

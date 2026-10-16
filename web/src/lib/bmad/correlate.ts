@@ -1,3 +1,4 @@
+import { humanizeSlug, parseStoryId } from "./ids";
 import { BmadProject, Epic, SprintStatus, StoryDetail, EpicStatus } from "./types";
 
 /**
@@ -5,13 +6,10 @@ import { BmadProject, Epic, SprintStatus, StoryDetail, EpicStatus } from "./type
  * a human-readable title: "Project Initialization".
  */
 function formatStoryTitle(slug: string): string {
-  // Remove the leading "N-N-" prefix
-  const withoutPrefix = slug.replace(/^\d+-\d+-/, "");
-  if (!withoutPrefix || withoutPrefix === slug) return slug;
-  return withoutPrefix
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+  // Remove the leading "N-N-" or "E1-S1-" prefix
+  const parsed = parseStoryId(slug);
+  if (!parsed || !parsed.slug) return slug;
+  return humanizeSlug(parsed.slug);
 }
 
 export function correlate(

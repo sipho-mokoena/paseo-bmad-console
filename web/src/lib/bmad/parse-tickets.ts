@@ -3,7 +3,7 @@ import type { ContentProvider } from "@/lib/content-provider";
 import matter from "gray-matter";
 import type { Epic, StoryDetail, StoryStatus } from "./types";
 
-const INITIATIVE_TICKETS = /^(.*\/initiative-[^/]+)\/tickets\.toml$/;
+export const INITIATIVE_TICKETS = /^(.*\/initiative-[^/]+)\/tickets\.toml$/;
 
 interface TicketEpicRow {
   id?: number | string;
@@ -51,7 +51,7 @@ interface Plan {
 
 /** Plans (`<type>-<slug>-plan.md`) beside the tickets, keyed by their `ticket` id. */
 async function readPlans(
-  provider: ContentProvider,
+  provider: Pick<ContentProvider, "getFileContent">,
   paths: string[],
   epicDir: string,
 ): Promise<{ plans: Map<string, Plan>; files: number }> {
@@ -87,7 +87,7 @@ function epicDescription(md: string): string {
  * Story ids are "<epicId>.<entryId>", matching the "after" references.
  */
 export async function parseTicketTree(
-  provider: ContentProvider,
+  provider: Pick<ContentProvider, "getFileContent">,
   paths: string[],
 ): Promise<{ epics: Epic[]; stories: StoryDetail[]; files: number }> {
   const epics: Epic[] = [];

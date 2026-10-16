@@ -1,4 +1,5 @@
 import yaml from "js-yaml";
+import { parse as parseToml } from "smol-toml";
 import type { ContentProvider } from "@/lib/content-provider";
 
 export interface BmadConfig {
@@ -7,6 +8,8 @@ export interface BmadConfig {
 
 export const DEFAULT_OUTPUT_DIR = "_bmad-output";
 export const CORE_CONFIG_PATH = "_bmad/core/config.yaml";
+/** Newer installs write one TOML file: `[core] output_folder = "..."`. */
+export const TOML_CONFIG_PATH = "_bmad/config.toml";
 
 const PROJECT_ROOT_PREFIX = /^\{project-root\}\/+/;
 
@@ -36,20 +39,58 @@ export function parseConfigContent(content: string): BmadConfig | null {
   }
 }
 
+/** Output folder from `_bmad/config.toml`: `[core] output_folder`, else the first `output_folder` key found. */
+export function parseTomlConfigContent(content: string): BmadConfig | null {
+  try {
+    const data = parseToml(content) as Record<string, unknown>;
+    const core = data.core;
+    let raw: unknown =
+      core && typeof core === "object" ? (core as Record<string, unknown>).output_folder : undefined;
+    if (typeof raw !== "string") {
+      const seen = new Set<unknown>();
+      const find = (node: unknown): unknown => {
+        if (!node || typeof node !== "object" || seen.has(node)) return undefined;
+        seen.add(node);
+        const rec = node as Record<string, unknown>;
+        if (typeof rec.output_folder === "string") return rec.output_folder;
+        for (const v of Object.values(rec)) {
+          const hit = find(v);
+          if (hit !== undefined) return hit;
+        }
+        return undefined;
+      };
+      raw = find(data);
+    }
+    if (typeof raw !== "string") return null;
+    const outputDir = normalizeOutputFolder(raw);
+    return outputDir ? { outputDir } : null;
+  } catch (e) {
+    console.warn("[BMAD Config] Failed to parse config TOML:", e);
+    return null;
+  }
+}
+
+/** Parses a config file by its path (`.toml` or YAML). */
+export function parseConfigFile(path: string, content: string): BmadConfig | null {
+  return path.endsWith(".toml") ? parseTomlConfigContent(content) : parseConfigContent(content);
+}
+
+/** Config files in precedence order: the v6 core YAML first, then the TOML form. */
+export const CONFIG_PATHS = [CORE_CONFIG_PATH, TOML_CONFIG_PATH] as const;
+
 export async function getBmadConfig(
   provider: ContentProvider,
   paths: string[],
 ): Promise<BmadConfig> {
-  if (!paths.includes(CORE_CONFIG_PATH)) {
-    return { outputDir: DEFAULT_OUTPUT_DIR };
-  }
-
-  try {
-    const content = await provider.getFileContent(CORE_CONFIG_PATH);
-    const parsed = parseConfigContent(content);
-    if (parsed) return parsed;
-  } catch (e) {
-    console.warn(`[BMAD Config] Failed to read ${CORE_CONFIG_PATH}:`, e);
+  for (const configPath of CONFIG_PATHS) {
+    if (!paths.includes(configPath)) continue;
+    try {
+      const content = await provider.getFileContent(configPath);
+      const parsed = parseConfigFile(configPath, content);
+      if (parsed) return parsed;
+    } catch (e) {
+      console.warn(`[BMAD Config] Failed to read ${configPath}:`, e);
+    }
   }
 
   return { outputDir: DEFAULT_OUTPUT_DIR };

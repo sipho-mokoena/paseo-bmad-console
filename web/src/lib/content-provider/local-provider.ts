@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
 import type { ContentProvider, ContentProviderTree } from "./types";
-import { LOCAL_PROVIDER_DEFAULTS } from "./types";
+import { DECLARABLE_DOT_DIRS, LOCAL_PROVIDER_DEFAULTS } from "./types";
 
 export type LocalFileErrorCode =
   | "INVALID_PATH"
@@ -68,8 +68,10 @@ export class LocalProvider implements ContentProvider {
 
   /**
    * Allow scanning an additional top-level directory (e.g. a custom output
-   * folder declared in `_bmad/core/config.yaml`). The name must be a single
-   * path segment — no slashes, no traversal, no leading dot.
+   * folder declared in `_bmad/core/config.yaml`, or a root a layout adapter
+   * declares such as `docs`). The name must be a single path segment — no
+   * slashes, no traversal. A leading dot is refused unless the name is in
+   * DECLARABLE_DOT_DIRS (currently only `.agentic`).
    */
   extendBmadDirs(name: string): void {
     if (
@@ -78,7 +80,8 @@ export class LocalProvider implements ContentProvider {
       name.includes("\\") ||
       name === "." ||
       name === ".." ||
-      name.startsWith(".")
+      name.includes("\0") ||
+      (name.startsWith(".") && !DECLARABLE_DOT_DIRS.has(name))
     ) {
       throw new Error(`Invalid BMAD dir name: ${name}`);
     }
@@ -222,7 +225,17 @@ export class LocalProvider implements ContentProvider {
       );
     }
 
-    return fs.readFile(fullPath, "utf-8");
+    // Guard 3b — an intermediate directory may be a symlink (e.g. a linked
+    // `.agentic`); the resolved file must still live inside the root.
+    const [realPath, realRoot] = await Promise.all([
+      fs.realpath(fullPath),
+      fs.realpath(this.resolvedRoot),
+    ]);
+    if (!realPath.startsWith(realRoot + path.sep)) {
+      throw new Error("Path traversal detected");
+    }
+
+    return fs.readFile(realPath, "utf-8");
   }
 
   /**

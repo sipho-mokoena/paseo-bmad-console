@@ -1,5 +1,6 @@
 import { Epic, EpicStatus } from "./types";
 import matter from "gray-matter";
+import { frontmatterEpicId, frontmatterTitle, parseEpicId } from "./ids";
 
 /**
  * Parse a single epic from an individual markdown file.
@@ -52,10 +53,15 @@ function extractId(
   body: string,
   filename: string,
 ): string | null {
-  // 1. From frontmatter
-  if (fm.id !== undefined && fm.id !== null) {
-    return String(fm.id);
+  // 1. From frontmatter: epic_id, epicId, epic, id (numeric or project style, "E1")
+  if (fm.id !== undefined && fm.id !== null && frontmatterEpicId(fm) === null) {
+    // Unrecognised shape: keep the legacy behaviour of taking `id` verbatim
+    if (fm.epic_id === undefined && fm.epicId === undefined && fm.epic === undefined) {
+      return String(fm.id);
+    }
   }
+  const fmId = frontmatterEpicId(fm);
+  if (fmId) return fmId;
 
   // 2. From heading: ## Epic 1: Title  or  ## 1 - Title
   const headingMatch = body.match(/^##\s+(?:Epic\s+)?(\d+)[\s:.—-]/im);
@@ -66,6 +72,10 @@ function extractId(
   const fileMatch = nameWithoutExt.match(/^(?:epic[_-]?)?(\d+)(?:[_-]|$)/i);
   if (fileMatch) return fileMatch[1];
 
+  // 4. Project-style filename: E1-foundations.md, DEFERRED-E10-slug.md
+  const projectMatch = nameWithoutExt.match(/^((?:[A-Za-z]+-)*[Ee]\d+)(?:[_-]|$)/);
+  if (projectMatch) return parseEpicId(projectMatch[1]);
+
   return null;
 }
 
@@ -74,10 +84,9 @@ function extractTitle(
   body: string,
   id: string,
 ): string {
-  // 1. From frontmatter
-  if (typeof fm.title === "string" && fm.title.trim()) {
-    return fm.title.trim();
-  }
+  // 1. From frontmatter: title, name
+  const fmTitle = frontmatterTitle(fm);
+  if (fmTitle) return fmTitle;
 
   // 2. From heading
   const headingMatch = body.match(

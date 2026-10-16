@@ -23,3 +23,10 @@ export const LOCAL_PROVIDER_DEFAULTS = {
   maxFileCount: 10_000,
   maxDepth: 20,
 } as const;
+
+/**
+ * The only leading-dot directories a layout adapter may ask the local provider to open.
+ * Everything else with a leading dot (.git, .ssh, .env.d, ...) is refused, whatever an
+ * adapter declares. Add a name here only together with the adapter that needs it.
+ */
+export const DECLARABLE_DOT_DIRS: ReadonlySet<string> = new Set([".agentic"]);
