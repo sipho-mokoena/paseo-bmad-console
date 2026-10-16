@@ -1,4 +1,4 @@
-# Contributing to BMAD Console
+# Contributing to Paseo BMAD Console
 
 Thank you for your interest in contributing! This document explains how to get started.
 

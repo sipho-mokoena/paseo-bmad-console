@@ -1,4 +1,4 @@
-# BMAD Console
+# Paseo BMAD Console
 
 ## Tailwind CSS
 

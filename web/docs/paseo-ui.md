@@ -1,6 +1,6 @@
 # Paseo UI reference
 
-Extracted from `getpaseo/paseo` (main) for restyling BMAD Console. Two sources are used:
+Extracted from `getpaseo/paseo` (main) for restyling Paseo BMAD Console. Two sources are used:
 
 - **Website** (`packages/website`): dark-only marketing/docs site.
 - **App** (`packages/app`): the product UI, with light and dark themes.
@@ -14,7 +14,7 @@ Paseo desktop screenshots (chat, History, model picker) and match `packages/app/
 `paseoDarkColors` (surface0-4, surfaceSidebar, accent). They supersede the website tokens
 (`#101615` background, `#171d1c` card, `#239956` primary) used in the previous pass.
 
-| Token | Value | Sampled from | BMAD Console token |
+| Token | Value | Sampled from | Paseo BMAD Console token |
 | --- | --- | --- | --- |
 | main / window background | `#181b1a` (surface0) | main area, header, tab strip | `--background` |
 | sidebar background | `#141716` (surfaceSidebar) | left sidebar | `--sidebar` |
@@ -30,7 +30,7 @@ Paseo desktop screenshots (chat, History, model picker) and match `packages/app/
 
 Layout (`packages/app/src/constants/layout.ts`): `HEADER_INNER_HEIGHT` 36 (screens ~40px with border),
 `HEADER_INNER_HEIGHT_MOBILE` 56, `WORKSPACE_SECONDARY_HEADER_HEIGHT` 36 (tab strip), sidebar 320px.
-BMAD Console uses: sidebar 20rem, header 2.5rem desktop / 3rem phone (`--app-header-h`), tab strip 2.25rem,
+Paseo BMAD Console uses: sidebar 20rem, header 2.5rem desktop / 3rem phone (`--app-header-h`), tab strip 2.25rem,
 sidebar action rows 30px (40px on phones), content padding 24px desktop / 8px phone.
 
 ### Website tokens (previous pass, superseded for dark)
@@ -47,7 +47,7 @@ Website tokens, `packages/website/src/styles.css` (`@theme`, lines 670-690):
 
 App surfaces, `packages/app/src/styles/theme.ts` `paseoDarkColors` (line 460):
 
-| Token | Value | Use in BMAD Console |
+| Token | Value | Use in Paseo BMAD Console |
 | --- | --- | --- |
 | surface0 | `#181B1A` | main background |
 | surface1 | `#1E2120` | raised panels, modals |
@@ -62,7 +62,7 @@ App surfaces, `packages/app/src/styles/theme.ts` `paseoDarkColors` (line 460):
 
 App tokens, `packages/app/src/styles/theme.ts` `lightSemanticColors` (line 323):
 
-| Token | Value | Use in BMAD Console |
+| Token | Value | Use in Paseo BMAD Console |
 | --- | --- | --- |
 | surface0 | `#FFFFFF` | background, cards |
 | surface1 | `#FAFAFA` | raised panels |

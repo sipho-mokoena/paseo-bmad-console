@@ -1,6 +1,6 @@
 # Local Folder Import
 
-When self-hosting BMAD Console on the same machine where your BMAD projects live, you can import them directly from the filesystem — no GitHub needed.
+When self-hosting Paseo BMAD Console on the same machine where your BMAD projects live, you can import them directly from the filesystem — no GitHub needed.
 
 ## Enabling
 
