@@ -10,6 +10,7 @@ import { EpicsTimeline } from "./epics-timeline";
 import { EpicsKanban } from "./epics-kanban";
 import { EpicStoriesSheet } from "./epic-stories-sheet";
 import { StoryDetailView } from "./story-detail-view";
+import { StoryRowDetails } from "./story-ticket-meta";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
 import { ArrowLeft, GanttChartSquare, Columns3 } from "lucide-react";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
@@ -325,6 +326,7 @@ export function EpicsBrowser({
                           <StatusBadge status={story.status} />
                         </div>
                       </div>
+                      <StoryRowDetails story={story} className="ml-10" />
                     </CardContent>
                   </Card>
                 ))}

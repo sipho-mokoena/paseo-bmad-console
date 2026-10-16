@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { SegmentedProgressBar } from "@/components/shared/segmented-progress-bar";
 import { StoryDetailView } from "./story-detail-view";
+import { StoryRowDetails } from "./story-ticket-meta";
 import { ArrowLeft } from "lucide-react";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
@@ -152,6 +153,7 @@ export function EpicStoriesSheet({
                         <StatusBadge status={story.status} />
                       </div>
                     </div>
+                    <StoryRowDetails story={story} className="ml-8" />
                   </CardContent>
                 </Card>
               ))}
