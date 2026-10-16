@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { epicName } from "@/lib/bmad/ids";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import {
@@ -60,10 +61,10 @@ export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
       const epicId = safeDecode(segments[4]);
       parents = [{ label: "Epics", href: `${base}/epics` }];
       if (segments[5]) {
-        parents.push({ label: `Epic ${epicId}`, href: `${base}/epics/${segments[4]}` });
+        parents.push({ label: epicName(epicId), href: `${base}/epics/${segments[4]}` });
         title = pageTitle ?? safeDecode(segments[5]);
       } else {
-        title = `Epic ${epicId}`;
+        title = epicName(epicId);
       }
     } else {
       title = getRouteLabel(segments[3]);

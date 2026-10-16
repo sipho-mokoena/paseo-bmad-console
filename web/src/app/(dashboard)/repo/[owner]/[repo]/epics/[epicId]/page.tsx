@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { StatusPill } from "@/components/shared/pill";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { EpicStoriesView } from "@/components/epics/epic-stories-view";
+import { epicLabel } from "@/lib/bmad/ids";
 import { decodeParam, loadProject } from "@/lib/load-project";
 
 interface EpicPageProps {
@@ -22,7 +23,7 @@ export default async function EpicPage({ params }: EpicPageProps) {
     <div className="min-w-0 space-y-3 pb-4" role="region" aria-label={`Epic ${epic.id}`}>
       <div className="space-y-2 px-2">
         <div className="flex items-center gap-3">
-          <span className="font-mono text-xs text-muted-foreground">E{epic.id}</span>
+          <span className="font-mono text-xs text-muted-foreground">{epicLabel(epic.id)}</span>
           <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{epic.title}</h1>
           <StatusPill status={epic.status} />
         </div>

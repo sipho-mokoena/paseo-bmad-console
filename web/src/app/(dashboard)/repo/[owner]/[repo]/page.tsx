@@ -4,6 +4,7 @@ import { getGitHubToken } from "@/lib/github/client";
 import { ProjectStatsGrid } from "@/components/dashboard/project-stats-grid";
 import { EpicsList } from "@/components/dashboard/epics-list";
 import { VelocityMetrics } from "@/components/dashboard/velocity-metrics";
+import { LayoutDetails, LayoutNotice, LayoutPill } from "@/components/dashboard/layout-info";
 import { KeyArtifactsCard } from "@/components/dashboard/key-artifacts-card";
 import { GitBranch, Clock, FolderOpen } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
@@ -62,6 +63,7 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
               </span>
             </>
           )}
+          <LayoutPill layout={project.layout} />
           {repoConfig.lastSyncedAt && (
             <span className="hidden shrink-0 items-center gap-2 sm:flex">
               <span className="text-muted-foreground/50">·</span>
@@ -87,6 +89,8 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
         </div>
       </div>
 
+      <LayoutNotice layout={project.layout} />
+
       <ProjectStatsGrid
         totalEpics={project.epics.length}
         totalStories={project.totalStories}
@@ -99,7 +103,9 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
         <VelocityMetrics sprintStatus={project.sprintStatus} />
       )}
 
-      <EpicsList epics={project.epics} owner={owner} repo={repoName} />
+      <LayoutDetails layout={project.layout} errors={project.parseHealth?.errors ?? []} />
+
+      <EpicsList epics={project.epics} owner={owner} repo={repoName} lookedFor={project.layout.lookedFor} />
 
       <KeyArtifactsCard
         planningArtifacts={planningArtifacts}

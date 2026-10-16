@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { ROW_CLASS } from "@/components/shared/list-kit";
+import { epicLabel } from "@/lib/bmad/ids";
 import { cn } from "@/lib/utils";
 import type { Epic, EpicStatus } from "@/lib/bmad/types";
 
@@ -42,7 +43,7 @@ export function EpicsKanban({ epics, hrefFor }: EpicsKanbanProps) {
                 aria-label={`Open epic ${epic.id}: ${epic.title}`}
                 className={cn(ROW_CLASS, "flex-wrap gap-x-2 gap-y-1")}
               >
-                <span className="font-mono text-xs text-muted-foreground">E{epic.id}</span>
+                <span className="font-mono text-xs text-muted-foreground">{epicLabel(epic.id)}</span>
                 <span className="min-w-0 flex-1 truncate">{epic.title}</span>
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                   {epic.completedStories}/{epic.totalStories}

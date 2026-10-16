@@ -41,6 +41,7 @@ export default async function DocsPage({
       fileTree={result.data.fileTree}
       docsTree={result.data.docsTree}
       bmadCoreTree={result.data.bmadCoreTree}
+      extraTrees={result.data.extraTrees}
       owner={owner}
       repo={repoName}
       initialSelectedFile={initialFile}

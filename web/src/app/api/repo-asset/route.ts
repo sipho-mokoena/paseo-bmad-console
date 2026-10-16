@@ -1,11 +1,7 @@
 import { getAuthenticatedSession, getAuthenticatedRepoConfig } from "@/lib/db/helpers";
 import { LocalProvider, LocalFileError } from "@/lib/content-provider/local-provider";
-import {
-  DEFAULT_OUTPUT_DIR,
-  CORE_CONFIG_PATH,
-  parseConfigContent,
-  isPathOutsideNestedOutput,
-} from "@/lib/bmad/parse-config";
+import { DEFAULT_OUTPUT_DIR, isPathOutsideNestedOutput } from "@/lib/bmad/parse-config";
+import { openProject } from "@/lib/bmad/scope";
 import {
   REPO_ASSET_MAX_BYTES,
   assetResponseHeaders,
@@ -15,7 +11,6 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CONFIG_MAX_BYTES = 256 * 1024;
 const MAX_IDENTIFIER_LENGTH = 200;
 
 const BASE_HEADERS = {
@@ -25,16 +20,6 @@ const BASE_HEADERS = {
 
 function errorResponse(status: number, error: string): Response {
   return Response.json({ error }, { status, headers: BASE_HEADERS });
-}
-
-/** Output folder declared in `_bmad/core/config.yaml`, or the default. */
-async function resolveOutputDir(provider: LocalProvider): Promise<string> {
-  try {
-    const buffer = await provider.getFileBuffer(CORE_CONFIG_PATH, CONFIG_MAX_BYTES);
-    return parseConfigContent(buffer.toString("utf-8"))?.outputDir ?? DEFAULT_OUTPUT_DIR;
-  } catch {
-    return DEFAULT_OUTPUT_DIR;
-  }
 }
 
 /**
@@ -71,18 +56,11 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const provider = new LocalProvider(config.localPath);
 
-    // Nested output folders: the provider whitelist is top-segment based, so
-    // mirror the check used by fetchFileContent.
-    const outputDir = await resolveOutputDir(provider);
-    if (outputDir !== DEFAULT_OUTPUT_DIR) {
-      try {
-        provider.extendBmadDirs(outputDir.split("/")[0]);
-      } catch {
-        // Leave the whitelist unchanged; the provider refuses the path below.
-      }
-      if (isPathOutsideNestedOutput(validation.path, outputDir)) {
-        return errorResponse(403, "Access denied");
-      }
+    // Opens the output folder (nested ones are top-segment based, so the extra
+    // check below applies) and the roots the detected layout declares.
+    const { outputDir } = await openProject(provider);
+    if (outputDir !== DEFAULT_OUTPUT_DIR && isPathOutsideNestedOutput(validation.path, outputDir)) {
+      return errorResponse(403, "Access denied");
     }
 
     const buffer = await provider.getFileBuffer(validation.path, REPO_ASSET_MAX_BYTES);

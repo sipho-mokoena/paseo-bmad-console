@@ -1,5 +1,7 @@
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
+export { epicLabel, epicName } from "@/lib/bmad/ids";
+
 export const EPIC_GROUPS: { status: Epic["status"]; label: string }[] = [
   { status: "in-progress", label: "In progress" },
   { status: "not-started", label: "Not started" },

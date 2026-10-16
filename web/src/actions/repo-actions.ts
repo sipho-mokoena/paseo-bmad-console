@@ -10,6 +10,7 @@ import {
 } from "@/lib/github/client";
 import { LocalProvider } from "@/lib/content-provider/local-provider";
 import { buildFileTree } from "@/lib/bmad/utils";
+import { openProject } from "@/lib/bmad/scope";
 import { parseBmadFile } from "@/lib/bmad/parser";
 import {
   getBmadConfig,
@@ -504,6 +505,8 @@ export async function fetchBmadFiles(input: {
     fileTree: FileTreeNode[];
     docsTree: FileTreeNode[];
     bmadCoreTree: FileTreeNode[];
+    /** Layout-declared roots outside the output folder, e.g. ".agentic". */
+    extraTrees: { root: string; tree: FileTreeNode[] }[];
     bmadFiles: string[];
   }>
 > {
@@ -557,11 +560,9 @@ export async function fetchBmadFiles(input: {
 async function fetchBmadFilesLocal(localPath: string) {
   const provider = new LocalProvider(localPath);
   await provider.validateRoot();
-  const initialTree = await provider.getTree();
-  const { outputDir, paths: allPaths } = await resolveBmadOutputDir(
-    provider,
-    initialTree.paths,
-  );
+  // Opens the output folder and the roots the detected layout declares (e.g. .agentic, docs).
+  const scope = await openProject(provider);
+  const { outputDir, paths: allPaths } = scope;
 
   const bmadPaths = allPaths.filter((p) => p.startsWith(outputDir + "/"));
   const fileTree = buildFileTree(bmadPaths, outputDir);
@@ -570,7 +571,7 @@ async function fetchBmadFilesLocal(localPath: string) {
   const bmadCoreTree = buildFileTree(bmadCorePaths, BMAD_CORE);
 
   // F20/F35: Detect docs/ via rootDirectories
-  const docsFolderName = initialTree.rootDirectories.find(
+  const docsFolderName = scope.rootDirectories.find(
     (d) => d.toLowerCase() === "docs"
   ) ?? null;
   const docsTree = docsFolderName
@@ -580,7 +581,20 @@ async function fetchBmadFilesLocal(localPath: string) {
       )
     : [];
 
-  return { success: true as const, data: { fileTree, docsTree, bmadCoreTree, bmadFiles: bmadPaths } };
+  // Adapter-declared roots other than docs (e.g. ".agentic") as extra Library trees.
+  const declared = new Set(scope.candidates.flatMap((c) => c.adapter.extraRoots));
+  const extraTrees = scope.openedRoots
+    .filter((root) => declared.has(root) && root.toLowerCase() !== "docs")
+    .map((root) => ({
+      root,
+      tree: buildFileTree(allPaths.filter((p) => p.startsWith(root + "/")), root),
+    }))
+    .filter((t) => t.tree.length > 0);
+
+  return {
+    success: true as const,
+    data: { fileTree, docsTree, bmadCoreTree, extraTrees, bmadFiles: bmadPaths },
+  };
 }
 
 async function fetchBmadFilesGitHub(
@@ -645,7 +659,7 @@ async function fetchBmadFilesGitHub(
       )
     : [];
 
-  return { success: true as const, data: { fileTree, docsTree, bmadCoreTree, bmadFiles: bmadPaths } };
+  return { success: true as const, data: { fileTree, docsTree, bmadCoreTree, extraTrees: [] as { root: string; tree: FileTreeNode[] }[], bmadFiles: bmadPaths } };
 }
 
 const fetchFileContentSchema = z.object({
@@ -715,8 +729,9 @@ export async function fetchFileContent(input: {
       // read inside it — but the provider only validates by single segment.
       // Re-check the requested path here so a nested config like
       // `output_folder: custom/out` cannot be used to read `custom/secret.txt`.
-      const tree = await provider.getTree();
-      const { outputDir } = await getBmadConfig(provider, tree.paths);
+      // openProject also opens the roots the detected layout declares (e.g. .agentic),
+      // so the viewer can read them; the provider still refuses every other path.
+      const { outputDir } = await openProject(provider);
       const requestedPath = parsed.data.path;
       if (
         outputDir !== DEFAULT_OUTPUT_DIR &&
@@ -727,28 +742,6 @@ export async function fetchFileContent(input: {
           error: sanitizeError(null, "ACCESS_DENIED"),
           code: "ACCESS_DENIED",
         };
-      }
-      if (outputDir !== DEFAULT_OUTPUT_DIR) {
-        const topSegment = outputDir.split("/")[0];
-        try {
-          provider.extendBmadDirs(topSegment);
-        } catch (err) {
-          // The downstream getFileContent → assertSafePath check is
-          // authoritative: an unsuccessful extendBmadDirs simply leaves
-          // the whitelist unchanged, so a non-extended access is
-          // refused with "Access denied". This catch is observability
-          // only — surface the failed validation in logs instead of
-          // letting it disappear silently.
-          console.warn(
-            "[fetchFileContent] extendBmadDirs failed",
-            {
-              owner: parsed.data.owner,
-              name: parsed.data.name,
-              segment: topSegment,
-              error: err instanceof Error ? err.message : String(err),
-            },
-          );
-        }
       }
       content = await provider.getFileContent(requestedPath);
     } else {

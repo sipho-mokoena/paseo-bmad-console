@@ -3,6 +3,7 @@ import { StatusPill } from "@/components/shared/pill";
 import { ROW_CLASS } from "@/components/shared/list-kit";
 import { AfterText, TicketChips, hasTicketChips } from "./story-ticket-meta";
 import { cn } from "@/lib/utils";
+import { epicLabel, epicName } from "@/lib/bmad/ids";
 import type { StoryDetail } from "@/lib/bmad/types";
 
 interface StoryRowProps {
@@ -34,10 +35,10 @@ export function StoryRow({ story, href, showEpic, project, className }: StoryRow
       </span>
       {showEpic && (
         <span
-          title={story.epicTitle ? `Epic ${story.epicId}: ${story.epicTitle}` : `Epic ${story.epicId}`}
+          title={story.epicTitle ? `${epicName(story.epicId)}: ${story.epicTitle}` : epicName(story.epicId)}
           className="shrink-0 rounded-sm bg-muted px-1.5 font-mono text-[11px] leading-5 text-muted-foreground"
         >
-          E{story.epicId}
+          {epicLabel(story.epicId)}
         </span>
       )}
       <span className="flex min-w-0 flex-1 items-baseline gap-2">

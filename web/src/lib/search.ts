@@ -2,6 +2,7 @@
  * Pure matching, ranking and snippet helpers for the global Search screen.
  * No I/O here: the server gathers the data, this module scores it.
  */
+import { epicLabel } from "@/lib/bmad/ids";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
 export const MIN_QUERY_LENGTH = 2;
@@ -65,7 +66,7 @@ export function scoreEpic(epic: Epic, query: string, terms: string[]): number {
   const q = query.toLowerCase();
   const id = norm(epic.id);
   const title = norm(epic.title);
-  const all = `E${epic.id} ${epic.id} ${epic.title} ${epic.description}`;
+  const all = `${epicLabel(epic.id)} ${epic.id} ${epic.title} ${epic.description}`;
   if (!includesAll(all, terms)) return 0;
   if (q === id || q === `e${id}` || q === `epic ${id}` || q === title) return S_EXACT;
   if (includesAll(epic.title, terms)) return S_TITLE;

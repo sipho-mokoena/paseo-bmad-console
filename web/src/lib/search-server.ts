@@ -1,4 +1,5 @@
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
+import { openProject } from "@/lib/bmad/scope";
 import { createContentProvider } from "@/lib/content-provider";
 import { createUserOctokit, getGitHubToken } from "@/lib/github/client";
 import type { FileTreeNode, Epic, StoryDetail } from "@/lib/bmad/types";
@@ -64,6 +65,8 @@ async function loadSnapshot(
   const octokit =
     config.sourceType === "github" && token ? createUserOctokit(token) : undefined;
   const provider = createContentProvider(config, octokit, userId);
+  // A fresh local provider only knows the default roots; open the layout's (docs, .agentic).
+  if (config.sourceType === "local") await openProject(provider).catch(() => undefined);
 
   const seen = new Set<string>();
   const paths: string[] = [];

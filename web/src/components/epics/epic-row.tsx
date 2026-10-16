@@ -3,6 +3,7 @@ import { StatusPill } from "@/components/shared/pill";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { ROW_CLASS } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
+import { epicLabel } from "@/lib/bmad/ids";
 import type { Epic } from "@/lib/bmad/types";
 
 interface EpicRowProps {
@@ -17,8 +18,8 @@ interface EpicRowProps {
 export function EpicRow({ epic, href, project, className }: EpicRowProps) {
   const body = (
     <>
-      <span className="w-7 shrink-0 font-mono text-xs text-muted-foreground">
-        E{epic.id}
+      <span className="min-w-7 shrink-0 font-mono text-xs text-muted-foreground">
+        {epicLabel(epic.id)}
       </span>
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span className="min-w-0 truncate lg:max-w-[55%] lg:shrink-0">{epic.title}</span>

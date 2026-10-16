@@ -8,6 +8,7 @@ import { BreadcrumbTitle } from "@/contexts/breadcrumb-context";
 import { decodeParam, loadProject } from "@/lib/load-project";
 import {
   epicHref,
+  epicName,
   epicsHref,
   neighbours,
   resolveAfter,
@@ -61,7 +62,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
         </Link>
         <ChevronRight className="size-3.5" aria-hidden="true" />
         <Link href={epicHref(base, epic.id)} className={CRUMB} title={epic.title}>
-          Epic {epic.id}
+          {epicName(epic.id)}
         </Link>
         <ChevronRight className="size-3.5" aria-hidden="true" />
         <span aria-current="page" className="px-1 font-mono text-xs">

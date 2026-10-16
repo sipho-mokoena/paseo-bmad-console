@@ -59,6 +59,7 @@ function treeContainsPath(nodes: FileTreeNode[], path: string): boolean {
 function FilePanel({
   fileTree,
   secondaryTree,
+  extraTrees = [],
   owner,
   repo,
   initialSelectedFile,
@@ -66,6 +67,8 @@ function FilePanel({
 }: {
   fileTree: FileTreeNode[];
   secondaryTree?: FileTreeNode[];
+  /** Layout-declared roots outside the output folder (e.g. ".agentic"). */
+  extraTrees?: { root: string; tree: FileTreeNode[] }[];
   owner: string;
   repo: string;
   initialSelectedFile?: string;
@@ -88,7 +91,8 @@ function FilePanel({
     hasSecondary && initialSelectedFile
       ? treeContainsPath(secondaryTree, initialSelectedFile)
       : false;
-  const isEmpty = fileTree.length === 0 && !hasSecondary;
+  const hasExtra = extraTrees.length > 0;
+  const isEmpty = fileTree.length === 0 && !hasSecondary && !hasExtra;
 
   if (isEmpty) {
     return (
@@ -101,7 +105,7 @@ function FilePanel({
     );
   }
 
-  const tree = hasSecondary ? (
+  const tree = hasSecondary || hasExtra ? (
     <div className="space-y-2">
       <CollapsibleSection title="Project artifacts" icon={FileOutput} defaultOpen>
         <FileTree
@@ -110,18 +114,40 @@ function FilePanel({
           onSelect={handleSelect}
         />
       </CollapsibleSection>
-      <div className="border-t" />
-      <CollapsibleSection
-        title="BMAD configuration"
-        icon={Settings}
-        defaultOpen={initialInSecondary}
-      >
-        <FileTree
-          nodes={secondaryTree}
-          selectedPath={selectedPath || undefined}
-          onSelect={handleSelect}
-        />
-      </CollapsibleSection>
+      {hasSecondary && (
+        <>
+          <div className="border-t" />
+          <CollapsibleSection
+            title="BMAD configuration"
+            icon={Settings}
+            defaultOpen={initialInSecondary}
+          >
+            <FileTree
+              nodes={secondaryTree}
+              selectedPath={selectedPath || undefined}
+              onSelect={handleSelect}
+            />
+          </CollapsibleSection>
+        </>
+      )}
+      {extraTrees.map((extra) => (
+        <div key={extra.root} className="space-y-2">
+          <div className="border-t" />
+          <CollapsibleSection
+            title={extra.root}
+            icon={FolderOpen}
+            defaultOpen={
+              !!initialSelectedFile && treeContainsPath(extra.tree, initialSelectedFile)
+            }
+          >
+            <FileTree
+              nodes={extra.tree}
+              selectedPath={selectedPath || undefined}
+              onSelect={handleSelect}
+            />
+          </CollapsibleSection>
+        </div>
+      ))}
     </div>
   ) : (
     <FileTree
@@ -209,6 +235,7 @@ interface DocsBrowserProps {
   fileTree: FileTreeNode[];
   docsTree: FileTreeNode[];
   bmadCoreTree: FileTreeNode[];
+  extraTrees?: { root: string; tree: FileTreeNode[] }[];
   owner: string;
   repo: string;
   initialSelectedFile?: string;
@@ -218,12 +245,13 @@ export function DocsBrowser({
   fileTree,
   docsTree,
   bmadCoreTree,
+  extraTrees = [],
   owner,
   repo,
   initialSelectedFile,
 }: DocsBrowserProps) {
   const hasDocs = docsTree.length > 0;
-  const hasBmad = fileTree.length > 0 || bmadCoreTree.length > 0;
+  const hasBmad = fileTree.length > 0 || bmadCoreTree.length > 0 || extraTrees.length > 0;
   const initialInDocs =
     !!initialSelectedFile && treeContainsPath(docsTree, initialSelectedFile);
   const [source, setSource] = useState<"bmad" | "docs">(
@@ -236,6 +264,7 @@ export function DocsBrowser({
       <FilePanel
         fileTree={fileTree}
         secondaryTree={bmadCoreTree.length > 0 ? bmadCoreTree : undefined}
+        extraTrees={extraTrees}
         owner={owner}
         repo={repo}
         initialSelectedFile={initialSelectedFile}
@@ -275,6 +304,7 @@ export function DocsBrowser({
       key="bmad"
       fileTree={fileTree}
       secondaryTree={bmadCoreTree.length > 0 ? bmadCoreTree : undefined}
+      extraTrees={extraTrees}
       owner={owner}
       repo={repo}
       initialSelectedFile={initialInDocs ? undefined : initialSelectedFile}

@@ -13,7 +13,7 @@ import {
   searchStories,
   storyHref,
 } from "@/lib/stories-browse";
-import type { Epic, StoryDetail } from "@/lib/bmad/types";
+import type { Epic, LayoutInfo, StoryDetail } from "@/lib/bmad/types";
 
 type EpicsLayout = "timeline" | "kanban";
 
@@ -22,10 +22,12 @@ interface EpicsBrowserProps {
   stories: StoryDetail[];
   /** `/repo/<owner>/<repo>` */
   base: string;
+  /** Detected layout; its search places explain an empty list. */
+  projectLayout?: LayoutInfo;
 }
 
 /** Level 1: the grouped epic list, plus search and filter across every story. */
-export function EpicsBrowser({ epics, stories, base }: EpicsBrowserProps) {
+export function EpicsBrowser({ epics, stories, base, projectLayout }: EpicsBrowserProps) {
   const [layout, setLayout] = useState<EpicsLayout>("timeline");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filter<string>[]>([]);
@@ -91,7 +93,9 @@ export function EpicsBrowser({ epics, stories, base }: EpicsBrowserProps) {
         </>
       ) : epics.length === 0 ? (
         <StateMessage>
-          No epic found. Epics will appear here once defined in the planning artifacts.
+          {projectLayout && projectLayout.lookedFor.length > 0
+            ? `${projectLayout.recognised ? "No epic found" : "Layout not recognised"}. Looked for: ${projectLayout.lookedFor.join(", ")}.`
+            : "No epic found. Epics will appear here once defined in the planning artifacts."}
         </StateMessage>
       ) : (
         <>

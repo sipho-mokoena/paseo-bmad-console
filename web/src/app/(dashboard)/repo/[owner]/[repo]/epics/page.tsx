@@ -25,5 +25,5 @@ export default async function EpicsPage({ params, searchParams }: EpicsPageProps
   );
   if (target) permanentRedirect(target);
 
-  return <EpicsBrowser epics={project.epics} stories={project.stories} base={base} />;
+  return <EpicsBrowser epics={project.epics} stories={project.stories} base={base} projectLayout={project.layout} />;
 }
