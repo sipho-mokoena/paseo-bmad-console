@@ -25,15 +25,6 @@ export default async function StoriesPage({ params }: StoriesPageProps) {
   if (!project) return notFound();
 
   return (
-    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-medium tracking-tight">Stories</h1>
-        <p className="text-muted-foreground mt-1">
-          {project.stories.length} stories across {project.epics.length}{" "}
-          epics
-        </p>
-      </div>
-      <StoriesView stories={project.stories} epics={project.epics} />
-    </div>
+    <StoriesView stories={project.stories} epics={project.epics} />
   );
 }

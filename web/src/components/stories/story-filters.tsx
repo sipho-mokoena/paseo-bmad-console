@@ -1,13 +1,12 @@
 "use client";
 
-import { Search } from "lucide-react";
 import {
   Filters,
   createFilter,
   type Filter,
   type FilterFieldConfig,
 } from "@/components/reui/filters";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/shared/list-kit";
 import type { Epic } from "@/lib/bmad/types";
 
 const STATUS_OPTIONS = [
@@ -53,16 +52,13 @@ export function StoryFilters({
   ];
 
   return (
-    <div className="contents sm:flex sm:flex-row sm:items-center sm:gap-3">
-      <div className="relative order-1 min-w-0 flex-1 sm:order-none">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search stories..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="h-10 pl-9 md:h-9"
-        />
-      </div>
+    <div className="contents sm:flex sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+      <SearchField
+        value={search}
+        onChange={onSearchChange}
+        placeholder="Search stories"
+        className="order-1 min-w-0 flex-1 sm:order-none sm:max-w-sm"
+      />
       <div className="order-3 basis-full sm:order-none sm:basis-auto">
         <Filters
           filters={filters}

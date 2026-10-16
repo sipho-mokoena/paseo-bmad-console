@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import { PillToggle } from "@/components/shared/list-kit";
 import { LayoutList, Columns3 } from "lucide-react";
 import { StoryFilters, type Filter } from "./story-filters";
 import { StoriesTable } from "./stories-table";
 import { KanbanBoard } from "./kanban-board";
-import { StaggeredList, StaggeredItem } from "@/components/shared/staggered-list";
 import {
   Sheet,
   SheetContent,
@@ -65,8 +64,8 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
   }, [stories, search, applyFilters]);
 
   return (
-    <StaggeredList className="min-w-0 space-y-3 md:space-y-4" role="region" aria-label="Stories list" staggerDelay={0.1}>
-      <StaggeredItem className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-4">
+    <div className="min-w-0 space-y-3" role="region" aria-label="Stories list">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
         <StoryFilters
           search={search}
           onSearchChange={setSearch}
@@ -74,37 +73,23 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
           onFiltersChange={setFilters}
           epics={epics}
         />
-        <div className="order-2 flex shrink-0 gap-1 border rounded-lg p-1 sm:order-none" role="group" aria-label="Display mode">
-          <Button
-            variant={view === "table" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("table")}
-            className="h-9 gap-1.5 md:h-8"
-            aria-label="Table view"
-          >
-            <LayoutList className="h-4 w-4" />
-            <span className="hidden sm:inline">Table</span>
-          </Button>
-          <Button
-            variant={view === "kanban" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setView("kanban")}
-            className="h-9 gap-1.5 md:h-8"
-            aria-label="Kanban view"
-          >
-            <Columns3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Board</span>
-          </Button>
-        </div>
-      </StaggeredItem>
+        <PillToggle
+          label="Display mode"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "table", label: "Table", icon: LayoutList, ariaLabel: "Table view" },
+            { value: "kanban", label: "Board", icon: Columns3, ariaLabel: "Board view" },
+          ]}
+          className="order-2 sm:order-none"
+        />
+      </div>
 
-      <StaggeredItem>
-        {view === "table" ? (
-          <StoriesTable stories={filtered} onStorySelect={setSelectedStory} />
-        ) : (
-          <KanbanBoard stories={filtered} />
-        )}
-      </StaggeredItem>
+      {view === "table" ? (
+        <StoriesTable stories={filtered} onStorySelect={setSelectedStory} />
+      ) : (
+        <KanbanBoard stories={filtered} onStorySelect={setSelectedStory} />
+      )}
 
       <Sheet
         open={selectedStory !== null}
@@ -119,11 +104,11 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
               ? `Story ${selectedStory.id}: ${selectedStory.title}`
               : "Story"}
           </SheetTitle>
-          <div className="px-3 pt-12 md:pt-0 md:px-4 pb-4">
+          <div className="px-3 pt-12 md:pt-4 md:px-4 pb-4">
             {selectedStory && <StoryDetailView story={selectedStory} />}
           </div>
         </SheetContent>
       </Sheet>
-    </StaggeredList>
+    </div>
   );
 }

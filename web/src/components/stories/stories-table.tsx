@@ -1,68 +1,16 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import { StatusPill } from "@/components/shared/pill";
+import { StateMessage } from "@/components/shared/list-kit";
+import { StoryRow } from "@/components/epics/story-row";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
-  type ColumnDef,
-  type SortingState,
-} from "@tanstack/react-table";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  DataGrid,
-  DataGridContainer,
-} from "@/components/reui/data-grid/data-grid";
-import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
-import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
-import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header";
-import { StatusBadge } from "@/components/shared/status-badge";
+  AfterText,
+  TicketChips,
+} from "@/components/epics/story-ticket-meta";
+import { cn } from "@/lib/utils";
 import type { StoryDetail } from "@/lib/bmad/types";
-
-function TaskGauge({ completed, total }: { completed: number; total: number }) {
-  const size = 44;
-  const stroke = 5;
-  const radius = (size - stroke) / 2;
-  const circumference = Math.PI * radius;
-  const percent = total > 0 ? completed / total : 0;
-  const filledLength = circumference * percent;
-  const remainingLength = circumference - filledLength;
-  const svgH = size / 2 + stroke / 2;
-
-  return (
-    <div className="inline-flex flex-col items-center gap-0.5">
-      <svg
-        width={size}
-        height={svgH}
-        viewBox={`0 0 ${size} ${svgH}`}
-      >
-        <path
-          d={`M ${stroke / 2} ${svgH - 1} A ${radius} ${radius} 0 0 1 ${size - stroke / 2} ${svgH - 1}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          className="text-muted-foreground/20"
-        />
-        {percent > 0 && (
-          <path
-            d={`M ${stroke / 2} ${svgH - 1} A ${radius} ${radius} 0 0 1 ${size - stroke / 2} ${svgH - 1}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${filledLength} ${remainingLength}`}
-            className={percent >= 1 ? "text-success" : "text-success/70"}
-          />
-        )}
-      </svg>
-      <span className="text-xs font-medium tabular-nums text-muted-foreground">
-        {completed}/{total}
-      </span>
-    </div>
-  );
-}
 
 /** Compares ticket ids such as "2.10" numerically, segment by segment. */
 function compareStoryIds(a: string, b: string): number {
@@ -82,60 +30,26 @@ function compareStoryIds(a: string, b: string): number {
   return 0;
 }
 
-const columns: ColumnDef<StoryDetail>[] = [
-  {
-    accessorKey: "id",
-    header: ({ column }) => (
-      <DataGridColumnHeader column={column} title="ID" />
-    ),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        S{row.getValue("id")}
-      </span>
-    ),
-    size: 80,
-    sortingFn: (rowA, rowB) =>
-      compareStoryIds(rowA.original.id, rowB.original.id),
-  },
-  {
-    accessorKey: "title",
-    header: ({ column }) => (
-      <DataGridColumnHeader column={column} title="Title" />
-    ),
-    cell: ({ row }) => (
-      <span className="font-medium">{row.getValue("title")}</span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => (
-      <DataGridColumnHeader column={column} title="Status" />
-    ),
-    cell: ({ row }) => <StatusBadge status={row.getValue("status")} />,
-  },
-  {
-    accessorKey: "epicTitle",
-    header: ({ column }) => (
-      <DataGridColumnHeader column={column} title="Epic" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
-        {row.getValue("epicTitle") || "-"}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "totalTasks",
-    header: "Tasks",
-    cell: ({ row }) => {
-      const story = row.original;
-      if (story.totalTasks === 0) return <span className="text-muted-foreground">-</span>;
-      return <TaskGauge completed={story.completedTasks} total={story.totalTasks} />;
-    },
-    size: 80,
-    enableSorting: false,
-  },
+type SortKey = "id" | "title" | "status" | "epicTitle";
+type SortState = { key: SortKey; desc: boolean } | null;
+
+const COMPARE: Record<SortKey, (a: StoryDetail, b: StoryDetail) => number> = {
+  id: (a, b) => compareStoryIds(a.id, b.id),
+  title: (a, b) => a.title.localeCompare(b.title),
+  status: (a, b) => a.status.localeCompare(b.status),
+  epicTitle: (a, b) => (a.epicTitle ?? "").localeCompare(b.epicTitle ?? ""),
+};
+
+const HEADERS: { key: SortKey | null; label: string; className?: string }[] = [
+  { key: "id", label: "ID", className: "w-16" },
+  { key: "title", label: "Title" },
+  { key: null, label: "Details", className: "hidden w-80 xl:table-cell" },
+  { key: "status", label: "Status", className: "w-32" },
+  { key: "epicTitle", label: "Epic", className: "hidden w-44 min-[1400px]:table-cell" },
+  { key: null, label: "Tasks", className: "w-16 text-right" },
 ];
+
+const PAGE = 60;
 
 interface StoriesTableProps {
   stories: StoryDetail[];
@@ -144,90 +58,138 @@ interface StoriesTableProps {
 }
 
 export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sort, setSort] = useState<SortState>(null);
+  const [visible, setVisible] = useState(PAGE);
 
-  const table = useReactTable({
-    data: stories,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    state: { sorting },
-    initialState: { pagination: { pageSize: 20 } },
-  });
+  const sorted = useMemo(() => {
+    if (!sort) return stories;
+    const cmp = COMPARE[sort.key];
+    return [...stories].sort((a, b) => (sort.desc ? -cmp(a, b) : cmp(a, b)));
+  }, [stories, sort]);
 
-  const [visible, setVisible] = useState(30);
-  const shown = stories.slice(0, visible);
+  const shown = sorted.slice(0, visible);
+
+  const toggleSort = (key: SortKey) =>
+    setSort((s) =>
+      !s || s.key !== key ? { key, desc: false } : s.desc ? null : { key, desc: true },
+    );
+
+  const more =
+    visible < sorted.length ? (
+      <button
+        type="button"
+        onClick={() => setVisible((v) => v + PAGE)}
+        className="mt-1 h-10 w-full rounded-md text-[13px] text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8"
+      >
+        Show more ({sorted.length - visible} left)
+      </button>
+    ) : null;
+
+  if (stories.length === 0) {
+    return <StateMessage>No story matches the filters</StateMessage>;
+  }
 
   return (
     <>
-    {/* Phone: stacked rows, a squashed 5-column grid is unreadable */}
-    <div className="md:hidden space-y-2" role="list" aria-label="Stories">
-      {shown.map((story) => (
-        <div
-          key={story.id}
-          role="listitem"
-        >
-          <button
-            type="button"
-            onClick={() => onStorySelect?.(story)}
-            className="flex min-h-14 w-full flex-col gap-1 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors active:bg-accent"
-          >
-            <span className="flex items-center justify-between gap-2">
-              <span className="font-mono text-xs text-muted-foreground">S{story.id}</span>
-              <StatusBadge status={story.status} compact />
-            </span>
-            <span className="text-sm font-medium break-words">{story.title}</span>
-            {(story.epicTitle || story.totalTasks > 0) && (
-              <span className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span className="min-w-0 truncate">{story.epicTitle || ""}</span>
-                {story.totalTasks > 0 && (
-                  <span className="shrink-0 tabular-nums">
-                    {story.completedTasks}/{story.totalTasks} tasks
-                  </span>
-                )}
-              </span>
-            )}
-          </button>
-        </div>
-      ))}
-      {stories.length === 0 && (
-        <p className="py-8 text-center text-sm text-muted-foreground">No story matches the filters</p>
-      )}
-      {visible < stories.length && (
-        <Button
-          variant="outline"
-          className="h-10 w-full"
-          onClick={() => setVisible((v) => v + 30)}
-        >
-          Show more ({stories.length - visible} left)
-        </Button>
-      )}
-    </div>
-    <div className="hidden md:block">
-    <DataGrid
-      table={table}
-      recordCount={stories.length}
-      onRowClick={onStorySelect}
-      tableLayout={{
-        headerSticky: true,
-        headerBackground: true,
-        headerBorder: true,
-        rowBorder: true,
-      }}
-    >
-      <DataGridContainer>
-        <DataGridTable />
-      </DataGridContainer>
-      {table.getPageCount() > 1 && (
-        <DataGridPagination
-          sizes={[10, 20, 50]}
-          info="{from} - {to} of {count}"
-        />
-      )}
-    </DataGrid>
-    </div>
+      {/* Phone: stacked History-style rows */}
+      <div className="xl:hidden" role="list" aria-label="Stories">
+        {shown.map((story) => (
+          <div key={story.id} role="listitem">
+            <StoryRow story={story} onClick={() => onStorySelect?.(story)} />
+          </div>
+        ))}
+        {more}
+      </div>
+
+      <div className="hidden xl:block">
+        <table className="w-full table-fixed border-collapse text-[13px]">
+          <thead className="sticky top-[calc(var(--app-header-h)+2.25rem)] z-10 bg-background">
+            <tr className="border-b text-left text-xs text-muted-foreground">
+              {HEADERS.map((h) => {
+                const active = h.key && sort?.key === h.key;
+                return (
+                  <th
+                    key={h.label}
+                    scope="col"
+                    aria-sort={
+                      active ? (sort!.desc ? "descending" : "ascending") : h.key ? "none" : undefined
+                    }
+                    className={cn("px-2 py-2 font-normal", h.className)}
+                  >
+                    {h.key ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(h.key!)}
+                        className="inline-flex items-center gap-1 rounded-sm outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {h.label}
+                        {active &&
+                          (sort!.desc ? (
+                            <ArrowDown className="size-3" aria-hidden="true" />
+                          ) : (
+                            <ArrowUp className="size-3" aria-hidden="true" />
+                          ))}
+                      </button>
+                    ) : (
+                      h.label
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((story) => (
+              <tr
+                key={story.id}
+                tabIndex={0}
+                aria-label={`Open story ${story.id}: ${story.title}`}
+                onClick={() => onStorySelect?.(story)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onStorySelect?.(story);
+                  }
+                }}
+                className="group/row cursor-pointer outline-hidden transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              >
+                <td className="rounded-l-md px-2 py-1.5 font-mono text-xs text-muted-foreground">
+                  {story.id}
+                </td>
+                <td className="px-2 py-1.5">
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="min-w-0 max-w-[60%] shrink-0 truncate">{story.title}</span>
+                    {story.description && (
+                      <>
+                        <span aria-hidden="true" className="text-muted-foreground">›</span>
+                        <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                          {story.description.replace(/\s+/g, " ")}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </td>
+                <td className="hidden px-2 py-1.5 xl:table-cell">
+                  <div className="flex items-center justify-start gap-1.5 overflow-hidden">
+                    {story.ticket && <TicketChips ticket={story.ticket} />}
+                    <AfterText ticket={story.ticket} />
+                  </div>
+                </td>
+                <td className="px-2 py-1.5">
+                  <StatusPill status={story.status} />
+                </td>
+                <td className="hidden truncate px-2 py-1.5 text-muted-foreground min-[1400px]:table-cell">
+                  {story.epicTitle || "-"}
+                </td>
+                <td className="rounded-r-md px-2 py-1.5 text-right text-xs tabular-nums text-muted-foreground">
+                  {story.totalTasks > 0 ? `${story.completedTasks}/${story.totalTasks}` : "-"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {more}
+      </div>
     </>
   );
 }
