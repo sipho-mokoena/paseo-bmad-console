@@ -1,4 +1,5 @@
 import { redirect, notFound } from "next/navigation";
+import { epicsForList } from "@/lib/bmad/list-view";
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
 import { getGitHubToken } from "@/lib/github/client";
 import { ProjectStatsGrid } from "@/components/dashboard/project-stats-grid";
@@ -105,7 +106,7 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
 
       <LayoutDetails layout={project.layout} errors={project.parseHealth?.errors ?? []} />
 
-      <EpicsList epics={project.epics} owner={owner} repo={repoName} lookedFor={project.layout.lookedFor} />
+      <EpicsList epics={epicsForList(project.epics)} owner={owner} repo={repoName} lookedFor={project.layout.lookedFor} />
 
       <KeyArtifactsCard
         planningArtifacts={planningArtifacts}

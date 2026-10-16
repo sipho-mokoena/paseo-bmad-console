@@ -3,6 +3,7 @@ import { StatusPill } from "@/components/shared/pill";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { ROW_CLASS } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
+import { markdownToPlainText } from "@/lib/markdown-text";
 import { epicLabel } from "@/lib/bmad/ids";
 import type { Epic } from "@/lib/bmad/types";
 
@@ -16,6 +17,7 @@ interface EpicRowProps {
 
 /** History-style epic row: E1  Title › description   12/14  ▬▬▬  [Done]. */
 export function EpicRow({ epic, href, project, className }: EpicRowProps) {
+  const plainDescription = markdownToPlainText(epic.description);
   const body = (
     <>
       <span className="min-w-7 shrink-0 font-mono text-xs text-muted-foreground">
@@ -23,13 +25,13 @@ export function EpicRow({ epic, href, project, className }: EpicRowProps) {
       </span>
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span className="min-w-0 truncate lg:max-w-[55%] lg:shrink-0">{epic.title}</span>
-        {epic.description && (
+        {plainDescription && (
           <>
             <span aria-hidden="true" className="hidden text-muted-foreground lg:inline">
               ›
             </span>
             <span className="hidden min-w-0 flex-1 truncate text-muted-foreground lg:inline">
-              {epic.description}
+              {plainDescription}
             </span>
           </>
         )}

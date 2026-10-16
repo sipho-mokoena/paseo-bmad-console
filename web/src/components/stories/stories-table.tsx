@@ -1,5 +1,6 @@
 "use client";
 
+import { markdownToPlainText } from "@/lib/markdown-text";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -187,11 +188,11 @@ export function StoriesTable({ stories, hrefFor, hideEpicColumn }: StoriesTableP
                   <CellLink href={hrefFor(story)}>
                     <div className="flex min-w-0 items-baseline gap-2">
                       <span className="min-w-0 max-w-[60%] shrink-0 truncate">{story.title}</span>
-                      {story.description && (
+                      {markdownToPlainText(story.description) && (
                         <>
                           <span aria-hidden="true" className="text-muted-foreground">›</span>
                           <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                            {story.description.replace(/\s+/g, " ")}
+                            {markdownToPlainText(story.description)}
                           </span>
                         </>
                       )}

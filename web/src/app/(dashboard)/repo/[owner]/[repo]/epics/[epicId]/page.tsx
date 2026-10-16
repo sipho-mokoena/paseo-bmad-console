@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { StatusPill } from "@/components/shared/pill";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { EpicStoriesView } from "@/components/epics/epic-stories-view";
+import { EpicBody } from "@/components/epics/epic-body";
+import { storiesForList } from "@/lib/bmad/list-view";
 import { epicLabel } from "@/lib/bmad/ids";
 import { decodeParam, loadProject } from "@/lib/load-project";
 
@@ -17,7 +19,7 @@ export default async function EpicPage({ params }: EpicPageProps) {
   if (!epic) notFound();
 
   const base = `/repo/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
-  const stories = project.stories.filter((s) => s.epicId === epic.id);
+  const stories = storiesForList(project.stories.filter((s) => s.epicId === epic.id));
 
   return (
     <div className="min-w-0 space-y-3 pb-4" role="region" aria-label={`Epic ${epic.id}`}>
@@ -27,8 +29,10 @@ export default async function EpicPage({ params }: EpicPageProps) {
           <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{epic.title}</h1>
           <StatusPill status={epic.status} />
         </div>
-        {epic.description && (
-          <p className="text-[13px] text-muted-foreground">{epic.description}</p>
+        {epic.body ? (
+          <EpicBody markdown={epic.body} owner={owner} repo={repo} docPath={epic.sourcePath} />
+        ) : (
+          epic.description && <p className="text-[13px] text-muted-foreground">{epic.description}</p>
         )}
         <div className="flex items-center gap-3">
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

@@ -458,3 +458,85 @@
     animation: none;
     mix-blend-mode: normal;
 }
+
+/* Compact markdown (epic and story detail panels): flat, 13px, hairline tables */
+.md-compact {
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.md-compact > :first-child {
+    margin-top: 0;
+}
+
+.md-compact > :last-child {
+    margin-bottom: 0;
+}
+
+.md-compact :where(p, ul, ol, blockquote, pre, table) {
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
+}
+
+.md-compact :where(li) {
+    margin-top: 0.15em;
+    margin-bottom: 0.15em;
+}
+
+.md-compact :where(h1, h2, h3, h4, h5, h6) {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.md-compact :where(h1) {
+    font-size: 14px;
+}
+
+.md-compact blockquote {
+    border-radius: 0.25rem;
+    padding: 0.25em 0.75em;
+    font-style: normal;
+}
+
+.md-compact table {
+    font-size: 12px;
+    margin: 0;
+    width: 100%;
+    border: 1px solid var(--border);
+}
+
+.md-compact :where(th, td) {
+    border: 1px solid var(--border);
+    padding: 0.35em 0.6em;
+    min-width: 7rem;
+    vertical-align: top;
+    text-align: left;
+}
+
+.md-compact thead th {
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+}
+
+.md-compact tbody tr:nth-child(even) {
+    background: transparent;
+}
+
+.md-compact :where(hr) {
+    margin: 1em 0;
+    border-color: var(--border);
+}
+
+.md-compact [data-slot="scroll-area"] {
+    margin: 0.6em 0;
+}
+
+.md-compact :where(code)::before,
+.md-compact :where(code)::after {
+    content: none;
+}

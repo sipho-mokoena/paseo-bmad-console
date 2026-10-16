@@ -45,6 +45,8 @@ interface MarkdownRendererProps {
   docPath?: string;
   /** Optional: route relative links to other markdown documents inside the app. */
   linkResolver?: MarkdownLinkResolver;
+  /** "compact": flat 13px text for detail panels (epic and story pages). */
+  variant?: "default" | "compact";
 }
 
 const DocAssetCtx = createContext<DocAssetContext | null>(null);
@@ -301,13 +303,19 @@ export function MarkdownRenderer({
   repo,
   docPath,
   linkResolver,
+  variant = "default",
 }: MarkdownRendererProps) {
   const docAsset: DocAssetContext | null =
     owner && repo && docPath ? { owner, repo, docPath } : null;
   return (
     <DocAssetCtx.Provider value={docAsset}>
       <LinkResolverCtx.Provider value={linkResolver ?? null}>
-      <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none break-words">
+      <div
+        className={cn(
+          "prose prose-sm prose-zinc dark:prose-invert max-w-none break-words",
+          variant === "compact" && "md-compact",
+        )}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[

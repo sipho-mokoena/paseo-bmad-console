@@ -2,7 +2,8 @@ import Link from "next/link";
 import { CheckCircle2, Circle } from "lucide-react";
 import { Pill } from "@/components/shared/pill";
 import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
-import { MarkdownRenderer } from "@/components/docs/markdown-renderer";
+import { InlineMarkdown } from "@/components/docs/inline-markdown";
+import { EpicBody } from "./epic-body";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { riskTone } from "./story-ticket-meta";
 import { cn } from "@/lib/utils";
@@ -128,15 +129,15 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
     <div className="space-y-5">
       {rows.length > 0 && <DefinitionTable rows={rows} />}
 
-      {story.description && (
+      {(story.body ?? story.description) && (
         <Section title="Description">
-          <MarkdownRenderer content={story.description} />
+          <EpicBody markdown={story.body ?? story.description} />
         </Section>
       )}
 
       {ticket && verify && (
         <Section title="Verify">
-          <p className="text-[13px] leading-relaxed">{verify}</p>
+          <InlineMarkdown className="text-[13px] leading-relaxed">{verify}</InlineMarkdown>
         </Section>
       )}
 
@@ -146,7 +147,7 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
             {criteria.map((criterion, i) => (
               <li key={i} className="flex items-start gap-2 text-[13px]">
                 <span className="mt-0.5 text-muted-foreground">•</span>
-                <span className="min-w-0 break-words">{criterion}</span>
+                <InlineMarkdown className="min-w-0 flex-1">{criterion}</InlineMarkdown>
               </li>
             ))}
           </ul>
@@ -178,11 +179,11 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
                 ) : (
                   <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 )}
-                <span
-                  className={`min-w-0 break-words ${task.completed ? "text-muted-foreground line-through" : ""}`}
+                <InlineMarkdown
+                  className={task.completed ? "flex-1 text-muted-foreground line-through" : "flex-1"}
                 >
                   {task.description}
-                </span>
+                </InlineMarkdown>
               </li>
             ))}
           </ul>

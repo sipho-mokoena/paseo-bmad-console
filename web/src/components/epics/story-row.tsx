@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { markdownToPlainText } from "@/lib/markdown-text";
 import { StatusPill } from "@/components/shared/pill";
 import { ROW_CLASS } from "@/components/shared/list-kit";
 import { AfterText, TicketChips, hasTicketChips } from "./story-ticket-meta";
@@ -43,13 +44,13 @@ export function StoryRow({ story, href, showEpic, project, className }: StoryRow
       )}
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span className="min-w-0 truncate lg:max-w-[50%] lg:shrink-0">{story.title}</span>
-        {story.description && (
+        {markdownToPlainText(story.description) && (
           <>
             <span aria-hidden="true" className="hidden text-muted-foreground lg:inline">
               ›
             </span>
             <span className="hidden min-w-0 flex-1 truncate text-muted-foreground lg:inline">
-              {story.description.replace(/\s+/g, " ")}
+              {markdownToPlainText(story.description)}
             </span>
           </>
         )}
