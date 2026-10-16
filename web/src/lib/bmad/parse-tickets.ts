@@ -2,6 +2,7 @@ import { parse as parseToml } from "smol-toml";
 import type { ContentProvider } from "@/lib/content-provider";
 import matter from "gray-matter";
 import type { Epic, StoryDetail, StoryStatus } from "./types";
+import { capBody, plainSummary } from "./body";
 
 export const INITIATIVE_TICKETS = /^(.*\/initiative-[^/]+)\/tickets\.toml$/;
 
@@ -75,7 +76,7 @@ async function readPlans(
 }
 
 function epicDescription(md: string): string {
-  const m = md.match(/^##\s+Description\s*\n+([\s\S]*?)(?=\n##\s|$)/im);
+  const m = md.match(/^##\s+Description\s*\n+([\s\S]*?)(?=\n##\s|(?![\s\S]))/im);
   return (m?.[1] ?? "").trim();
 }
 
@@ -143,7 +144,8 @@ export async function parseTicketTree(
           statusExplicit: Boolean(plan),
           epicId,
           epicTitle,
-          description: e.description ?? "",
+          description: plainSummary(e.description),
+          ...(capBody(e.description) ? { body: capBody(e.description) } : {}),
           ticket: {
             type: e.type,
             risk: e.risk,
@@ -166,7 +168,9 @@ export async function parseTicketTree(
       epics.push({
         id: epicId,
         title: epicTitle,
-        description,
+        description: plainSummary(description),
+        ...(capBody(description) ? { body: capBody(description) } : {}),
+        ...(pathSet.has(mdPath) ? { sourcePath: mdPath } : {}),
         status: "not-started",
         stories: storyIds,
         totalStories: storyIds.length,

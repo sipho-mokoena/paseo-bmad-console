@@ -1,6 +1,7 @@
 import matter from "gray-matter";
 import { StoryDetail, StoryTask } from "./types";
 import { normalizeStoryStatus } from "./utils";
+import { MAX_STORY_BODY_CHARS, capBody, plainSummary, removeSection, stripLeadingTitle } from "./body";
 import { frontmatterStoryId, parseStoryId } from "./ids";
 
 export function parseStory(
@@ -73,19 +74,13 @@ export function parseStory(
     const statusExplicit = Boolean(rawStatus);
     const status = normalizeStoryStatus(rawStatus);
 
-    // Extract acceptance criteria
+    // Extract acceptance criteria (markdown; deeper-indented lines stay inside their criterion)
     const acceptanceCriteria: string[] = [];
     const acSection = body.match(
       /## Acceptance Criteria\s*\n([\s\S]*?)(?=\n##|\n$|$)/i
     );
     if (acSection) {
-      // Match numbered items (1. ..., 2. ...) and bullet items (- ..., * ...)
-      const items = acSection[1].match(/(?:^|\n)\s*(?:\d+\.\s+|\*\*(?:Given|And|Then)\*\*|[-*]\s+)(.+)/g);
-      if (items) {
-        for (const item of items) {
-          acceptanceCriteria.push(item.replace(/^\s*(?:\d+\.\s+|[-*]\s+)/, "").trim());
-        }
-      }
+      acceptanceCriteria.push(...extractCriteria(acSection[1]));
     }
 
     // Extract tasks from checkboxes
@@ -98,13 +93,21 @@ export function parseStory(
       });
     }
 
+    // Description body: drop the title/status lines and the sections rendered on their own.
+    let descBody = stripLeadingTitle(body, "1");
+    descBody = descBody.replace(/^Status:.*$/im, "");
+    if (acceptanceCriteria.length > 0) descBody = removeSection(descBody, /^Acceptance Criteria\s*$/i);
+    if (tasks.length > 0) descBody = removeSection(descBody, /^(?:Tasks?|Subtasks?|Tasks?\s*\/\s*Subtasks?)\b/i);
+    const fullBody = capBody(descBody, MAX_STORY_BODY_CHARS);
+
     return {
       id,
       title: String(title),
       status,
       statusExplicit,
       epicId,
-      description: body.trim().slice(0, 1000),
+      description: plainSummary(descBody),
+      ...(fullBody ? { body: fullBody } : {}),
       acceptanceCriteria,
       tasks,
       completedTasks: tasks.filter((t) => t.completed).length,
@@ -114,4 +117,24 @@ export function parseStory(
     console.error(`Failed to parse story ${filename}:`, e);
     return null;
   }
+}
+
+const CRITERION_START = /^(\s*)(?:\d+[.)]\s+|[-*+]\s+)(.+)$|^(\s*)(\*\*(?:Given|And|Then)\*\*.*)$/;
+
+/** Splits an Acceptance Criteria section into criteria; indented sub-bullets stay nested in their parent. */
+export function extractCriteria(section: string): string[] {
+  const items: string[] = [];
+  let baseIndent = -1;
+  for (const line of section.replace(/\t/g, "    ").split("\n")) {
+    if (!line.trim()) continue;
+    const m = line.match(CRITERION_START);
+    const indent = m ? (m[1] ?? m[3]).length : line.length - line.trimStart().length;
+    if (m && (baseIndent < 0 || indent <= baseIndent)) {
+      if (baseIndent < 0) baseIndent = indent;
+      items.push((m[2] ?? m[4]).trim());
+    } else if (items.length > 0 && baseIndent >= 0 && indent > baseIndent) {
+      items[items.length - 1] += "\n" + line.slice(baseIndent);
+    }
+  }
+  return items;
 }

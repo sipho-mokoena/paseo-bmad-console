@@ -4,6 +4,7 @@ import { humanizeSlug } from "../ids";
 import { isExcludedStatus, normalizeStoryStatus } from "../utils";
 import { mapLimit, READ_CONCURRENCY } from "../concurrency";
 import { parseStory } from "../parse-story";
+import { plainSummary } from "../body";
 import { parseEpics } from "../parse-epics";
 import { parseEpicFile } from "../parse-epic-file";
 import { emptyResult, hasRoot, type LayoutAdapter, type LayoutContext, type LayoutResult } from "./types";
@@ -91,7 +92,7 @@ export const v4Adapter: LayoutAdapter = {
       }
       if (r.kind === "epic") {
         const epic = parseEpicFile(r.content, r.path.split("/").pop() ?? "");
-        if (epic) epics.push(epic);
+        if (epic) epics.push({ ...epic, sourcePath: r.path });
         else result.parseErrors.push({ file: r.path, error: "Failed to parse individual epic file. Check format (frontmatter or heading).", contentType: "epic" });
       } else if (r.kind === "headings") {
         const parsed = parseEpics(r.content);
@@ -114,7 +115,8 @@ export const v4Adapter: LayoutAdapter = {
           title: (typeof fm.title === "string" && fm.title) || h1 || humanizeSlug(m[3] ?? "") || `Story ${id}`,
           status: normalizeV4(raw),
           statusExplicit: Boolean(raw),
-          description: (base?.description ?? body).slice(0, 1000),
+          description: base?.description ?? plainSummary(body),
+          ...(base?.body ? { body: base.body } : {}),
         });
         result.storyPaths.push(r.path);
       }

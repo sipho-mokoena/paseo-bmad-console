@@ -2,6 +2,8 @@ import matter from "gray-matter";
 import type { Epic, EpicStatus, StoryDetail, SprintStoryEntry } from "../types";
 import { parseSprintStatus, sprintRawStatuses } from "../parse-sprint-status";
 import { parseStory } from "../parse-story";
+import { markdownToPlainText } from "@/lib/markdown-text";
+import { capBody, plainSummary, stripLeadingTitle } from "../body";
 import { isExcludedStatus, normalizeStoryStatus } from "../utils";
 import {
   compareEpicIds,
@@ -155,6 +157,8 @@ interface EpicSeed {
   id: string;
   title?: string;
   description?: string;
+  body?: string;
+  sourcePath?: string;
   folder?: string;
 }
 
@@ -276,10 +280,13 @@ export const v6ProjectAdapter: LayoutAdapter = {
             continue;
           }
           const s = seed(id);
-          const title = frontmatterTitle(fm) ?? (firstH1(body) ? stripIdPrefix(firstH1(body)!) : undefined);
+          const rawTitle = frontmatterTitle(fm) ?? (firstH1(body) ? stripIdPrefix(firstH1(body)!) : undefined);
+          const title = rawTitle ? markdownToPlainText(rawTitle) : undefined;
           // A flat epic file is the primary source; epic-level specs only fill gaps.
           if (r.key.startsWith("epic:") || !s.title) s.title = title ?? s.title;
-          if (r.key.startsWith("epic:") || !s.description) s.description = summarizeSpec(body, 500) || s.description;
+          if (r.key.startsWith("epic:") || !s.description) s.description = plainSummary(summarizeSpec(body, 2000)) || s.description;
+          if (r.key.startsWith("epic:") || !s.sourcePath) s.sourcePath = r.path;
+          if (r.key.startsWith("epic:") || !s.body) s.body = capBody(stripLeadingTitle(body)) ?? s.body;
         } else {
           const filename = r.path.split("/").pop() ?? "";
           const id = r.key.slice(r.key.indexOf(":") + 1);
@@ -296,10 +303,10 @@ export const v6ProjectAdapter: LayoutAdapter = {
             ...parsed,
             id: sid.id,
             epicId: sid.epicId,
-            title: frontmatterTitle(fm) ?? (h1 ? stripIdPrefix(h1) : humanizeSlug(sid.slug) || sid.id),
+            title: markdownToPlainText(frontmatterTitle(fm) ?? (h1 ? stripIdPrefix(h1) : "")) || humanizeSlug(sid.slug) || sid.id,
             status: normalizeStoryStatus(rawStatus),
             statusExplicit: Boolean(rawStatus),
-            description: summarizeSpec(body) || parsed.description,
+            description: plainSummary(summarizeSpec(body, 2000)) || parsed.description,
           };
           specStories.set(sid.id, { story, raw: rawStatus, path: r.path });
           result.storyPaths.push(r.path);
@@ -374,6 +381,8 @@ export const v6ProjectAdapter: LayoutAdapter = {
         id: s.id,
         title: s.title ?? s.id,
         description: s.description ?? "",
+        ...(s.body ? { body: s.body } : {}),
+        ...(s.sourcePath ? { sourcePath: s.sourcePath } : {}),
         status: epicStatusById.get(s.id) ?? "not-started",
         stories: stories.filter((st) => st.epicId === s.id).map((st) => st.id),
         totalStories: 0,

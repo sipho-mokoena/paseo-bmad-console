@@ -1,5 +1,6 @@
 import { Epic, EpicStatus } from "./types";
 import matter from "gray-matter";
+import { capBody, plainSummary, stripLeadingTitle } from "./body";
 import { frontmatterEpicId, frontmatterTitle, parseEpicId } from "./ids";
 
 /**
@@ -31,12 +32,14 @@ export function parseEpicFile(
 
     const title = extractTitle(fm, body, id);
     const storyIds = extractStoryReferences(body);
-    const description = extractDescription(body).slice(0, 500);
+    const description = plainSummary(body);
+    const fullBody = capBody(stripLeadingTitle(body));
 
     return {
       id,
       title,
       description,
+      ...(fullBody ? { body: fullBody } : {}),
       status: "not-started" as EpicStatus,
       stories: storyIds,
       totalStories: storyIds.length,
@@ -116,19 +119,4 @@ function extractStoryReferences(body: string): string[] {
     }
   }
   return ids;
-}
-
-function extractDescription(body: string): string {
-  const lines = body.split("\n");
-  const descLines: string[] = [];
-
-  for (const line of lines) {
-    // Skip headings
-    if (line.startsWith("#")) continue;
-    if (line.trim()) {
-      descLines.push(line);
-    }
-  }
-
-  return descLines.join("\n").trim();
 }

@@ -27,7 +27,15 @@ export interface SprintStoryEntry {
 export interface Epic {
   id: string;
   title: string;
+  /** Short plain-text summary (<= ~300 chars); safe for list rows and search. */
   description: string;
+  /**
+   * Full epic markdown (file body without frontmatter and title line, capped).
+   * Detail pages only: strip it before passing epics to client list components.
+   */
+  body?: string;
+  /** Repo-relative path of the epic markdown file, when known (resolves relative links and images). */
+  sourcePath?: string;
   status: EpicStatus;
   stories: string[];
   totalStories: number;
@@ -47,7 +55,14 @@ export interface StoryDetail {
   statusExplicit?: boolean;
   epicId: string;
   epicTitle?: string;
+  /** Short plain-text summary (<= ~300 chars); safe for list rows and search. */
   description: string;
+  /**
+   * Full story markdown for the Description section (title/status lines and the
+   * criteria/task sections shown separately are removed). Detail pages only.
+   */
+  body?: string;
+  /** Markdown, one entry per criterion; nested bullets stay inside their criterion. */
   acceptanceCriteria: string[];
   tasks: StoryTask[];
   completedTasks: number;

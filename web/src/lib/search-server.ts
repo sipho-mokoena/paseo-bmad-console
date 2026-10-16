@@ -4,6 +4,7 @@ import { createContentProvider } from "@/lib/content-provider";
 import { createUserOctokit, getGitHubToken } from "@/lib/github/client";
 import type { FileTreeNode, Epic, StoryDetail } from "@/lib/bmad/types";
 import type { RepoConfig } from "@/lib/types";
+import { withoutEpicBody, withoutStoryBody } from "@/lib/bmad/list-view";
 import {
   MAX_RESULTS_PER_GROUP,
   normalizeQuery,
@@ -147,12 +148,12 @@ export async function searchAllRepos(
     }
     for (const epic of res.value.epics) {
       const score = scoreEpic(epic, query, terms);
-      if (score > 0) epics.push({ score, item: { project, epic } });
+      if (score > 0) epics.push({ score, item: { project, epic: withoutEpicBody(epic) } });
     }
     for (const story of res.value.stories) {
       const score = scoreStory(story, query, terms);
       if (score > 0) {
-        stories.push({ score, item: { project, story: { ...story, tasks: [] } } });
+        stories.push({ score, item: { project, story: { ...withoutStoryBody(story), tasks: [] } } });
       }
     }
     for (const doc of res.value.docs) {

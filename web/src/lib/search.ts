@@ -4,6 +4,7 @@
  */
 import { epicLabel } from "@/lib/bmad/ids";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
+import { markdownToPlainText } from "@/lib/markdown-text";
 
 export const MIN_QUERY_LENGTH = 2;
 export const MAX_QUERY_LENGTH = 200;
@@ -126,7 +127,7 @@ export function scoreDoc(doc: DocCandidate, query: string, terms: string[]): Doc
   // Terms may split between path and content ("registry design").
   const combined = includesAll(`${doc.path}\n${doc.text}`, terms);
   if (!nameHit && !pathHit && !contentHit && !combined) return { score: 0, snippet: null };
-  const snippet = doc.text ? makeSnippet(doc.text, terms) : null;
+  const snippet = doc.text ? makeSnippet(markdownToPlainText(doc.text), terms) : null;
   if (stem.toLowerCase() === q || name.toLowerCase() === q) return { score: S_EXACT, snippet };
   if (nameHit) return { score: S_TITLE, snippet };
   if (pathHit) return { score: S_ID - 10, snippet };

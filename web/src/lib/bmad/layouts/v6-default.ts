@@ -176,6 +176,7 @@ export const v6DefaultAdapter: LayoutAdapter = {
         const filename = file.split("/").pop() || "";
         const epic = parseEpicFile(content, filename);
         if (epic) {
+          epic.sourcePath = file;
           rawEpics.push(epic);
           epicByMetaPath.set(file, epic);
         } else {

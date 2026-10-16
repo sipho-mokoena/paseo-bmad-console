@@ -1,4 +1,5 @@
 import { Epic, EpicStatus } from "./types";
+import { capBody, plainSummary } from "./body";
 
 export function parseEpics(content: string): { epics: Epic[]; error?: string } {
   try {
@@ -6,7 +7,7 @@ export function parseEpics(content: string): { epics: Epic[]; error?: string } {
     const lines = content.split("\n");
 
     let currentEpic: Partial<Epic> | null = null;
-    let descLines: string[] = [];
+    let bodyLines: string[] = [];
     let storyIds: string[] = [];
 
     for (const line of lines) {
@@ -15,18 +16,19 @@ export function parseEpics(content: string): { epics: Epic[]; error?: string } {
       );
       if (epicMatch) {
         if (currentEpic && currentEpic.id) {
-          epics.push(finalizeEpic(currentEpic, descLines, storyIds));
+          epics.push(finalizeEpic(currentEpic, bodyLines, storyIds));
         }
         currentEpic = {
           id: epicMatch[1],
           title: epicMatch[2].trim(),
         };
-        descLines = [];
+        bodyLines = [];
         storyIds = [];
         continue;
       }
 
       if (currentEpic) {
+        bodyLines.push(line);
         const storyRef = line.match(/(?:story|S)[\s-]*(\d+(?:\.\d+)?)/gi);
         if (storyRef) {
           for (const ref of storyRef) {
@@ -37,14 +39,11 @@ export function parseEpics(content: string): { epics: Epic[]; error?: string } {
           }
         }
 
-        if (line.trim() && !line.startsWith("#")) {
-          descLines.push(line);
-        }
       }
     }
 
     if (currentEpic && currentEpic.id) {
-      epics.push(finalizeEpic(currentEpic, descLines, storyIds));
+      epics.push(finalizeEpic(currentEpic, bodyLines, storyIds));
     }
 
     return { epics };
@@ -56,13 +55,15 @@ export function parseEpics(content: string): { epics: Epic[]; error?: string } {
 
 function finalizeEpic(
   partial: Partial<Epic>,
-  descLines: string[],
+  bodyLines: string[],
   storyIds: string[]
 ): Epic {
+  const body = capBody(bodyLines.join("\n"));
   return {
     id: partial.id || "0",
     title: partial.title || "Untitled Epic",
-    description: descLines.join("\n").trim().slice(0, 500),
+    description: plainSummary(bodyLines.join("\n")),
+    ...(body ? { body } : {}),
     status: "not-started" as EpicStatus,
     stories: storyIds,
     totalStories: storyIds.length,
