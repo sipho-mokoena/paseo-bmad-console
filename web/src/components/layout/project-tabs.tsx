@@ -29,7 +29,7 @@ export function ProjectTabs({ basePath, hasSpecs = false, hasDesign = false }: P
   return (
     <nav
       aria-label="Project sections"
-      className="sticky top-[calc(var(--app-header-h)+env(safe-area-inset-top))] z-20 flex h-12 shrink-0 md:h-9 items-center gap-1 overflow-x-auto border-b bg-background px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="sticky top-[calc(var(--app-header-h)+env(safe-area-inset-top))] z-20 flex h-12 shrink-0 md:h-10 items-center gap-1 overflow-x-auto border-b bg-background px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {visible.map((tab) => {
         const href = tab.segment ? `${basePath}/${tab.segment}` : basePath;
@@ -45,7 +45,7 @@ export function ProjectTabs({ basePath, hasSpecs = false, hasDesign = false }: P
               if (active) window.dispatchEvent(new CustomEvent("section-reset"));
             }}
             className={cn(
-              "inline-flex h-10 shrink-0 md:h-7 items-center gap-1.5 rounded-md px-2.5 text-[13px] text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:stroke-[1.5]",
+              "inline-flex h-10 shrink-0 md:h-8 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:stroke-[1.5]",
               active && "bg-accent font-medium text-foreground",
             )}
           >

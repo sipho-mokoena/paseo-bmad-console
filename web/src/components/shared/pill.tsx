@@ -2,9 +2,9 @@ import { Check, Circle, CircleDashed, Clock, Eye, Ban, Rocket } from "lucide-rea
 import { cn } from "@/lib/utils";
 import type { StoryStatus, EpicStatus } from "@/lib/bmad/types";
 
-/** The one pill style: 11-12px text, 6px radius, hairline border, optional 12px icon. */
+/** The one pill style: 12px text, 6px radius, hairline border, optional 12px icon. */
 export const PILL_BASE =
-  "inline-flex h-5 w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-1.5 text-[11px] font-normal leading-none [&>svg]:size-3 [&>svg]:shrink-0";
+  "inline-flex h-[22px] w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-1.5 text-2xs font-normal leading-none [&>svg]:size-3 [&>svg]:shrink-0";
 
 export type PillTone = "neutral" | "success" | "info" | "danger" | "fill";
 

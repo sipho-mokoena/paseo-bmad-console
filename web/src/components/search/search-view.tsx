@@ -275,7 +275,7 @@ export function SearchView() {
           aria-label="Search epics, stories and documents"
           autoComplete="off"
           spellCheck={false}
-          className="h-10 w-full rounded-lg border border-input bg-card pl-9 pr-10 text-[13px] outline-hidden placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 [&::-webkit-search-cancel-button]:hidden"
+          className="h-10 w-full rounded-lg border border-input bg-card pl-9 pr-10 text-sm outline-hidden placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 [&::-webkit-search-cancel-button]:hidden"
         />
         {text && (
           <button

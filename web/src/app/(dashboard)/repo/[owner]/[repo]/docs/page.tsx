@@ -28,7 +28,7 @@ export default async function DocsPage({
   if (!result.success) {
     return (
       <div
-        className="flex min-h-40 items-center justify-center px-4 py-10 text-center text-[13px] text-muted-foreground"
+        className="flex min-h-40 items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground"
         role="alert"
       >
         <p>{result.error}</p>

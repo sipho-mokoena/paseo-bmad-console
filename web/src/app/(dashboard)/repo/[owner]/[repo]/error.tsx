@@ -34,7 +34,7 @@ export default function RepoError({
                 ? "Authentication required"
                 : "Failed to load project"}
         </h2>
-        <p className="mx-auto max-w-md text-[13px] text-muted-foreground">
+        <p className="mx-auto max-w-md text-sm text-muted-foreground">
           {isPathStale || isLocal
             ? "This local folder no longer exists or has been moved. You can remove it from your dashboard."
             : is404

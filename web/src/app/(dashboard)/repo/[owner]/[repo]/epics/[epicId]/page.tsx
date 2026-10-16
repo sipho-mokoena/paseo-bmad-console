@@ -26,13 +26,13 @@ export default async function EpicPage({ params }: EpicPageProps) {
       <div className="space-y-2 px-2">
         <div className="flex items-center gap-3">
           <span className="font-mono text-xs text-muted-foreground">{epicLabel(epic.id)}</span>
-          <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{epic.title}</h1>
+          <h1 className="min-w-0 flex-1 truncate text-lg md:text-[1.375rem] leading-snug font-medium">{epic.title}</h1>
           <StatusPill status={epic.status} />
         </div>
         {epic.body ? (
           <EpicBody markdown={epic.body} owner={owner} repo={repo} docPath={epic.sourcePath} />
         ) : (
-          epic.description && <p className="text-[13px] text-muted-foreground">{epic.description}</p>
+          epic.description && <p className="text-sm text-muted-foreground">{epic.description}</p>
         )}
         <div className="flex items-center gap-3">
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

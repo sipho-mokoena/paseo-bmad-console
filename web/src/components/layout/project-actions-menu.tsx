@@ -23,7 +23,7 @@ interface ProjectActionsMenuProps {
 }
 
 const itemClass =
-  "min-h-9 gap-2 px-2 py-0 text-[13px] md:min-h-[30px] [&_svg:not([class*='size-'])]:size-4 [&_svg]:stroke-[1.5]";
+  "min-h-9 gap-2 px-2 py-0 text-sm md:min-h-[30px] [&_svg:not([class*='size-'])]:size-4 [&_svg]:stroke-[1.5]";
 
 /**
  * Trailing "..." actions for a sidebar project row. The dialogs are rendered

@@ -26,7 +26,7 @@ const components: Components = {
     );
   },
   code: ({ children, className }) => (
-    <code className={cn("rounded-sm bg-muted px-1 py-px font-mono text-[0.92em]", className)}>
+    <code className={cn("rounded-sm bg-muted px-1 py-px font-mono text-[max(0.9em,13px)]", className)}>
       {children}
     </code>
   ),

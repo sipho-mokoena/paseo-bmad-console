@@ -42,7 +42,7 @@ interface EpicsListViewProps {
 const dirWord = (dir: "asc" | "desc") => (dir === "asc" ? "ascending" : "descending");
 
 const SORT_BTN =
-  "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-[13px] text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-9 [&_svg]:size-3.5";
+  "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-sm text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-9 [&_svg]:size-3.5";
 
 /** Overview epic list: search, status filter, sort and pagination, kept in the URL. */
 export function EpicsListView({ epics, base }: EpicsListViewProps) {
@@ -170,7 +170,7 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
                   onValueChange={(v) => setSort(v as EpicSortKey)}
                 >
                   {SORT_KEYS.map((k) => (
-                    <DropdownMenuRadioItem key={k} value={k} className="text-[13px]">
+                    <DropdownMenuRadioItem key={k} value={k} className="text-sm">
                       {SORT_LABELS[k]}
                     </DropdownMenuRadioItem>
                   ))}
@@ -180,10 +180,10 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
                   value={state.dir}
                   onValueChange={(v) => commit({ dir: v as "asc" | "desc" })}
                 >
-                  <DropdownMenuRadioItem value="asc" className="text-[13px]">
+                  <DropdownMenuRadioItem value="asc" className="text-sm">
                     Ascending
                   </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="desc" className="text-[13px]">
+                  <DropdownMenuRadioItem value="desc" className="text-sm">
                     Descending
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
@@ -205,7 +205,7 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
         <div
           role="group"
           aria-label="Sort epics by column"
-          className="sticky top-[calc(var(--app-header-h)+2.25rem)] z-10 hidden items-center gap-3 border-b bg-background px-2 py-1 text-xs text-muted-foreground md:flex"
+          className="sticky top-[calc(var(--app-header-h)+2.5rem)] z-10 hidden items-center gap-3 border-b bg-background px-2 py-1 text-xs text-muted-foreground md:flex"
         >
           <ColumnHead label="ID" k="id" state={state} onSort={toggleColumn} className="min-w-7" />
           <ColumnHead label="Title" k="title" state={state} onSort={toggleColumn} className="flex-1" />
@@ -225,7 +225,7 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex h-10 items-center rounded-lg border border-input bg-card px-3 text-[13px] text-foreground outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:h-8"
+            className="inline-flex h-10 items-center rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:h-8"
           >
             Clear filters
           </button>

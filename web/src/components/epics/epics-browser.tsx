@@ -99,7 +99,7 @@ export function EpicsBrowser({ epics, stories, base, projectLayout }: EpicsBrows
         </StateMessage>
       ) : (
         <>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {epics.length} epics &middot; {totalStories} stories
           </p>
           {layout === "timeline" ? (

@@ -31,18 +31,18 @@ export function StoryRow({ story, href, showEpic, project, className }: StoryRow
       aria-label={`Open story ${story.id}: ${story.title}`}
       className={cn(ROW_CLASS, "flex-wrap gap-y-1 lg:flex-nowrap", className)}
     >
-      <span className="w-10 shrink-0 font-mono text-xs text-muted-foreground">
+      <span className="w-14 shrink-0 font-mono text-xs text-muted-foreground">
         {story.id}
       </span>
       {showEpic && (
         <span
           title={story.epicTitle ? `${epicName(story.epicId)}: ${story.epicTitle}` : epicName(story.epicId)}
-          className="shrink-0 rounded-sm bg-muted px-1.5 font-mono text-[11px] leading-5 text-muted-foreground"
+          className="shrink-0 rounded-sm bg-muted px-1.5 font-mono text-2xs leading-5 text-muted-foreground"
         >
           {epicLabel(story.epicId)}
         </span>
       )}
-      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+      <span className="flex min-w-[9rem] flex-1 items-baseline gap-2 lg:min-w-0">
         <span className="min-w-0 truncate lg:max-w-[50%] lg:shrink-0">{story.title}</span>
         {markdownToPlainText(story.description) && (
           <>
@@ -68,11 +68,11 @@ export function StoryRow({ story, href, showEpic, project, className }: StoryRow
           {project}
         </span>
       )}
-      <span className="order-2 flex shrink-0 justify-end lg:w-28">
+      <span className="order-2 ml-auto flex shrink-0 justify-end lg:ml-0 lg:w-28">
         <StatusPill status={story.status} />
       </span>
       {(chips || hasAfter || story.totalTasks > 0) && (
-        <span className="order-3 flex basis-full flex-wrap items-center gap-1.5 pl-[3.25rem] lg:order-1 lg:basis-auto lg:flex-nowrap lg:pl-0">
+        <span className="order-3 flex basis-full flex-wrap items-center gap-1.5 pl-[3.75rem] lg:order-1 lg:basis-auto lg:flex-nowrap lg:pl-0">
           {ticket && <TicketChips ticket={ticket} />}
           <AfterText ticket={ticket} className="max-w-40 lg:w-32 lg:max-w-none lg:shrink-0 lg:text-right" />
           {story.totalTasks > 0 && (

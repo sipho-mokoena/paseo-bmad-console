@@ -63,7 +63,7 @@ export function AfterText({
   if (!ticket || ticket.after.length === 0) return null;
   const text = `after ${ticket.after.join(", ")}`;
   return (
-    <span title={text} className={cn("truncate text-[11px] text-muted-foreground", className)}>
+    <span title={text} className={cn("truncate text-2xs text-muted-foreground", className)}>
       {text}
     </span>
   );

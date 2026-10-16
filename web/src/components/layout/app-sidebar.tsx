@@ -30,7 +30,7 @@ function avatarColor(name: string): string {
 }
 
 const rowBase =
-  "flex h-10 md:h-[30px] w-full items-center gap-2 rounded-md px-2 text-[13px] text-muted-foreground outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.5]";
+  "flex h-10 md:h-8 w-full items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.5]";
 
 const footerButton =
   "inline-flex size-8 md:size-7 items-center justify-center rounded-md text-muted-foreground outline-hidden transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&_svg]:size-4 [&_svg]:stroke-[1.5]";
@@ -101,7 +101,7 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
           )}
         </nav>
         <div className="border-t border-sidebar-border" />
-        <div className="flex h-10 md:h-9 items-center justify-between pr-2 pl-4">
+        <div className="flex h-10 md:h-10 items-center justify-between pr-2 pl-4">
           <Link
             href="/"
             onClick={closeOnMobile}
@@ -142,14 +142,14 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
               >
                 <span
                   aria-hidden="true"
-                  className="flex size-4 shrink-0 items-center justify-center rounded-[4px] text-[10px] leading-none font-semibold text-white"
+                  className="flex size-5 shrink-0 items-center justify-center rounded-[4px] text-2xs leading-none font-semibold text-white"
                   style={{ backgroundColor: avatarColor(repo.displayName) }}
                 >
                   {repo.displayName.charAt(0).toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] leading-[18px]">{repo.displayName}</span>
-                  <span className="block truncate text-xs leading-4 text-muted-foreground">
+                  <span className="block truncate text-sm leading-5">{repo.displayName}</span>
+                  <span className="block truncate text-xs leading-[18px] text-muted-foreground">
                     {subtitle} · {repo.branch}
                   </span>
                 </span>

@@ -57,7 +57,7 @@ export function UserMenu() {
         >
           <Avatar size="sm" className="size-5">
             {image && <AvatarImage src={image} alt="" />}
-            <AvatarFallback className="text-[9px]">{getInitials(name)}</AvatarFallback>
+            <AvatarFallback className="text-2xs">{getInitials(name)}</AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>

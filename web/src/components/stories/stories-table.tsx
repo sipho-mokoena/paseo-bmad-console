@@ -114,7 +114,7 @@ export function StoriesTable({ stories, hrefFor, hideEpicColumn }: StoriesTableP
       <button
         type="button"
         onClick={() => setVisible((v) => v + PAGE)}
-        className="mt-1 h-10 w-full rounded-md text-[13px] text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8"
+        className="mt-1 h-10 w-full rounded-md text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8"
       >
         Show more ({sorted.length - visible} left)
       </button>
@@ -137,8 +137,8 @@ export function StoriesTable({ stories, hrefFor, hideEpicColumn }: StoriesTableP
       </div>
 
       <div className="hidden xl:block">
-        <table className="w-full table-fixed border-collapse text-[13px]">
-          <thead className="sticky top-[calc(var(--app-header-h)+2.25rem)] z-10 bg-background">
+        <table className="w-full table-fixed border-collapse text-sm">
+          <thead className="sticky top-[calc(var(--app-header-h)+2.5rem)] z-10 bg-background">
             <tr className="border-b text-left text-xs text-muted-foreground">
               {HEADERS.filter((h) => !(hideEpicColumn && h.key === "epicTitle")).map((h) => {
                 const active = h.key && sort?.key === h.key;

@@ -24,7 +24,7 @@ export function LayoutPill({ layout }: { layout: LayoutInfo }) {
 export function LayoutNotice({ layout }: { layout: LayoutInfo }) {
   if (layout.recognised) return null;
   return (
-    <p role="status" className="px-2 text-[13px] text-muted-foreground">
+    <p role="status" className="px-2 text-sm text-muted-foreground">
       Layout not recognised: looked for {lookedForText(layout)}.
     </p>
   );
@@ -40,7 +40,7 @@ export function LayoutDetails({
 }) {
   if (layout.notes.length === 0 && errors.length === 0) return null;
   return (
-    <details className="px-2 text-[13px] text-muted-foreground">
+    <details className="px-2 text-sm text-muted-foreground">
       <summary className="cursor-pointer select-none py-1 hover:text-foreground">
         Details
         <span className="ml-1.5 opacity-60">{layout.notes.length + errors.length}</span>

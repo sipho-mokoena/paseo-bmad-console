@@ -47,7 +47,7 @@ export function DocumentTabBrowser({
   const label = tab === "specs" ? "Specs documents" : "Design documents";
 
   return (
-    <div className="-mx-2 -mb-4 -mt-2 flex min-w-0 flex-col md:-m-6 lg:h-[calc(100dvh-var(--app-header-h)-2.25rem-env(safe-area-inset-top))] lg:flex-row">
+    <div className="-mx-2 -mb-4 -mt-2 flex min-w-0 flex-col md:-m-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem-env(safe-area-inset-top))] lg:flex-row">
       <aside
         aria-label={label}
         className="flex min-w-0 shrink-0 flex-col border-b lg:h-full lg:w-[280px] lg:border-b-0 lg:border-r"
@@ -56,7 +56,7 @@ export function DocumentTabBrowser({
           type="button"
           onClick={() => setListOpen((o) => !o)}
           aria-expanded={listOpen}
-          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-[13px] outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
         >
           <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate">{selected?.name ?? "Documents"}</span>
@@ -88,7 +88,7 @@ export function DocumentTabBrowser({
                         aria-current={active ? "page" : undefined}
                         onClick={() => setListOpen(false)}
                         className={cn(
-                          "flex min-h-10 w-full min-w-0 items-center rounded-md px-2 text-[13px] text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:min-h-[30px]",
+                          "flex min-h-10 w-full min-w-0 items-center rounded-md px-2 text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:min-h-[30px]",
                           active && "bg-accent font-medium text-foreground",
                         )}
                       >

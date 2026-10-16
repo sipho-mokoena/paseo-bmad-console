@@ -37,7 +37,7 @@ function safeDecode(value: string): string {
 }
 
 const iconButton =
-  "inline-flex size-10 md:size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden [&_svg]:size-4";
+  "inline-flex size-10 md:size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden [&_svg]:size-4";
 
 export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
   const pathname = usePathname();
@@ -75,10 +75,10 @@ export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-[calc(var(--app-header-h)+env(safe-area-inset-top))] shrink-0 items-center gap-1 border-b bg-background pt-[env(safe-area-inset-top)] pr-[max(0.5rem,env(safe-area-inset-right))] pl-[max(0.5rem,env(safe-area-inset-left))] md:px-2">
-      <SidebarTrigger className="size-10 md:size-7 shrink-0 text-muted-foreground" />
+      <SidebarTrigger className="size-10 md:size-8 shrink-0 text-muted-foreground" />
       <nav
         aria-label="Breadcrumb"
-        className="flex min-w-0 flex-1 items-center gap-1.5 pl-1 text-[13px] md:text-sm"
+        className="flex min-w-0 flex-1 items-center gap-1.5 pl-1 text-sm md:text-sm"
       >
         {parents.map((crumb, i) => (
           <span key={`${crumb.label}-${i}`} className="hidden items-center gap-1.5 sm:flex">
@@ -91,7 +91,7 @@ export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           </span>
         ))}
-        <span aria-current="page" className="truncate font-medium">
+        <span aria-current="page" className="truncate text-base font-medium">
           {title}
         </span>
         {projectName && (

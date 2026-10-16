@@ -13,7 +13,7 @@ export interface PagerTarget {
 }
 
 const LINK =
-  "flex min-h-10 min-w-0 max-w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
+  "flex min-h-10 min-w-0 max-w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
 /** Previous / next story footer, with `j`/`k` and arrow keys when no field has focus. */
 export function StoryPager({ prev, next }: { prev: PagerTarget | null; next: PagerTarget | null }) {

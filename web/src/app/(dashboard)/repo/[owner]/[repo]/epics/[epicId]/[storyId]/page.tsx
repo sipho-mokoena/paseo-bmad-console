@@ -55,7 +55,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
       <BreadcrumbTitle title={`${story.id} ${story.title}`} />
       <nav
         aria-label="Breadcrumb"
-        className="-mx-1 flex flex-wrap items-center gap-x-0.5 text-[13px] text-muted-foreground"
+        className="-mx-1 flex flex-wrap items-center gap-x-0.5 text-sm text-muted-foreground"
       >
         <Link href={epicsHref(base)} className={CRUMB}>
           Epics
@@ -73,7 +73,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
       <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="flex min-w-0 items-baseline gap-3">
           <span className="shrink-0 font-mono text-xs text-muted-foreground">{story.id}</span>
-          <h1 className="min-w-0 break-words text-base font-medium">{story.title}</h1>
+          <h1 className="min-w-0 break-words text-lg md:text-[1.375rem] leading-snug font-medium">{story.title}</h1>
         </div>
         <div className="shrink-0 self-start">
           <StatusPill status={story.status} />

@@ -26,7 +26,7 @@ export function GroupLabel({
 
 /** Row chrome: 36px, no border, hover fill, focus ring. Use on a button or link. */
 export const ROW_CLASS =
-  "group/row flex min-h-10 w-full min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-left text-[13px] outline-hidden transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:min-h-9 md:py-1";
+  "group/row flex min-h-10 w-full min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm outline-hidden transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:min-h-9 md:py-1";
 
 /** Flat, small, muted, centred message for empty / loading / error states. */
 export function StateMessage({
@@ -42,7 +42,7 @@ export function StateMessage({
     <div
       role={role}
       className={cn(
-        "flex min-h-40 items-center justify-center px-4 py-10 text-center text-[13px] text-muted-foreground",
+        "flex min-h-40 items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground",
         className,
       )}
     >
@@ -138,7 +138,7 @@ export function SearchField({
         }
         placeholder={placeholder}
         aria-label={ariaLabel ?? placeholder}
-        className={cn("h-10 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-[13px] outline-hidden placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 md:h-9 [&::-webkit-search-cancel-button]:hidden", clearable && "pr-10 md:pr-9")}
+        className={cn("h-10 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm outline-hidden placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 md:h-9 [&::-webkit-search-cancel-button]:hidden", clearable && "pr-10 md:pr-9")}
       />
       {clearable && value && (
         <button

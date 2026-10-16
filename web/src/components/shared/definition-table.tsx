@@ -17,7 +17,7 @@ export function DefinitionTable({
   return (
     <dl
       className={cn(
-        "grid grid-cols-[minmax(5.5rem,9rem)_minmax(0,1fr)] overflow-hidden rounded-lg border text-[13px]",
+        "grid grid-cols-[minmax(5.5rem,9rem)_minmax(0,1fr)] overflow-hidden rounded-lg border text-sm",
         className,
       )}
     >

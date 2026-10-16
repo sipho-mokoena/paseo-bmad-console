@@ -47,7 +47,7 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
     <div className="space-y-4">
       {/* Source line (the title lives in the header; project actions live in the sidebar) */}
       <div className="flex items-center gap-2">
-        <div className="flex min-w-0 items-center gap-x-2 overflow-hidden text-[13px] text-muted-foreground [&>svg]:shrink-0">
+        <div className="flex min-w-0 items-center gap-x-2 overflow-hidden text-sm text-muted-foreground [&>svg]:shrink-0">
           {isLocal ? (
             <>
               <FolderOpen className="h-3.5 w-3.5" />

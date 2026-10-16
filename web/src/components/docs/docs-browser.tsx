@@ -31,7 +31,7 @@ function CollapsibleSection({
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="flex min-h-7 w-full items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-h-8 w-full items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
       >
         {open ? (
           <ChevronDown className="h-3 w-3 shrink-0" />
@@ -158,7 +158,7 @@ function FilePanel({
   );
 
   return (
-    <div className="-mx-2 -mb-4 -mt-2 flex min-w-0 flex-col md:-m-6 lg:h-[calc(100dvh-var(--app-header-h)-2.25rem-env(safe-area-inset-top))] lg:flex-row">
+    <div className="-mx-2 -mb-4 -mt-2 flex min-w-0 flex-col md:-m-6 lg:h-[calc(100dvh-var(--app-header-h)-2.5rem-env(safe-area-inset-top))] lg:flex-row">
       {/* Content column */}
       <div className="min-w-0 flex-1 lg:overflow-y-auto">
         <DocumentPane
@@ -178,7 +178,7 @@ function FilePanel({
           type="button"
           onClick={() => setTreeOpen((o) => !o)}
           aria-expanded={treeOpen}
-          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-[13px] outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
         >
           <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate">
@@ -190,7 +190,7 @@ function FilePanel({
             <ChevronRight className="h-4 w-4 shrink-0" />
           )}
         </button>
-        <div className="hidden h-9 shrink-0 items-center gap-1 border-b px-2 lg:flex">
+        <div className="hidden h-10 shrink-0 items-center gap-1 border-b px-2 lg:flex">
           {sources ? (
             <PillToggle
               label="Source tree"
@@ -202,7 +202,7 @@ function FilePanel({
               ]}
             />
           ) : (
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-md bg-accent px-2 text-xs">
+            <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-accent px-2 text-xs">
               <FolderOpen className="size-3.5" aria-hidden="true" />
               Files
             </span>

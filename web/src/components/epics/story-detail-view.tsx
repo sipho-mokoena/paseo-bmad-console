@@ -137,7 +137,7 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
 
       {ticket && verify && (
         <Section title="Verify">
-          <InlineMarkdown className="text-[13px] leading-relaxed">{verify}</InlineMarkdown>
+          <InlineMarkdown className="text-sm leading-relaxed">{verify}</InlineMarkdown>
         </Section>
       )}
 
@@ -145,7 +145,7 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
         <Section title="Acceptance criteria">
           <ul className="space-y-1.5">
             {criteria.map((criterion, i) => (
-              <li key={i} className="flex items-start gap-2 text-[13px]">
+              <li key={i} className="flex items-start gap-2 text-sm">
                 <span className="mt-0.5 text-muted-foreground">•</span>
                 <InlineMarkdown className="min-w-0 flex-1">{criterion}</InlineMarkdown>
               </li>
@@ -173,7 +173,7 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
           />
           <ul className="space-y-1.5 pt-1">
             {story.tasks.map((task, i) => (
-              <li key={i} className="flex items-start gap-2 text-[13px]">
+              <li key={i} className="flex items-start gap-2 text-sm">
                 {task.completed ? (
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
                 ) : (

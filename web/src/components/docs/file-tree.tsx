@@ -19,7 +19,7 @@ interface FileTreeProps {
 
 export function FileTree({ nodes, selectedPath, onSelect }: FileTreeProps) {
   return (
-    <div className="overflow-hidden text-[13px]">
+    <div className="overflow-hidden text-sm">
       {nodes.map((node) => (
         <TreeNode
           key={node.path}

@@ -47,14 +47,14 @@ export function KanbanBoard({ stories, hrefFor }: KanbanBoardProps) {
                 href={hrefFor(story)}
                 aria-label={`Open story ${story.id}: ${story.title}`}
                 title={story.epicTitle ? `${story.title} (${story.epicTitle})` : story.title}
-                className={cn(ROW_CLASS, "gap-2 lg:min-h-7 lg:py-1")}
+                className={cn(ROW_CLASS, "gap-2 lg:min-h-8 lg:py-1")}
               >
                 <span className="min-w-8 shrink-0 font-mono text-xs text-muted-foreground">
                   {story.id}
                 </span>
-                <span className="min-w-0 flex-1 truncate">{story.title}</span>
+                <span className="min-w-0 flex-1 line-clamp-2 break-words leading-snug">{story.title}</span>
                 {story.totalTasks > 0 && (
-                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                  <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
                     {story.completedTasks}/{story.totalTasks}
                   </span>
                 )}

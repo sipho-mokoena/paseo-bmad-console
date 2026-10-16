@@ -62,7 +62,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
     <div className="mb-6 overflow-hidden rounded-lg border">
       <button
         onClick={() => setOpen(!open)}
-        className="flex min-h-9 w-full items-center gap-2 px-3 text-[13px] text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex min-h-9 w-full items-center gap-2 px-3 text-sm text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         aria-expanded={open}
         aria-controls={`toc-${tocId}`}
       >

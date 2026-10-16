@@ -20,7 +20,7 @@ interface EpicsKanbanProps {
 export function EpicsKanban({ epics, hrefFor }: EpicsKanbanProps) {
   if (epics.length === 0) {
     return (
-      <p className="py-10 text-center text-[13px] text-muted-foreground">
+      <p className="py-10 text-center text-sm text-muted-foreground">
         No epic found in this project
       </p>
     );

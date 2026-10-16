@@ -36,7 +36,7 @@ function CodeRenderer({
   }, [content, language]);
 
   return (
-    <pre className="hljs overflow-x-auto rounded-lg border p-3 text-[13px] leading-relaxed max-w-full">
+    <pre className="hljs overflow-x-auto rounded-lg border p-3 text-sm leading-relaxed max-w-full">
       <code dangerouslySetInnerHTML={{ __html: html }} />
     </pre>
   );
@@ -137,7 +137,7 @@ export function DocumentPane({
 
   return (
     <>
-      <div className="z-10 flex min-h-9 items-center justify-between gap-2 border-b bg-background px-3 lg:sticky lg:top-0">
+      <div className="z-10 flex min-h-10 items-center justify-between gap-2 border-b bg-background px-3 lg:sticky lg:top-0">
         <span className="min-w-0 truncate text-xs text-muted-foreground">
           {path && stats ? stats : ""}
         </span>
@@ -183,7 +183,7 @@ export function DocumentPane({
               {parsedFile.parseError ? (
                 <>
                   <div
-                    className="mb-4 rounded-lg border border-warning/30 px-3 py-2 text-[13px]"
+                    className="mb-4 rounded-lg border border-warning/30 px-3 py-2 text-sm"
                     role="alert"
                   >
                     <div className="flex items-center gap-2 font-medium text-warning-foreground">
@@ -212,7 +212,7 @@ export function DocumentPane({
               ) : parsedFile.contentType === "json" ? (
                 <CodeRenderer content={parsedFile.body} language="json" />
               ) : (
-                <pre className="whitespace-pre-wrap font-mono text-[13px]">
+                <pre className="whitespace-pre-wrap font-mono text-sm">
                   {parsedFile.body}
                 </pre>
               )}
