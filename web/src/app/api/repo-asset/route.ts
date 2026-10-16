@@ -1,0 +1,113 @@
+import { getAuthenticatedSession, getAuthenticatedRepoConfig } from "@/lib/db/helpers";
+import { LocalProvider, LocalFileError } from "@/lib/content-provider/local-provider";
+import {
+  DEFAULT_OUTPUT_DIR,
+  CORE_CONFIG_PATH,
+  parseConfigContent,
+  isPathOutsideNestedOutput,
+} from "@/lib/bmad/parse-config";
+import {
+  REPO_ASSET_MAX_BYTES,
+  assetResponseHeaders,
+  validateAssetPath,
+} from "@/lib/docs/asset-paths";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CONFIG_MAX_BYTES = 256 * 1024;
+const MAX_IDENTIFIER_LENGTH = 200;
+
+const BASE_HEADERS = {
+  "Cache-Control": "no-store",
+  "X-Content-Type-Options": "nosniff",
+} as const;
+
+function errorResponse(status: number, error: string): Response {
+  return Response.json({ error }, { status, headers: BASE_HEADERS });
+}
+
+/** Output folder declared in `_bmad/core/config.yaml`, or the default. */
+async function resolveOutputDir(provider: LocalProvider): Promise<string> {
+  try {
+    const buffer = await provider.getFileBuffer(CORE_CONFIG_PATH, CONFIG_MAX_BYTES);
+    return parseConfigContent(buffer.toString("utf-8"))?.outputDir ?? DEFAULT_OUTPUT_DIR;
+  } catch {
+    return DEFAULT_OUTPUT_DIR;
+  }
+}
+
+/**
+ * GET /api/repo-asset?owner=&repo=&path=
+ *
+ * Serves an image that lives inside a BMAD directory of one of the caller's
+ * local repos, so markdown documents can reference it with a relative URL.
+ */
+export async function GET(request: Request): Promise<Response> {
+  const session = await getAuthenticatedSession();
+  if (!session) return errorResponse(401, "Unauthorized");
+
+  const url = new URL(request.url);
+  const owner = url.searchParams.get("owner");
+  const repo = url.searchParams.get("repo");
+  if (
+    !owner ||
+    !repo ||
+    owner.length > MAX_IDENTIFIER_LENGTH ||
+    repo.length > MAX_IDENTIFIER_LENGTH
+  ) {
+    return errorResponse(400, "Invalid repository");
+  }
+
+  const validation = validateAssetPath(url.searchParams.get("path"));
+  if (!validation.ok) return errorResponse(validation.status, validation.error);
+
+  // Per-user lookup: a user can only resolve repos they own.
+  const config = await getAuthenticatedRepoConfig(session.userId, owner, repo);
+  if (!config || config.sourceType !== "local" || !config.localPath) {
+    return errorResponse(404, "Not found");
+  }
+
+  try {
+    const provider = new LocalProvider(config.localPath);
+
+    // Nested output folders: the provider whitelist is top-segment based, so
+    // mirror the check used by fetchFileContent.
+    const outputDir = await resolveOutputDir(provider);
+    if (outputDir !== DEFAULT_OUTPUT_DIR) {
+      try {
+        provider.extendBmadDirs(outputDir.split("/")[0]);
+      } catch {
+        // Leave the whitelist unchanged; the provider refuses the path below.
+      }
+      if (isPathOutsideNestedOutput(validation.path, outputDir)) {
+        return errorResponse(403, "Access denied");
+      }
+    }
+
+    const buffer = await provider.getFileBuffer(validation.path, REPO_ASSET_MAX_BYTES);
+    return new Response(new Uint8Array(buffer), {
+      status: 200,
+      headers: { ...BASE_HEADERS, ...assetResponseHeaders(validation.contentType, buffer.byteLength) },
+    });
+  } catch (err) {
+    if (err instanceof LocalFileError) {
+      switch (err.code) {
+        case "INVALID_PATH":
+          return errorResponse(400, "Invalid path");
+        case "FORBIDDEN":
+          return errorResponse(403, "Access denied");
+        case "NOT_FOUND":
+          return errorResponse(404, "Not found");
+        case "TOO_LARGE":
+          return errorResponse(413, "File too large");
+      }
+    }
+    if (err instanceof Error && err.message === "LOCAL_DISABLED") {
+      return errorResponse(503, "Local file access is disabled");
+    }
+    // Do not log the error object: messages may contain filesystem paths.
+    console.error("[repo-asset] unexpected failure");
+    return errorResponse(500, "Internal error");
+  }
+}

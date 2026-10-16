@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { createContext, useContext } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -13,6 +13,12 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { bmadSanitizeSchema } from "@/lib/bmad/sanitize-schema";
 import {
+  buildRepoAssetUrl,
+  isRelativeImageHref,
+  resolveImageSrc,
+  type DocAssetContext,
+} from "@/lib/docs/asset-paths";
+import {
   ExternalLink,
   Info,
   Lightbulb,
@@ -23,7 +29,13 @@ import {
 
 interface MarkdownRendererProps {
   content: string;
+  /** Repo identifiers and the repo-relative path of this document, used to resolve relative images. */
+  owner?: string;
+  repo?: string;
+  docPath?: string;
 }
+
+const DocAssetCtx = createContext<DocAssetContext | null>(null);
 
 const CALLOUT_CONFIG: Record<
   string,
@@ -164,6 +176,7 @@ function CalloutBlockquote(props: React.ComponentProps<"blockquote">) {
 }
 
 function SmartLink(props: React.ComponentProps<"a">) {
+  const docAsset = useContext(DocAssetCtx);
   const { href, children, ...rest } = props;
   const isExternal =
     href && (href.startsWith("http://") || href.startsWith("https://"));
@@ -177,19 +190,27 @@ function SmartLink(props: React.ComponentProps<"a">) {
     );
   }
 
+  // Relative link that points at an image in the repo: serve it through the asset route.
+  const assetHref =
+    docAsset && href && isRelativeImageHref(docAsset, href)
+      ? buildRepoAssetUrl(docAsset, href) ?? href
+      : href;
+
   return (
-    <a href={href} {...rest}>
+    <a href={assetHref} {...rest}>
       {children}
     </a>
   );
 }
 
 function LazyImage(props: React.ComponentProps<"img">) {
-  const { className, alt, ...rest } = props;
+  const { className, alt, src, ...rest } = props;
+  const docAsset = useContext(DocAssetCtx);
   /* eslint-disable @next/next/no-img-element */
   return (
     <img
       {...rest}
+      src={resolveImageSrc(typeof src === "string" ? src : undefined, docAsset)}
       alt={alt ?? ""}
       loading="lazy"
       className={cn("rounded-lg shadow-sm max-w-full h-auto", className)}
@@ -229,21 +250,25 @@ const components: Components = {
   },
 };
 
-export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, owner, repo, docPath }: MarkdownRendererProps) {
+  const docAsset: DocAssetContext | null =
+    owner && repo && docPath ? { owner, repo, docPath } : null;
   return (
-    <div className="prose prose-zinc dark:prose-invert max-w-none">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[
-          [rehypeSanitize, bmadSanitizeSchema],
-          rehypeSlug,
-          [rehypeAutolinkHeadings, { behavior: "prepend", properties: { className: ["autolink-heading"], ariaHidden: "true", tabIndex: -1 } }],
-          rehypeHighlight,
-        ]}
-        components={components}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
+    <DocAssetCtx.Provider value={docAsset}>
+      <div className="prose prose-zinc dark:prose-invert max-w-none">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[
+            [rehypeSanitize, bmadSanitizeSchema],
+            rehypeSlug,
+            [rehypeAutolinkHeadings, { behavior: "prepend", properties: { className: ["autolink-heading"], ariaHidden: "true", tabIndex: -1 } }],
+            rehypeHighlight,
+          ]}
+          components={components}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+    </DocAssetCtx.Provider>
   );
 }

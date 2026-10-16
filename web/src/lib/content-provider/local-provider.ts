@@ -4,6 +4,23 @@ import path from "node:path";
 import type { ContentProvider, ContentProviderTree } from "./types";
 import { LOCAL_PROVIDER_DEFAULTS } from "./types";
 
+export type LocalFileErrorCode =
+  | "INVALID_PATH"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "TOO_LARGE";
+
+/** Path/file errors carry a code so callers can map them to responses without leaking paths. */
+export class LocalFileError extends Error {
+  readonly code: LocalFileErrorCode;
+
+  constructor(code: LocalFileErrorCode, message: string) {
+    super(message);
+    this.name = "LocalFileError";
+    this.code = code;
+  }
+}
+
 interface LocalProviderOptions {
   maxFileSizeBytes?: number;
   maxFileCount?: number;
@@ -209,6 +226,55 @@ export class LocalProvider implements ContentProvider {
   }
 
   /**
+   * Read a binary file (e.g. an image) with the same guards as getFileContent,
+   * plus a realpath containment check so intermediate symlinks cannot escape the root.
+   */
+  async getFileBuffer(
+    filePath: string,
+    maxBytes: number = LOCAL_PROVIDER_DEFAULTS.maxFileSizeBytes,
+  ): Promise<Buffer> {
+    this.assertSafePath(filePath);
+
+    const fullPath = path.resolve(this.resolvedRoot, filePath);
+
+    let lstat;
+    try {
+      lstat = await fs.lstat(fullPath);
+    } catch {
+      throw new LocalFileError("NOT_FOUND", "File not found");
+    }
+    if (lstat.isSymbolicLink()) {
+      throw new LocalFileError("FORBIDDEN", "Symlinks are not allowed");
+    }
+
+    let realPath: string;
+    let realRoot: string;
+    try {
+      realPath = await fs.realpath(fullPath);
+      realRoot = await fs.realpath(this.resolvedRoot);
+    } catch {
+      throw new LocalFileError("NOT_FOUND", "File not found");
+    }
+    if (!realPath.startsWith(realRoot + path.sep)) {
+      throw new LocalFileError("FORBIDDEN", "Path traversal detected");
+    }
+
+    const handle = await fs.open(realPath, "r");
+    try {
+      const stat = await handle.stat();
+      if (!stat.isFile()) {
+        throw new LocalFileError("NOT_FOUND", "File not found");
+      }
+      if (stat.size > maxBytes) {
+        throw new LocalFileError("TOO_LARGE", "File exceeds size limit");
+      }
+      return await handle.readFile();
+    } finally {
+      await handle.close();
+    }
+  }
+
+  /**
    * Guard 2 — Path traversal jail.
    * Ensures the resolved path stays within resolvedRoot.
    * Also rejects null bytes and Unicode slash look-alikes.
@@ -216,23 +282,25 @@ export class LocalProvider implements ContentProvider {
   private assertSafePath(filePath: string): void {
     // Reject null bytes (F12)
     if (filePath.includes("\0")) {
-      throw new Error("Invalid path: null bytes not allowed");
+      throw new LocalFileError("INVALID_PATH", "Invalid path: null bytes not allowed");
     }
 
     // Reject Unicode slash look-alikes (F23: U+2215, U+FF0F)
     if (/[\u2215\uFF0F]/.test(filePath)) {
-      throw new Error("Invalid path: unsupported characters");
+      throw new LocalFileError("INVALID_PATH", "Invalid path: unsupported characters");
     }
 
     const resolved = path.resolve(this.resolvedRoot, filePath);
     if (!resolved.startsWith(this.resolvedRoot + path.sep) && resolved !== this.resolvedRoot) {
-      throw new Error("Path traversal detected");
+      throw new LocalFileError("FORBIDDEN", "Path traversal detected");
     }
 
-    // Guard 7 — Restrict access to BMAD directories only
-    const firstSegment = filePath.split(path.sep)[0];
+    // Guard 7 — Restrict access to BMAD directories only.
+    // Checked on the normalized path so `_bmad-output/../x` cannot reach `x`.
+    const relative = path.relative(this.resolvedRoot, resolved);
+    const firstSegment = relative.split(path.sep)[0];
     if (!this.bmadDirs.has(firstSegment)) {
-      throw new Error("Access denied: only BMAD directories are accessible");
+      throw new LocalFileError("FORBIDDEN", "Access denied: only BMAD directories are accessible");
     }
   }
 }
