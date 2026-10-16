@@ -51,12 +51,76 @@ export function filterStoriesByStatus<T extends { status: string }>(
   );
 }
 
-/** Link to an epic's stories on the Epics page: `<pathname>?epic=<id>`. */
-export function epicHref(pathname: string, epicId: string): string {
-  return `${pathname}?epic=${encodeURIComponent(epicId)}`;
+/** The epics list of a project: `<base>/epics` (base is `/repo/<owner>/<repo>`). */
+export function epicsHref(base: string): string {
+  return `${base}/epics`;
 }
 
-/** Where the retired `<base>/stories` route sends visitors, keeping `?epic=`. */
-export function storiesRedirectTarget(base: string, epic?: string): string {
-  return epic ? epicHref(`${base}/epics`, epic) : `${base}/epics`;
+/** Link to an epic page: `<base>/epics/<epicId>`. */
+export function epicHref(base: string, epicId: string): string {
+  return `${epicsHref(base)}/${encodeURIComponent(epicId)}`;
+}
+
+/** Link to a story page: `<base>/epics/<epicId>/<storyId>`. */
+export function storyHref(base: string, epicId: string, storyId: string): string {
+  return `${epicHref(base, epicId)}/${encodeURIComponent(storyId)}`;
+}
+
+/**
+ * Where the old query-string URLs go: `/epics?epic=` and `/epics?story=` (also the
+ * retired `/stories`). A story wins over an epic and brings its own epic along; refs
+ * that match nothing return null (the caller then shows the list).
+ */
+export function legacyEpicsTarget(
+  base: string,
+  query: { epic?: string; story?: string },
+  epics: Pick<Epic, "id">[],
+  stories: Pick<StoryDetail, "id" | "epicId">[],
+): string | null {
+  if (query.story) {
+    const hit = stories.find(
+      (s) => s.id === query.story && (!query.epic || s.epicId === query.epic),
+    ) ?? stories.find((s) => s.id === query.story);
+    if (hit) return storyHref(base, hit.epicId, hit.id);
+  }
+  if (query.epic && epics.some((e) => e.id === query.epic)) {
+    return epicHref(base, query.epic);
+  }
+  return null;
+}
+
+/**
+ * Where the retired `<base>/stories` route sends visitors. It cannot see the project,
+ * so a lone `?story=` goes to the epics page, which resolves it.
+ */
+export function storiesRedirectTarget(base: string, epic?: string, story?: string): string {
+  if (epic && story) return storyHref(base, epic, story);
+  if (epic) return epicHref(base, epic);
+  if (story) return `${epicsHref(base)}?story=${encodeURIComponent(story)}`;
+  return epicsHref(base);
+}
+
+type Linked = Pick<StoryDetail, "id" | "ticket">;
+
+/** Stories that list `storyId` in their `after` (the ones it blocks), in input order. */
+export function storiesBlockedBy<T extends Linked>(stories: T[], storyId: string): T[] {
+  return stories.filter((s) => s.id !== storyId && s.ticket?.after.includes(storyId));
+}
+
+/** Splits `after` refs into known stories (linkable) and unknown refs (plain chips). */
+export function resolveAfter<T extends Pick<StoryDetail, "id">>(
+  stories: T[],
+  refs: string[],
+): { ref: string; story: T | null }[] {
+  return refs.map((ref) => ({ ref, story: stories.find((s) => s.id === ref) ?? null }));
+}
+
+/** Previous and next item around `id` in the given order (null at the ends or when absent). */
+export function neighbours<T extends { id: string }>(
+  items: T[],
+  id: string,
+): { prev: T | null; next: T | null } {
+  const i = items.findIndex((s) => s.id === id);
+  if (i < 0) return { prev: null, next: null };
+  return { prev: items[i - 1] ?? null, next: items[i + 1] ?? null };
 }

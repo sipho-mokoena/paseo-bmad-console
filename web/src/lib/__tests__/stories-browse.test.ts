@@ -1,5 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { groupEpicsByStatus, searchStories, filterStoriesByStatus, epicHref, storiesRedirectTarget } from "../stories-browse";
+import {
+  groupEpicsByStatus,
+  searchStories,
+  filterStoriesByStatus,
+  epicsHref,
+  epicHref,
+  storyHref,
+  legacyEpicsTarget,
+  storiesRedirectTarget,
+  storiesBlockedBy,
+  resolveAfter,
+  neighbours,
+} from "../stories-browse";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
 const epic = (id: string, status: Epic["status"]): Epic => ({
@@ -72,16 +84,67 @@ describe("filterStoriesByStatus", () => {
   });
 });
 
-describe("epicHref", () => {
-  it("builds the ?epic= link and encodes the id", () => {
-    expect(epicHref("/repo/a/b/epics", "3")).toBe("/repo/a/b/epics?epic=3");
-    expect(epicHref("/x", "a b")).toBe("/x?epic=a%20b");
+const B = "/repo/o/r";
+
+describe("path helpers", () => {
+  it("builds epics, epic and story paths and encodes ids", () => {
+    expect(epicsHref(B)).toBe("/repo/o/r/epics");
+    expect(epicHref(B, "3")).toBe("/repo/o/r/epics/3");
+    expect(epicHref(B, "a b")).toBe("/repo/o/r/epics/a%20b");
+    expect(storyHref(B, "3", "3.6")).toBe("/repo/o/r/epics/3/3.6");
+  });
+});
+
+describe("legacyEpicsTarget", () => {
+  const epics = [{ id: "3" }, { id: "4" }];
+  const stories = [
+    { id: "3.6", epicId: "3" },
+    { id: "4.1", epicId: "4" },
+  ];
+  it("sends ?epic= to the epic page", () => {
+    expect(legacyEpicsTarget(B, { epic: "3" }, epics, stories)).toBe("/repo/o/r/epics/3");
+  });
+  it("sends ?story= (with or without ?epic=) to the story page, using the story's epic", () => {
+    expect(legacyEpicsTarget(B, { epic: "3", story: "3.6" }, epics, stories)).toBe("/repo/o/r/epics/3/3.6");
+    expect(legacyEpicsTarget(B, { story: "4.1" }, epics, stories)).toBe("/repo/o/r/epics/4/4.1");
+    expect(legacyEpicsTarget(B, { epic: "3", story: "4.1" }, epics, stories)).toBe("/repo/o/r/epics/4/4.1");
+  });
+  it("falls back to the epic, then to nothing, for unknown refs", () => {
+    expect(legacyEpicsTarget(B, { epic: "3", story: "9.9" }, epics, stories)).toBe("/repo/o/r/epics/3");
+    expect(legacyEpicsTarget(B, { epic: "9", story: "9.9" }, epics, stories)).toBeNull();
+    expect(legacyEpicsTarget(B, {}, epics, stories)).toBeNull();
   });
 });
 
 describe("storiesRedirectTarget", () => {
-  it("points at epics and keeps ?epic=", () => {
-    expect(storiesRedirectTarget("/repo/o/r")).toBe("/repo/o/r/epics");
-    expect(storiesRedirectTarget("/repo/o/r", "3")).toBe("/repo/o/r/epics?epic=3");
+  it("points at the new routes", () => {
+    expect(storiesRedirectTarget(B)).toBe("/repo/o/r/epics");
+    expect(storiesRedirectTarget(B, "3")).toBe("/repo/o/r/epics/3");
+    expect(storiesRedirectTarget(B, "3", "3.6")).toBe("/repo/o/r/epics/3/3.6");
+    expect(storiesRedirectTarget(B, undefined, "3.6")).toBe("/repo/o/r/epics?story=3.6");
+  });
+});
+
+describe("story links", () => {
+  const t = (id: string, after: string[] = []) => ({
+    id,
+    ticket: { covers: [], after },
+  });
+  const all = [t("1.1"), t("1.2", ["1.1"]), t("2.1", ["1.1", "1.2"]), { id: "2.2" }];
+
+  it("computes the stories a story blocks", () => {
+    expect(storiesBlockedBy(all, "1.1").map((s) => s.id)).toEqual(["1.2", "2.1"]);
+    expect(storiesBlockedBy(all, "2.1")).toEqual([]);
+  });
+  it("resolves after refs, leaving unknown ones unlinked", () => {
+    const r = resolveAfter(all, ["1.1", "9.9"]);
+    expect(r[0].story?.id).toBe("1.1");
+    expect(r[1]).toEqual({ ref: "9.9", story: null });
+  });
+  it("finds previous and next neighbours", () => {
+    expect(neighbours(all, "1.2")).toMatchObject({ prev: { id: "1.1" }, next: { id: "2.1" } });
+    expect(neighbours(all, "1.1").prev).toBeNull();
+    expect(neighbours(all, "2.2").next).toBeNull();
+    expect(neighbours(all, "x")).toEqual({ prev: null, next: null });
   });
 });
