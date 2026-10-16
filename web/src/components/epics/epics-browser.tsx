@@ -28,7 +28,7 @@ interface EpicsBrowserProps {
 
 /** Level 1: the grouped epic list, plus search and filter across every story. */
 export function EpicsBrowser({ epics, stories, base, projectLayout }: EpicsBrowserProps) {
-  const [layout, setLayout] = useState<EpicsLayout>("timeline");
+  const [layout, setLayout] = useState<EpicsLayout>("kanban");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filter<string>[]>([]);
 

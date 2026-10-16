@@ -18,7 +18,7 @@ interface EpicStoriesViewProps {
 
 /** The epic page's toolbar (search, status filter, Table | Board) and its stories. */
 export function EpicStoriesView({ epicId, stories, base }: EpicStoriesViewProps) {
-  const [view, setView] = useState<"table" | "kanban">("table");
+  const [view, setView] = useState<"table" | "kanban">("kanban");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filter<string>[]>([]);
 
