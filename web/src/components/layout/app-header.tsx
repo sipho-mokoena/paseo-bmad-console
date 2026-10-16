@@ -8,7 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { GitHubStarsButton } from "@/components/animate-ui/components/buttons/github-stars";
 
 const routeLabels: Record<string, string> = {
   profile: "Profile",
@@ -85,13 +84,6 @@ export function AppHeader() {
         ))}
       </nav>
       <AnimatedThemeToggler className="ml-auto rounded-full p-2 hover:bg-accent shrink-0" />
-      <GitHubStarsButton
-        username="DevHDI"
-        repo="my-bmad"
-        variant="ghost"
-        size="sm"
-        onClick={() => window.open("https://github.com/DevHDI/my-bmad", "_blank", "noopener,noreferrer")}
-      />
       <ScrollProgress />
     </header>
   );

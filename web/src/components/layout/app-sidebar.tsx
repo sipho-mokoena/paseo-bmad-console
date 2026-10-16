@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -23,7 +22,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -74,19 +72,6 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
 
   return (
     <Sidebar variant="floating" collapsible="icon">
-      <SidebarHeader className="border-b border-border/50 px-6 py-4 group-data-[collapsible=icon]:px-2">
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/logo.png"
-            alt="MyBMAD"
-            width={32}
-            height={32}
-            className="shrink-0 rounded-lg"
-          />
-          <span className="font-medium text-lg group-data-[collapsible=icon]:hidden">MyBMAD</span>
-        </Link>
-      </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -200,9 +185,6 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
         </div>
         <div className="border-t border-border/50 pt-2">
           <UserMenu />
-        </div>
-        <div className="border-t border-border/50 pt-2 pb-1 text-center group-data-[collapsible=icon]:hidden">
-          <p className="text-xs text-muted-foreground">Made with ❤️ by Hichem</p>
         </div>
       </SidebarFooter>
     </Sidebar>
