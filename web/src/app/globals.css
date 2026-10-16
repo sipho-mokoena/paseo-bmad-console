@@ -187,8 +187,7 @@
     @apply bg-card border border-border rounded-xl;
 }
 
-/* Page content sits directly on the main background: no card, no shadow.
-   The class name is kept so existing markup stays unchanged. */
+/* Page content sits directly on the main background: no card, no shadow. */
 :root {
     --app-header-h: 3rem;
 }
@@ -199,17 +198,17 @@
     }
 }
 
-.mesh-gradient {
+.page-pad {
     padding: 0.5rem 0.5rem max(1rem, env(safe-area-inset-bottom));
 }
 
 @media (min-width: 768px) {
-    .mesh-gradient {
+    .page-pad {
         padding: 1.5rem;
     }
 }
 
-/* Custom font variable override */
+/* Custom font variable override (rev 8) */
 @theme inline {
     --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
@@ -292,7 +291,12 @@
     text-decoration: none;
     opacity: 0;
     transition: opacity 300ms;
-    margin-right: 0.25em;
+    position: absolute;
+    left: -1.1em;
+}
+
+.prose :is(h1, h2, h3, h4) {
+    position: relative;
 }
 
 .prose :is(h1, h2, h3, h4):hover a.autolink-heading {

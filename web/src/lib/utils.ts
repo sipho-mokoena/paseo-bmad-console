@@ -31,3 +31,17 @@ export function formatRelativeTime(date: Date | string | null): string {
   if (hours < 24) return `Last synced ${hours}h ago`;
   return `Last synced ${days}d ago`;
 }
+
+/** Compact relative time for dense lists: "just now", "5m ago", "3h ago", "2d ago". */
+export function formatShortRelative(date: Date | string | null | undefined): string {
+  if (!date) return "";
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return "";
+  const diff = Date.now() - d.getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(diff / 86400000)}d ago`;
+}

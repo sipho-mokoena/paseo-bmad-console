@@ -1,67 +1,40 @@
-"use client";
-
 import { cn } from "@/lib/utils";
-import { useRef, useState, useEffect } from "react";
 
-interface SegmentedProgressBarProps {
+interface ProgressBarProps {
   percent: number;
+  /** Ignored: the fill is always the primary green. Kept for existing call sites. */
   color?: string;
   className?: string;
+  label?: string;
 }
 
-const SEGMENT_WIDTH = 7;
-const GAP = 3;
-
-export function SegmentedProgressBar({
-  percent,
-  color = "bg-primary",
-  className,
-}: SegmentedProgressBarProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [totalSegments, setTotalSegments] = useState(60);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0].contentRect.width;
-      const count = Math.floor((width + GAP) / (SEGMENT_WIDTH + GAP));
-      setTotalSegments(Math.max(count, 10));
-    });
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const filledCount = Math.round((percent / 100) * totalSegments);
-
+/** Thin (4px) continuous bar: track #272a29, fill primary green. */
+export function ProgressBar({ percent, className, label }: ProgressBarProps) {
+  const pct = Math.max(0, Math.min(100, percent));
   return (
-    <div className={cn("flex w-full items-center h-5 min-w-0", className)}>
-      {/* Mobile: continuous bar, many tiny ticks squash on a phone */}
+    <div
+      className={cn("h-1 w-full min-w-0 overflow-hidden rounded-full bg-accent", className)}
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label}
+    >
       <div
-        className="md:hidden w-full h-2 rounded-full bg-muted-foreground/30 overflow-hidden"
-        role="progressbar"
-        aria-valuenow={percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div className={cn("h-full rounded-full", color)} style={{ width: `${percent}%` }} />
-      </div>
-      <div
-        ref={containerRef}
-        className="hidden md:flex w-full h-full items-stretch gap-[3px] min-w-0 overflow-hidden"
-      >
-        {Array.from({ length: totalSegments }, (_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "flex-1 rounded-[2px]",
-              i < filledCount ? color : "bg-muted-foreground/30",
-            )}
-          />
-        ))}
-      </div>
+        className="h-full rounded-full bg-primary transition-[width] duration-300"
+        style={{ width: `${pct}%` }}
+      />
     </div>
+  );
+}
+
+/** Legacy name. Same thin continuous bar; height classes from old call sites are dropped. */
+export function SegmentedProgressBar({ percent, className, label }: ProgressBarProps) {
+  return (
+    <ProgressBar
+      percent={percent}
+      label={label}
+      className={className?.replace(/(?:^|\s)(?:[a-z]+:)?h-\S+/g, "")}
+    />
   );
 }

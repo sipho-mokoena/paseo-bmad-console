@@ -57,7 +57,7 @@ export default function ProfilePage() {
 
   if (isPending) {
     return (
-      <div className="mesh-gradient min-h-full">
+      <div className="page-pad">
         <div className="space-y-8 pt-6 lg:pt-8">
           <Skeleton className="h-8 w-48" />
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -120,7 +120,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mesh-gradient min-h-full">
+    <div className="page-pad">
       <div className="space-y-8 pt-6 lg:pt-8">
         <h1 className="text-3xl font-medium tracking-tight">My Profile</h1>
 

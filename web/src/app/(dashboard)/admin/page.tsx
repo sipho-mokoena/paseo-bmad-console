@@ -20,7 +20,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <div className="mesh-gradient min-h-full">
+    <div className="page-pad">
       <div className="space-y-8 pt-6 lg:pt-8">
       <div>
         <h1 className="text-3xl font-medium tracking-tight">

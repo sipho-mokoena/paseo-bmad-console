@@ -10,7 +10,7 @@ export default async function RepoLayout({ children, params }: RepoLayoutProps) 
   return (
     <>
       <ProjectTabs basePath={`/repo/${owner}/${repo}`} />
-      <div className="mesh-gradient min-h-full">{children}</div>
+      <div className="page-pad">{children}</div>
     </>
   );
 }
