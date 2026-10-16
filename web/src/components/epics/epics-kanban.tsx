@@ -1,16 +1,14 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { SegmentedProgressBar } from "@/components/shared/segmented-progress-bar";
-import { StaggeredList, StaggeredItem } from "@/components/shared/staggered-list";
+import { ProgressBar } from "@/components/shared/segmented-progress-bar";
+import { ROW_CLASS } from "@/components/shared/list-kit";
+import { cn } from "@/lib/utils";
 import type { Epic, EpicStatus } from "@/lib/bmad/types";
 
-const kanbanColumns: { status: EpicStatus; label: string; color: string }[] = [
-  { status: "not-started", label: "Planning", color: "bg-muted-foreground" },
-  { status: "in-progress", label: "In Progress", color: "bg-info" },
-  { status: "done", label: "Done", color: "bg-success" },
+const kanbanColumns: { status: EpicStatus; label: string }[] = [
+  { status: "not-started", label: "Planning" },
+  { status: "in-progress", label: "In progress" },
+  { status: "done", label: "Done" },
 ];
 
 interface EpicsKanbanProps {
@@ -21,90 +19,48 @@ interface EpicsKanbanProps {
 export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
   if (epics.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 rounded-lg border border-dashed border-border/50 text-muted-foreground">
+      <p className="py-10 text-center text-[13px] text-muted-foreground">
         No epic found in this project
-      </div>
+      </p>
     );
   }
 
   return (
-    <StaggeredList className="grid grid-cols-1 gap-4 md:grid-cols-3 [&>*]:min-w-0">
+    <div className="grid grid-cols-1 divide-y lg:grid-cols-3 lg:divide-x lg:divide-y-0 [&>*]:min-w-0">
       {kanbanColumns.map((col) => {
         const columnEpics = epics.filter((e) => e.status === col.status);
         return (
-          <StaggeredItem key={col.status} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2.5 w-2.5 rounded-full ${col.color}`}
-                aria-hidden="true"
-              />
-              <h3 className="text-sm font-medium">{col.label}</h3>
-              <Badge variant="secondary" className="ml-auto text-xs">
-                {columnEpics.length}
-              </Badge>
-            </div>
-
-            <div className="space-y-2 min-h-25">
-              {columnEpics.map((epic) => (
-                <Card
-                  key={epic.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onSelectEpic(epic.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onSelectEpic(epic.id);
-                    }
-                  }}
-                  className="glass-card cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                  aria-label={`Open epic ${epic.id}: ${epic.title}`}
-                >
-                  <CardContent className="px-3 py-0 md:p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
-                          {epic.id}
-                        </span>
-                        <span className="font-medium text-sm leading-tight line-clamp-2 break-words">
-                          {epic.title}
-                        </span>
-                      </div>
-                      <StatusBadge status={epic.status} compact />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>
-                          {epic.completedStories}/{epic.totalStories} stories
-                        </span>
-                        <span>{epic.progressPercent}%</span>
-                      </div>
-                      <SegmentedProgressBar
-                        percent={epic.progressPercent}
-                        color={
-                          epic.progressPercent >= 100
-                            ? "bg-success"
-                            : epic.progressPercent > 0
-                              ? "bg-info"
-                              : "bg-muted-foreground"
-                        }
-                        className="h-1.5"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {columnEpics.length === 0 && (
-                <div className="flex items-center justify-center h-20 rounded-lg border border-dashed border-border/50 text-xs text-muted-foreground">
-                  No epics
-                </div>
-              )}
-            </div>
-          </StaggeredItem>
+          <section key={col.status} aria-label={col.label} className="space-y-1 p-2 lg:min-h-60">
+            <h3 className="px-2 pb-1 text-xs text-muted-foreground">
+              {col.label}
+              <span className="ml-1.5 opacity-60">{columnEpics.length}</span>
+            </h3>
+            {columnEpics.map((epic) => (
+              <button
+                key={epic.id}
+                type="button"
+                onClick={() => onSelectEpic(epic.id)}
+                aria-label={`Open epic ${epic.id}: ${epic.title}`}
+                className={cn(ROW_CLASS, "flex-wrap gap-x-2 gap-y-1")}
+              >
+                <span className="font-mono text-xs text-muted-foreground">E{epic.id}</span>
+                <span className="min-w-0 flex-1 truncate">{epic.title}</span>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {epic.completedStories}/{epic.totalStories}
+                </span>
+                <ProgressBar
+                  percent={epic.progressPercent}
+                  label={`Epic ${epic.id} progress`}
+                  className="basis-full"
+                />
+              </button>
+            ))}
+            {columnEpics.length === 0 && (
+              <p className="px-2 py-3 text-xs text-muted-foreground">No epics</p>
+            )}
+          </section>
         );
       })}
-    </StaggeredList>
+    </div>
   );
 }

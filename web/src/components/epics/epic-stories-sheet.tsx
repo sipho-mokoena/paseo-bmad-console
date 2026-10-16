@@ -8,11 +8,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { SegmentedProgressBar } from "@/components/shared/segmented-progress-bar";
+import { ProgressBar } from "@/components/shared/segmented-progress-bar";
+import { StateMessage } from "@/components/shared/list-kit";
 import { StoryDetailView } from "./story-detail-view";
-import { StoryRowDetails } from "./story-ticket-meta";
+import { StoryRow } from "./story-row";
 import { ArrowLeft } from "lucide-react";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
@@ -75,87 +74,38 @@ export function EpicStoriesSheet({
           ) : (
             <>
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
-                  {epic.id}
+                <span className="font-mono text-xs text-muted-foreground shrink-0">
+                  E{epic.id}
                 </span>
-                <SheetTitle className="min-w-0 text-base md:text-lg break-words">{epic.title}</SheetTitle>
+                <SheetTitle className="min-w-0 break-words text-sm font-medium">{epic.title}</SheetTitle>
               </div>
               {epic.description && (
-                <SheetDescription className="md:ml-11">
+                <SheetDescription className="text-[13px]">
                   {epic.description}
                 </SheetDescription>
               )}
-              <div className="md:ml-11 mt-2 space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    {epic.completedStories}/{epic.totalStories} stories
-                  </span>
-                  <span>{epic.progressPercent}%</span>
-                </div>
-                <SegmentedProgressBar
-                  percent={epic.progressPercent}
-                  color={
-                    epic.progressPercent >= 100
-                      ? "bg-success"
-                      : epic.progressPercent > 0
-                        ? "bg-info"
-                        : "bg-muted-foreground"
-                  }
-                  className="h-1.5"
-                />
+              <div className="mt-1 flex items-center gap-3">
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {epic.completedStories}/{epic.totalStories} stories &middot;{" "}
+                  {epic.progressPercent}%
+                </span>
+                <ProgressBar percent={epic.progressPercent} label={`Epic ${epic.id} progress`} />
               </div>
             </>
           )}
         </SheetHeader>
 
-        <div className="px-3 md:px-4 pb-4">
+        <div className="px-2 pb-4">
           {inDetailView && selectedStory ? (
             <StoryDetailView story={selectedStory} />
           ) : stories.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                No story found for this epic
-              </p>
-            </div>
+            <StateMessage>No story found for this epic</StateMessage>
           ) : (
-            <div className="space-y-2">
+            <div role="list">
               {stories.map((story) => (
-                <Card
-                  key={story.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedStoryId(story.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setSelectedStoryId(story.id);
-                    }
-                  }}
-                  className="glass-card cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                  aria-label={`Open story ${story.id}: ${story.title}`}
-                >
-                  <CardContent className="px-3 py-0 md:p-3">
-                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-medium text-primary shrink-0">
-                          {story.id}
-                        </span>
-                        <span className="font-medium text-sm line-clamp-2 sm:truncate break-words min-w-0">
-                          {story.title}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 pl-8 sm:pl-0">
-                        {story.totalTasks > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            {story.completedTasks}/{story.totalTasks}
-                          </span>
-                        )}
-                        <StatusBadge status={story.status} compact />
-                      </div>
-                    </div>
-                    <StoryRowDetails story={story} className="md:ml-8" />
-                  </CardContent>
-                </Card>
+                <div key={story.id} role="listitem">
+                  <StoryRow story={story} onClick={() => setSelectedStoryId(story.id)} />
+                </div>
               ))}
             </div>
           )}

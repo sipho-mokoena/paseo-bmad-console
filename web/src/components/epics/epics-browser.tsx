@@ -1,18 +1,16 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { ProgressRing } from "@/components/shared/progress-ring";
-import { SegmentedProgressBar } from "@/components/shared/segmented-progress-bar";
-import { EpicsTimeline } from "./epics-timeline";
+import { StatusPill } from "@/components/shared/pill";
+import { ProgressBar } from "@/components/shared/segmented-progress-bar";
+import { GroupLabel, PillToggle, StateMessage } from "@/components/shared/list-kit";
+import { EpicRow } from "./epic-row";
+import { StoryRow } from "./story-row";
 import { EpicsKanban } from "./epics-kanban";
 import { EpicStoriesSheet } from "./epic-stories-sheet";
 import { StoryDetailView } from "./story-detail-view";
-import { StoryRowDetails } from "./story-ticket-meta";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
-import { ArrowLeft, GanttChartSquare, Columns3 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
 type EpicsLayout = "timeline" | "kanban";
@@ -24,7 +22,8 @@ interface EpicsBrowserProps {
   stories: StoryDetail[];
   totalEpics: number;
   totalStories: number;
-  totalEpicProgress: number;
+  /** Kept for the page; the summary line no longer shows a ring. */
+  totalEpicProgress?: number;
 }
 
 export function EpicsBrowser({
@@ -32,7 +31,6 @@ export function EpicsBrowser({
   stories,
   totalEpics,
   totalStories,
-  totalEpicProgress,
 }: EpicsBrowserProps) {
   const [view, setView] = useState<View>("epics");
   const [selectedEpicId, setSelectedEpicId] = useState<string | null>(null);
@@ -143,43 +141,14 @@ export function EpicsBrowser({
     return () => clearExtraSegments();
   }, [clearExtraSegments]);
 
-  // Dynamic title based on current view
-  const renderTitle = () => {
-    if (view === "epics") {
-      return (
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-medium tracking-tight">Epics</h1>
-            <p className="text-muted-foreground mt-1">
-              {totalEpics} epics &middot; {totalStories} stories
-            </p>
-          </div>
-          <ProgressRing percent={totalEpicProgress} size={56} strokeWidth={4} className="shrink-0" />
-        </div>
-      );
-    }
-
-    if ((view === "stories" || view === "story") && selectedEpic) {
-      return (
-        <div>
-          <h1 className="text-2xl md:text-3xl font-medium tracking-tight break-words">
-            Epic {selectedEpic.id}: {selectedEpic.title}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {epicStories.length} stories
-          </p>
-        </div>
-      );
-    }
-
-    return null;
-  };
+  const GROUPS: { status: Epic["status"]; label: string }[] = [
+    { status: "in-progress", label: "In progress" },
+    { status: "not-started", label: "Not started" },
+    { status: "done", label: "Done" },
+  ];
 
   return (
-    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
-      {renderTitle()}
-
-      {/* Back button */}
+    <div className="space-y-3 pb-4">
       {view !== "epics" && (
         <button
           type="button"
@@ -189,156 +158,104 @@ export function EpicsBrowser({
               : goToEpics
           }
           aria-label={view === "story" ? "Back to stories" : "Back to epics"}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-300"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md text-[13px] text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-7"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           {view === "story" ? "Back to stories" : "Back to epics"}
         </button>
       )}
 
-      <div className="space-y-4">
-        {/* Layout toggle (only on the epics list view) */}
-        {view === "epics" && (
-          <div className="flex justify-end">
-            <div
-              className="flex gap-1 border rounded-lg p-1"
-              role="group"
-              aria-label="Epics display mode"
-            >
-              <Button
-                variant={layout === "timeline" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setLayout("timeline")}
-                className="gap-1.5"
-                aria-label="Timeline view"
-                aria-pressed={layout === "timeline"}
-              >
-                <GanttChartSquare className="h-4 w-4" />
-                <span className="hidden sm:inline">Timeline</span>
-              </Button>
-              <Button
-                variant={layout === "kanban" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setLayout("kanban")}
-                className="gap-1.5"
-                aria-label="Kanban view"
-                aria-pressed={layout === "kanban"}
-              >
-                <Columns3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Board</span>
-              </Button>
+      {view === "epics" && (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] text-muted-foreground">
+              {totalEpics} epics &middot; {totalStories} stories
+            </p>
+            <PillToggle
+              label="Epics display mode"
+              value={layout}
+              onChange={setLayout}
+              options={[
+                { value: "timeline", label: "List", ariaLabel: "List view" },
+                { value: "kanban", label: "Board", ariaLabel: "Board view" },
+              ]}
+            />
+          </div>
+
+          {epics.length === 0 ? (
+            <StateMessage>
+              No epic found. Epics will appear here once defined in the planning artifacts.
+            </StateMessage>
+          ) : layout === "timeline" ? (
+            <div>
+              {GROUPS.map((g) => {
+                const list = epics.filter((e) =>
+                  g.status === "not-started"
+                    ? e.status !== "in-progress" && e.status !== "done"
+                    : e.status === g.status,
+                );
+                if (list.length === 0) return null;
+                return (
+                  <section key={g.status} aria-label={g.label}>
+                    <GroupLabel count={list.length}>{g.label}</GroupLabel>
+                    <div role="list">
+                      {list.map((epic) => (
+                        <div key={epic.id} role="listitem">
+                          <EpicRow epic={epic} onClick={() => goToStories(epic.id)} />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <EpicsKanban epics={epics} onSelectEpic={openEpicSheet} />
+          )}
+        </>
+      )}
+
+      {view === "stories" && selectedEpic && (
+        <div className="space-y-3">
+          <div className="space-y-2 px-2">
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted-foreground">E{selectedEpic.id}</span>
+              <h2 className="min-w-0 flex-1 truncate text-sm font-medium">{selectedEpic.title}</h2>
+              <StatusPill status={selectedEpic.status} />
+            </div>
+            {selectedEpic.description && (
+              <p className="text-[13px] text-muted-foreground">{selectedEpic.description}</p>
+            )}
+            <div className="flex items-center gap-3">
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {selectedEpic.completedStories}/{selectedEpic.totalStories} stories &middot;{" "}
+                {selectedEpic.progressPercent}%
+              </span>
+              <ProgressBar
+                percent={selectedEpic.progressPercent}
+                label={`Epic ${selectedEpic.id} progress`}
+              />
             </div>
           </div>
-        )}
 
-        {/* Active view */}
-        {view === "epics" && layout === "timeline" && (
-          <EpicsTimeline epics={epics} onSelectEpic={goToStories} />
-        )}
-
-        {view === "epics" && layout === "kanban" && (
-          <EpicsKanban epics={epics} onSelectEpic={openEpicSheet} />
-        )}
-
-        {view === "stories" && selectedEpic && (
-          <div className="space-y-4">
-            {/* Epic header summary */}
-            <Card className="glass-card">
-              <CardContent className="px-3 py-0 md:p-5">
-                <div className="flex items-start justify-between gap-2 md:gap-4">
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                        {selectedEpic.id}
-                      </span>
-                      <h3 className="min-w-0 text-base md:text-lg font-medium break-words">
-                        {selectedEpic.title}
-                      </h3>
-                    </div>
-                    {selectedEpic.description && (
-                      <p className="text-sm text-muted-foreground md:ml-11">
-                        {selectedEpic.description}
-                      </p>
-                    )}
-                  </div>
-                  <StatusBadge status={selectedEpic.status} compact />
+          <GroupLabel count={epicStories.length}>Stories</GroupLabel>
+          {epicStories.length === 0 ? (
+            <StateMessage>No story found for this epic</StateMessage>
+          ) : (
+            <div role="list">
+              {epicStories.map((story) => (
+                <div key={story.id} role="listitem">
+                  <StoryRow story={story} onClick={() => goToStory(story.id)} />
                 </div>
-                <div className="mt-3 md:ml-11">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                    <span>
-                      {selectedEpic.completedStories} of{" "}
-                      {selectedEpic.totalStories} stories
-                    </span>
-                    <span>{selectedEpic.progressPercent}%</span>
-                  </div>
-                  <SegmentedProgressBar
-                    percent={selectedEpic.progressPercent}
-                    color={
-                      selectedEpic.progressPercent >= 100
-                        ? "bg-success"
-                        : "bg-warning"
-                    }
-                    className="h-2"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-            {/* Stories list */}
-            {epicStories.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No story found for this epic
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 md:space-y-3">
-                {epicStories.map((story) => (
-                  <Card
-                    key={story.id}
-                    className="glass-card cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => goToStory(story.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        goToStory(story.id);
-                      }
-                    }}
-                  >
-                    <CardContent className="px-3 py-0 md:p-4">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
-                            {story.id}
-                          </span>
-                          <span className="min-w-0 font-medium line-clamp-2 sm:truncate break-words">
-                            {story.title}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0 pl-10 sm:pl-0">
-                          {story.totalTasks > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {story.completedTasks}/{story.totalTasks} tasks
-                            </span>
-                          )}
-                          <StatusBadge status={story.status} compact />
-                        </div>
-                      </div>
-                      <StoryRowDetails story={story} className="md:ml-10" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {view === "story" && selectedStory && (
-          <StoryDetailView story={selectedStory} />
-        )}
-      </div>
+      {view === "story" && selectedStory && (
+        <StoryDetailView story={selectedStory} />
+      )}
 
       <EpicStoriesSheet
         open={sheetEpicId !== null}

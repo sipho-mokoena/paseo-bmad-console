@@ -1,91 +1,86 @@
-import { Badge } from "@/components/ui/badge";
+import { Pill, type PillTone } from "@/components/shared/pill";
 import { cn } from "@/lib/utils";
 import type { StoryDetail, StoryTicketMeta } from "@/lib/bmad/types";
 
-const RISK_TONE: Record<string, string> = {
-  low: "bg-success/15 text-success-foreground border-success/25",
-  medium: "bg-warning/15 text-warning-foreground border-warning/25",
-  high: "bg-destructive/15 text-destructive-foreground border-destructive/25",
+const RISK_TONE: Record<string, PillTone> = {
+  low: "neutral",
+  medium: "info",
+  high: "danger",
 };
 
-const CHIP = "px-1.5 py-0 text-[11px] font-normal leading-4";
-
-export function riskToneClass(risk: string): string {
-  return RISK_TONE[risk.toLowerCase()] ?? "bg-muted text-muted-foreground border-border";
+export function riskTone(risk: string): PillTone {
+  return RISK_TONE[risk.toLowerCase()] ?? "neutral";
 }
 
-/**
- * Compact summary under a story row: description (2-line clamp) and, for
- * ticket-tree stories only, a metadata row. BMad v6 stories render the
- * description alone.
- */
+const MAX_COVERS = 2;
+
+/** Type / risk / HIL / covers as small pills (inline, no wrapper element of its own). */
+export function TicketChips({
+  ticket,
+  maxCovers = MAX_COVERS,
+}: {
+  ticket: StoryTicketMeta;
+  /** Collapse extra covers into "+N" (keeps single-line rows tidy). */
+  maxCovers?: number;
+}) {
+  const shown = ticket.covers.slice(0, maxCovers);
+  const hidden = ticket.covers.length - shown.length;
+  return (
+    <>
+      {ticket.type && <Pill className="capitalize">{ticket.type}</Pill>}
+      {ticket.risk && (
+        <Pill tone={riskTone(ticket.risk)} className="capitalize">
+          {ticket.risk} risk
+        </Pill>
+      )}
+      {ticket.hitl && <Pill title="Human in the loop">HIL</Pill>}
+      {shown.map((cap) => (
+        <Pill key={cap} tone="fill" className="font-mono">
+          {cap}
+        </Pill>
+      ))}
+      {hidden > 0 && (
+        <Pill tone="fill" title={ticket.covers.join(", ")}>
+          +{hidden}
+        </Pill>
+      )}
+    </>
+  );
+}
+
+export function hasTicketChips(ticket: StoryTicketMeta | undefined | null): boolean {
+  return !!ticket && !!(ticket.type || ticket.risk || ticket.hitl || ticket.covers.length > 0);
+}
+
+/** "after 1.2, 1.3" in muted text. */
+export function AfterText({
+  ticket,
+  className,
+}: {
+  ticket: StoryTicketMeta | undefined | null;
+  className?: string;
+}) {
+  if (!ticket || ticket.after.length === 0) return null;
+  const text = `after ${ticket.after.join(", ")}`;
+  return (
+    <span title={text} className={cn("truncate text-[11px] text-muted-foreground", className)}>
+      {text}
+    </span>
+  );
+}
+
+/** Kept for existing call sites: the chips row under a story. */
 export function StoryRowDetails({
   story,
   className,
 }: {
   story: StoryDetail;
-  /** Indent so the text lines up under the title, past the id bubble. */
   className?: string;
 }) {
+  if (!story.ticket || !hasTicketChips(story.ticket)) return null;
   return (
-    <div className={cn("min-w-0", className)}>
-      {story.description && (
-        <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-          {story.description}
-        </p>
-      )}
-      {story.ticket && <TicketMetaRow ticket={story.ticket} />}
-    </div>
-  );
-}
-
-export function TicketMetaRow({ ticket }: { ticket: StoryTicketMeta }) {
-  const hasAny =
-    ticket.type ||
-    ticket.risk ||
-    ticket.hitl ||
-    ticket.covers.length > 0 ||
-    ticket.after.length > 0;
-  if (!hasAny) return null;
-
-  return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-      {ticket.type && (
-        <Badge variant="outline" className={cn(CHIP, "capitalize")}>
-          {ticket.type}
-        </Badge>
-      )}
-      {ticket.risk && (
-        <Badge
-          variant="outline"
-          className={cn(CHIP, "capitalize", riskToneClass(ticket.risk))}
-        >
-          {ticket.risk} risk
-        </Badge>
-      )}
-      {ticket.hitl && (
-        <Badge
-          variant="outline"
-          title="Human in the loop"
-          className={cn(CHIP, "bg-info/15 text-info-foreground border-info/25")}
-        >
-          HIL
-        </Badge>
-      )}
-      {ticket.covers.map((cap) => (
-        <Badge
-          key={cap}
-          variant="secondary"
-          className={cn(CHIP, "font-mono")}
-        >
-          {cap}
-        </Badge>
-      ))}
-      {ticket.after.length > 0 && (
-        <span className="text-[11px] text-muted-foreground">
-          after {ticket.after.join(", ")}
-        </span>
-      )}
+    <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", className)}>
+      <TicketChips ticket={story.ticket} maxCovers={99} />
     </div>
   );
 }

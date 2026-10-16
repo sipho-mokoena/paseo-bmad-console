@@ -1,98 +1,80 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { StatusPill, Pill } from "@/components/shared/pill";
+import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
 import { MarkdownRenderer } from "@/components/docs/markdown-renderer";
 import { CheckCircle2, Circle } from "lucide-react";
-import { SegmentedProgressBar } from "@/components/shared/segmented-progress-bar";
-import { riskToneClass } from "./story-ticket-meta";
+import { ProgressBar } from "@/components/shared/segmented-progress-bar";
+import { riskTone } from "./story-ticket-meta";
 import type { StoryDetail, StoryTicketMeta } from "@/lib/bmad/types";
 
 interface StoryDetailViewProps {
   story: StoryDetail;
 }
 
-const LABEL = "text-xs text-muted-foreground";
-const CHIP = "px-1.5 py-0 text-[11px] font-normal leading-4";
-
-function TicketDefinitions({
-  ticket,
-  status,
+function Section({
+  title,
+  aside,
+  children,
 }: {
-  ticket: StoryTicketMeta;
-  status: StoryDetail["status"];
+  title: string;
+  aside?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <Card className="glass-card">
-      <CardContent className="px-3 py-0 md:p-5 space-y-4">
-        <dl className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-3 md:gap-y-4 sm:grid-cols-4">
-          <div>
-            <dt className={LABEL}>Type</dt>
-            <dd className="mt-1 text-sm capitalize">{ticket.type ?? "-"}</dd>
-          </div>
-          <div>
-            <dt className={LABEL}>Risk</dt>
-            <dd className="mt-1">
-              {ticket.risk ? (
-                <Badge
-                  variant="outline"
-                  className={`${CHIP} capitalize ${riskToneClass(ticket.risk)}`}
-                >
-                  {ticket.risk}
-                </Badge>
-              ) : (
-                <span className="text-sm">-</span>
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt className={LABEL}>Human in the loop</dt>
-            <dd className="mt-1 text-sm">{ticket.hitl ? "Yes" : "No"}</dd>
-          </div>
-          {ticket.assignee && (
-            <div>
-              <dt className={LABEL}>Assignee</dt>
-              <dd className="mt-1 text-sm">{ticket.assignee}</dd>
-            </div>
-          )}
-        </dl>
-
-        {(ticket.covers.length > 0 || ticket.after.length > 0) && (
-          <dl className="grid gap-4 sm:grid-cols-2">
-            {ticket.covers.length > 0 && (
-              <div>
-                <dt className={LABEL}>Covers</dt>
-                <dd className="mt-1.5 flex flex-wrap gap-1.5">
-                  {ticket.covers.map((cap) => (
-                    <Badge key={cap} variant="secondary" className={`${CHIP} font-mono`}>
-                      {cap}
-                    </Badge>
-                  ))}
-                </dd>
-              </div>
-            )}
-            {ticket.after.length > 0 && (
-              <div>
-                <dt className={LABEL}>After</dt>
-                <dd className="mt-1.5 flex flex-wrap gap-1.5">
-                  {ticket.after.map((ref) => (
-                    <Badge key={ref} variant="outline" className={`${CHIP} font-mono`}>
-                      {ref}
-                    </Badge>
-                  ))}
-                </dd>
-              </div>
-            )}
-          </dl>
-        )}
-
-        {status === "blocked" && ticket.blockedReason && (
-          <p className="text-sm text-destructive-foreground">
-            Blocked: {ticket.blockedReason}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-xs text-muted-foreground">{title}</h4>
+        {aside}
+      </div>
+      {children}
+    </section>
   );
+}
+
+function ticketRows(ticket: StoryTicketMeta): DefinitionRow[] {
+  const rows: DefinitionRow[] = [
+    { label: "type", value: <span className="capitalize">{ticket.type ?? "-"}</span> },
+    {
+      label: "risk",
+      value: ticket.risk ? (
+        <Pill tone={riskTone(ticket.risk)} className="capitalize">
+          {ticket.risk}
+        </Pill>
+      ) : (
+        "-"
+      ),
+    },
+    { label: "human in the loop", value: ticket.hitl ? "Yes" : "No" },
+  ];
+  if (ticket.assignee) rows.push({ label: "assignee", value: ticket.assignee });
+  if (ticket.covers.length > 0) {
+    rows.push({
+      label: "covers",
+      value: (
+        <span className="flex flex-wrap gap-1.5">
+          {ticket.covers.map((cap) => (
+            <Pill key={cap} tone="fill" className="font-mono">
+              {cap}
+            </Pill>
+          ))}
+        </span>
+      ),
+    });
+  }
+  if (ticket.after.length > 0) {
+    rows.push({
+      label: "after",
+      value: (
+        <span className="flex flex-wrap gap-1.5">
+          {ticket.after.map((ref) => (
+            <Pill key={ref} className="font-mono">
+              {ref}
+            </Pill>
+          ))}
+        </span>
+      ),
+    });
+  }
+  return rows;
 }
 
 export function StoryDetailView({ story }: StoryDetailViewProps) {
@@ -102,97 +84,88 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
   const criteria = ticket ? story.acceptanceCriteria.slice(1) : story.acceptanceCriteria;
 
   return (
-    <div className="space-y-3 md:space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:pr-8">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex shrink-0 items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-            Story {story.id}
-          </span>
-          <h3 className="min-w-0 text-base md:text-lg font-medium break-words">{story.title}</h3>
+        <div className="flex min-w-0 items-baseline gap-3">
+          <span className="shrink-0 font-mono text-xs text-muted-foreground">{story.id}</span>
+          <h3 className="min-w-0 break-words text-base font-medium">{story.title}</h3>
         </div>
-        <div className="shrink-0 self-start"><StatusBadge status={story.status} /></div>
+        <div className="shrink-0 self-start">
+          <StatusPill status={story.status} />
+        </div>
       </div>
 
-      {/* Ticket metadata (ticket-tree stories only) */}
-      {ticket && <TicketDefinitions ticket={ticket} status={story.status} />}
+      {ticket && (
+        <div className="space-y-2">
+          <DefinitionTable rows={ticketRows(ticket)} />
+          {story.status === "blocked" && ticket.blockedReason && (
+            <p className="text-[13px] text-destructive-foreground">
+              Blocked: {ticket.blockedReason}
+            </p>
+          )}
+        </div>
+      )}
 
-      {/* Description */}
       {story.description && (
-        <Card className="glass-card">
-          <CardContent className="px-3 py-0 md:p-5">
-            <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
-              Description
-            </h4>
-            <MarkdownRenderer content={story.description} />
-          </CardContent>
-        </Card>
+        <Section title="Description">
+          <MarkdownRenderer content={story.description} />
+        </Section>
       )}
 
-      {/* Verify: for ticket stories acceptanceCriteria[0] is the verify text */}
       {ticket && verify && (
-        <Card className="glass-card">
-          <CardContent className="px-3 py-0 md:p-5">
-            <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
-              Verify
-            </h4>
-            <p className="text-sm leading-relaxed">{verify}</p>
-          </CardContent>
-        </Card>
+        <Section title="Verify">
+          <p className="text-[13px] leading-relaxed">{verify}</p>
+        </Section>
       )}
 
-      {/* Acceptance Criteria (BMad v6: all items; ticket stories: items after Verify) */}
       {criteria.length > 0 && (
-        <Card className="glass-card">
-          <CardContent className="px-3 py-0 md:p-5">
-            <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
-              Acceptance Criteria
-            </h4>
-            <ul className="space-y-2">
-              {criteria.map((criterion, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm">
-                  <span className="mt-0.5 text-muted-foreground">•</span>
-                  <span className="min-w-0 break-words">{criterion}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <Section title="Acceptance criteria">
+          <ul className="space-y-1.5">
+            {criteria.map((criterion, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13px]">
+                <span className="mt-0.5 text-muted-foreground">•</span>
+                <span className="min-w-0 break-words">{criterion}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
       )}
 
-      {/* Tasks */}
       {story.tasks.length > 0 && (
-        <Card className="glass-card">
-          <CardContent className="px-3 py-0 md:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                Tasks
-              </h4>
-              <span className="text-xs text-muted-foreground">
-                {story.completedTasks} of {story.totalTasks} completed
-              </span>
-            </div>
-            <SegmentedProgressBar
-              percent={story.totalTasks > 0 ? Math.round((story.completedTasks / story.totalTasks) * 100) : 0}
-              color={story.completedTasks === story.totalTasks ? "bg-success" : "bg-warning"}
-              className="h-2 mb-4"
-            />
-            <ul className="space-y-2">
-              {story.tasks.map((task, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm">
-                  {task.completed ? (
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
-                  ) : (
-                    <Circle className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                  )}
-                  <span className={`min-w-0 break-words ${task.completed ? "text-muted-foreground line-through" : ""}`}>
-                    {task.description}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <Section
+          title="Tasks"
+          aside={
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {story.completedTasks} of {story.totalTasks} completed
+            </span>
+          }
+        >
+          <ProgressBar
+            percent={
+              story.totalTasks > 0
+                ? Math.round((story.completedTasks / story.totalTasks) * 100)
+                : 0
+            }
+            label="Task progress"
+          />
+          <ul className="space-y-1.5 pt-1">
+            {story.tasks.map((task, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13px]">
+                {task.completed ? (
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                ) : (
+                  <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                )}
+                <span
+                  className={`min-w-0 break-words ${task.completed ? "text-muted-foreground line-through" : ""}`}
+                >
+                  {task.description}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
       )}
     </div>
   );
