@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -18,6 +19,7 @@ import {
   buildRepoAssetUrl,
   isRelativeImageHref,
   resolveImageSrc,
+  resolveRepoRelativePath,
   type DocAssetContext,
 } from "@/lib/docs/asset-paths";
 import {
@@ -29,15 +31,24 @@ import {
   OctagonAlert,
 } from "lucide-react";
 
+/**
+ * Maps the repo-relative path of a linked markdown document to an app URL
+ * (without hash). Without a resolver, relative links are left untouched.
+ */
+export type MarkdownLinkResolver = (repoPath: string) => string | null;
+
 interface MarkdownRendererProps {
   content: string;
   /** Repo identifiers and the repo-relative path of this document, used to resolve relative images. */
   owner?: string;
   repo?: string;
   docPath?: string;
+  /** Optional: route relative links to other markdown documents inside the app. */
+  linkResolver?: MarkdownLinkResolver;
 }
 
 const DocAssetCtx = createContext<DocAssetContext | null>(null);
+const LinkResolverCtx = createContext<MarkdownLinkResolver | null>(null);
 
 const CALLOUT_CONFIG: Record<
   string,
@@ -179,6 +190,7 @@ function CalloutBlockquote(props: React.ComponentProps<"blockquote">) {
 
 function SmartLink(props: React.ComponentProps<"a">) {
   const docAsset = useContext(DocAssetCtx);
+  const linkResolver = useContext(LinkResolverCtx);
   const { href, children, ...rest } = props;
   const isExternal =
     href && (href.startsWith("http://") || href.startsWith("https://"));
@@ -190,6 +202,20 @@ function SmartLink(props: React.ComponentProps<"a">) {
         <ExternalLink className="ml-1 inline-block size-3.5 align-text-bottom" />
       </a>
     );
+  }
+
+  // Relative link to another markdown document: let the host route it.
+  if (docAsset && linkResolver && href && /\.md(?:[?#]|$)/i.test(href)) {
+    const target = resolveRepoRelativePath(docAsset.docPath, href);
+    const url = target ? linkResolver(target) : null;
+    if (url) {
+      const hash = href.includes("#") ? href.slice(href.indexOf("#")) : "";
+      return (
+        <Link href={url + hash} className={rest.className} title={rest.title}>
+          {children}
+        </Link>
+      );
+    }
   }
 
   // Relative link that points at an image in the repo: serve it through the asset route.
@@ -269,11 +295,18 @@ const components: Components = {
   },
 };
 
-export function MarkdownRenderer({ content, owner, repo, docPath }: MarkdownRendererProps) {
+export function MarkdownRenderer({
+  content,
+  owner,
+  repo,
+  docPath,
+  linkResolver,
+}: MarkdownRendererProps) {
   const docAsset: DocAssetContext | null =
     owner && repo && docPath ? { owner, repo, docPath } : null;
   return (
     <DocAssetCtx.Provider value={docAsset}>
+      <LinkResolverCtx.Provider value={linkResolver ?? null}>
       <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none break-words">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
@@ -288,6 +321,7 @@ export function MarkdownRenderer({ content, owner, repo, docPath }: MarkdownRend
           {content}
         </ReactMarkdown>
       </div>
+      </LinkResolverCtx.Provider>
     </DocAssetCtx.Provider>
   );
 }
