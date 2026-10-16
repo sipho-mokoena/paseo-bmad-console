@@ -9,6 +9,8 @@ interface StoryRowProps {
   onClick: () => void;
   /** Shows the owning epic (search results listing stories of many epics). */
   showEpic?: boolean;
+  /** Muted project name column (results spanning several projects). */
+  project?: string;
   className?: string;
 }
 
@@ -16,7 +18,7 @@ interface StoryRowProps {
  * History-style story row: id, title › description, pills, after text, status.
  * One line on desktop; on phones the pills wrap to a second line.
  */
-export function StoryRow({ story, onClick, showEpic, className }: StoryRowProps) {
+export function StoryRow({ story, onClick, showEpic, project, className }: StoryRowProps) {
   const ticket = story.ticket;
   const chips = hasTicketChips(ticket);
   const hasAfter = !!ticket && ticket.after.length > 0;
@@ -54,6 +56,14 @@ export function StoryRow({ story, onClick, showEpic, className }: StoryRowProps)
       {story.totalTasks > 0 && (
         <span className="hidden shrink-0 text-xs tabular-nums text-muted-foreground lg:inline">
           {story.completedTasks}/{story.totalTasks}
+        </span>
+      )}
+      {project && (
+        <span
+          title={project}
+          className="order-2 max-w-24 shrink-0 truncate text-xs text-muted-foreground lg:w-28 lg:max-w-none"
+        >
+          {project}
         </span>
       )}
       <span className="order-2 flex shrink-0 justify-end lg:w-28">

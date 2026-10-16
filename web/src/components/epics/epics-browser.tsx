@@ -58,7 +58,22 @@ export function EpicsBrowser({
   const [storyView, setStoryView] = useState<"table" | "kanban">("table");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filter<string>[]>([]);
-  const [selectedStory, setSelectedStory] = useState<StoryDetail | null>(null);
+  const [localStory, setSelectedStory] = useState<StoryDetail | null>(null);
+  // ?story=<id> (from global Search) opens that story's sheet; Back/Forward follow the URL.
+  const storyParam = searchParams.get("story");
+  const urlStory = useMemo(
+    () => (storyParam ? (stories.find((s) => s.id === storyParam) ?? null) : null),
+    [stories, storyParam],
+  );
+  const selectedStory = localStory ?? urlStory;
+  const closeStory = useCallback(() => {
+    setSelectedStory(null);
+    if (!storyParam) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("story");
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }, [storyParam, searchParams, router, pathname]);
   const [sheetEpicId, setSheetEpicId] = useState<string | null>(null);
 
   // Search and filters belong to one level: reset them when the level changes
@@ -259,7 +274,7 @@ export function EpicsBrowser({
       <Sheet
         open={selectedStory !== null}
         onOpenChange={(open) => {
-          if (!open) setSelectedStory(null);
+          if (!open) closeStory();
         }}
       >
         <SheetContent side="right" className="w-full max-w-full sm:max-w-2xl overflow-y-auto overflow-x-hidden">

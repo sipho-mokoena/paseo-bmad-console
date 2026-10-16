@@ -9,11 +9,13 @@ interface EpicRowProps {
   epic: Epic;
   href?: string;
   onClick?: () => void;
+  /** Muted project name column (results spanning several projects). */
+  project?: string;
   className?: string;
 }
 
 /** History-style epic row: E1  Title › description   12/14  ▬▬▬  [Done]. */
-export function EpicRow({ epic, href, onClick, className }: EpicRowProps) {
+export function EpicRow({ epic, href, onClick, project, className }: EpicRowProps) {
   const body = (
     <>
       <span className="w-7 shrink-0 font-mono text-xs text-muted-foreground">
@@ -32,6 +34,14 @@ export function EpicRow({ epic, href, onClick, className }: EpicRowProps) {
           </>
         )}
       </span>
+      {project && (
+        <span
+          title={project}
+          className="max-w-24 shrink-0 truncate text-xs text-muted-foreground lg:w-28 lg:max-w-none"
+        >
+          {project}
+        </span>
+      )}
       <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground sm:w-12">
         {epic.completedStories}/{epic.totalStories}
       </span>

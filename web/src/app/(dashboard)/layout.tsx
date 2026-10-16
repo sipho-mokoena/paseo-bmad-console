@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
+import { SearchShortcut } from "@/components/layout/search-shortcut";
 import { BreadcrumbProvider } from "@/contexts/breadcrumb-context";
 import { redirect } from "next/navigation";
 import {
@@ -29,6 +30,7 @@ export default async function DashboardLayout({
   return (
     <BreadcrumbProvider>
       <SidebarProvider>
+        <SearchShortcut />
         <AppSidebar
           repos={repos}
           userEmail={session.email}
