@@ -54,14 +54,14 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-3.75 z-30 flex h-14 items-center gap-4 bg-sidebar border border-sidebar-border rounded-lg mt-3.75 mr-3.75 px-6 overflow-hidden">
-      <SidebarTrigger className="-ml-2" />
-      <Separator orientation="vertical" className="h-6" />
-      <nav className="flex items-center gap-1.5 text-lg min-w-0">
+    <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] md:top-3.75 z-30 flex h-12 md:h-14 items-center gap-2 md:gap-4 bg-sidebar border border-sidebar-border rounded-lg mt-[max(0.5rem,env(safe-area-inset-top))] mx-2 md:mx-0 md:mt-3.75 md:mr-3.75 px-2 md:px-6 overflow-hidden">
+      <SidebarTrigger className="md:-ml-2 size-10 md:size-7 shrink-0" />
+      <Separator orientation="vertical" className="h-6 hidden md:block" />
+      <nav className="flex items-center gap-1.5 text-base md:text-lg min-w-0 flex-1 md:flex-none overflow-hidden">
         {breadcrumbs.map((crumb, i) => (
-          <span key={`${crumb.label}-${i}`} className="flex items-center gap-1.5 min-w-0">
+          <span key={`${crumb.label}-${i}`} className={`flex items-center gap-1.5 min-w-0 ${i < breadcrumbs.length - 2 ? "hidden sm:flex" : ""} ${i === breadcrumbs.length - 1 ? "shrink-0 max-w-[60%] sm:max-w-none sm:shrink" : ""}`}>
             {i > 0 && (
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground shrink-0 ${i === breadcrumbs.length - 2 ? "hidden sm:block" : ""}`} />
             )}
             {i === breadcrumbs.length - 1 ? (
               <span className="font-medium truncate">{crumb.label}</span>
@@ -86,12 +86,12 @@ export function AppHeader() {
       <Link
         href="/search"
         aria-label="Search"
-        className="ml-auto inline-flex h-8 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="md:ml-auto ml-0 inline-flex size-10 md:size-auto md:h-8 shrink-0 items-center justify-center gap-2 rounded-lg md:border border-border md:px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
         <Search className="h-4 w-4" />
-        <span>Search</span>
+        <span className="hidden md:inline">Search</span>
       </Link>
-      <AnimatedThemeToggler className="rounded-full p-2 hover:bg-accent shrink-0" />
+      <AnimatedThemeToggler className="rounded-full p-2.5 md:p-2 hover:bg-accent shrink-0" />
       <ScrollProgress />
     </header>
   );
