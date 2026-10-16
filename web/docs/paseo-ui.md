@@ -132,4 +132,4 @@ Page shell (`packages/website/src/components/site-shell.tsx`): `max-w-5xl p-6 md
 
 - `packages/website/public/logo.svg` (mark, 700x700 viewBox) and `packages/website/public/favicon.svg`.
 - `packages/desktop/assets/icon.png` (512), `64x64.png`, `128x128.png`, `32x32.png`, `icon.ico`.
-- Copied into `web/public/brand/` and `web/src/app/icon.png` (see commit log).
+- Copied into `web/public/logo.png` (replaces `logo_mybmad.png`, used by the sidebar, login and add-repo card), `web/src/app/icon.png` (app icon) and `web/public/favicon.svg`.
