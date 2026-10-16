@@ -133,3 +133,27 @@ Page shell (`packages/website/src/components/site-shell.tsx`): `max-w-5xl p-6 md
 - `packages/website/public/logo.svg` (mark, 700x700 viewBox) and `packages/website/public/favicon.svg`.
 - `packages/desktop/assets/icon.png` (512), `64x64.png`, `128x128.png`, `32x32.png`, `icon.ico`.
 - Copied into `web/public/logo.png` (replaces `logo_mybmad.png`, used by the sidebar, login and add-repo card), `web/src/app/icon.png` (app icon) and `web/public/favicon.svg`.
+
+## Mobile
+
+Paseo treats everything below `md` as a compact form factor (`packages/app/src/constants/layout.ts`: `isCompactBreakpoint`, `COMPACT_FORM_FACTOR_WIDTH = 500`). Only that file was read for the app package; the other values below are our own choices made in the same spirit, checked visually at 390x844 and 360x740.
+
+Adopted from Paseo:
+
+- Compact layout is a separate branch below `md`, desktop spacing is untouched (`md:` prefixes restore the old values).
+- Mobile header has its own height and a fixed 8px top padding plus the safe-area inset (`HEADER_TOP_PADDING_MOBILE = 8`, we use `max(0.5rem, env(safe-area-inset-top))`). Our header is 48px on mobile (Paseo uses 56px inner height with a 36px desktop header; ours is 56px on desktop).
+- Sidebar becomes a drawer below `md` (already the shadcn Sheet), capped at `min(18rem, 85vw)`, with safe-area padding top and bottom.
+
+Our own rules:
+
+- Gutters: 8px (`px-2`) page and header margin, `gap-2`/`gap-3` between cards, card padding `py-4`/`px-3`/`px-4` (desktop keeps `py-6`/`px-6`).
+- Titles `text-2xl` below `md`, `text-3xl` from `md`.
+- Touch targets 40px: header buttons, sidebar rows, sheet and dialog close, story rows.
+- Segmented progress bars render a continuous bar below `md`; the ticks return from `md`.
+- Status badges never shrink (`shrink-0 whitespace-nowrap`); titles wrap or clamp instead. `min-w-24` only from `md`.
+- Breadcrumb shows the last two crumbs below `sm`; the Search button is icon-only below `md`.
+- Epic timeline rail is hidden below `md`; the status badge moves next to the title.
+- Stories table is a stacked list (ID and status, title, epic and tasks) below `md`, with "Show more"; the Board is a horizontal scroll-snap strip at 85% column width.
+- Library: the file tree is a collapsible section that closes after picking a file; content takes the full width and the page scrolls (no fixed inner height below `md`).
+- Dialog: top-anchored on mobile (keyboard-safe), `max-h-[calc(100dvh-2rem)]`, 16px side margins. Sheet: `h-dvh`, safe-area padding.
+- `viewport` export in `app/layout.tsx`: `width=device-width`, `initialScale=1`, `viewportFit=cover`, `themeColor` per colour scheme.

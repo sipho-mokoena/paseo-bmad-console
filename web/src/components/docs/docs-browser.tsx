@@ -49,7 +49,7 @@ function CodeRenderer({
   }, [content, language]);
 
   return (
-    <pre className="hljs rounded-lg p-4 overflow-x-auto text-sm leading-relaxed">
+    <pre className="hljs rounded-lg p-3 md:p-4 overflow-x-auto max-w-full text-sm leading-relaxed">
       <code dangerouslySetInnerHTML={{ __html: html }} />
     </pre>
   );
@@ -117,9 +117,12 @@ function FilePanel({
   const [parsedFile, setParsedFile] = useState<ParsedBmadFile | null>(null);
   const [loading, setLoading] = useState(!!initialSelectedFile);
   const [error, setError] = useState<string | null>(null);
+  // Phone: the tree is a collapsible section that closes once a file is picked.
+  const [treeOpen, setTreeOpen] = useState(!initialSelectedFile);
 
   const handleSelect = useCallback((path: string) => {
     setSelectedPath(path);
+    setTreeOpen(false);
     setLoading(true);
     setError(null);
   }, []);
@@ -170,10 +173,26 @@ function FilePanel({
   }
 
   return (
-    <StaggeredList className="flex gap-4 h-[calc(100vh-17rem)]" staggerDelay={0.1}>
-      <StaggeredItem>
-      <Card className="glass-card w-64 shrink-0 overflow-hidden h-full">
-        <ScrollArea className="h-full p-3 [&_[data-slot=scroll-area-viewport]>div]:block!">
+    <StaggeredList className="flex min-w-0 flex-col gap-3 md:flex-row md:gap-4 md:h-[calc(100vh-17rem)]" staggerDelay={0.1}>
+      <StaggeredItem className="md:h-full">
+      <Card className="glass-card w-full gap-0 overflow-hidden py-0 md:w-64 md:shrink-0 md:h-full md:py-6 md:gap-6">
+        <button
+          type="button"
+          onClick={() => setTreeOpen((o) => !o)}
+          aria-expanded={treeOpen}
+          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-medium md:hidden"
+        >
+          <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
+          <span className="min-w-0 flex-1 truncate">
+            {selectedPath ? selectedPath.split("/").pop() : "Files"}
+          </span>
+          {treeOpen ? (
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          ) : (
+            <ChevronRight className="h-4 w-4 shrink-0" />
+          )}
+        </button>
+        <ScrollArea className={`${treeOpen ? "" : "hidden md:block"} max-h-[55dvh] border-t p-2 md:max-h-none md:h-full md:border-t-0 md:p-3 [&_[data-slot=scroll-area-viewport]>div]:block!`}>
           {hasSecondary ? (
             <div className="space-y-2">
               <CollapsibleSection
@@ -211,9 +230,9 @@ function FilePanel({
       </Card>
       </StaggeredItem>
 
-      <StaggeredItem className="flex-1">
-      <Card className="glass-card overflow-hidden h-full">
-        <ScrollArea className="h-full p-6">
+      <StaggeredItem className="min-w-0 md:flex-1 md:h-full">
+      <Card className="glass-card overflow-hidden py-3 md:h-full md:py-6">
+        <ScrollArea className="p-3 md:h-full md:p-6">
           <div aria-live="polite">
             {loading ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -353,18 +372,18 @@ export function DocsBrowser({
   // Both exist — show tabs
   return (
     <Tabs defaultValue={defaultTab}>
-      <TabsList>
-        <TabsTrigger value="bmad" className="gap-1.5">
+      <TabsList className="w-full sm:w-fit">
+        <TabsTrigger value="bmad" className="min-w-0 flex-1 gap-1.5 sm:flex-none">
           <Cog className="size-4" />
           BMAD Artifacts
         </TabsTrigger>
-        <TabsTrigger value="docs" className="gap-1.5">
+        <TabsTrigger value="docs" className="min-w-0 flex-1 gap-1.5 sm:flex-none">
           <FolderOpen className="size-4" />
           Project Documentation
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="bmad" className="mt-4">
+      <TabsContent value="bmad" className="mt-3 md:mt-4">
         <FilePanel
           fileTree={fileTree}
           secondaryTree={bmadCoreTree.length > 0 ? bmadCoreTree : undefined}
@@ -374,7 +393,7 @@ export function DocsBrowser({
         />
       </TabsContent>
 
-      <TabsContent value="docs" className="mt-4">
+      <TabsContent value="docs" className="mt-3 md:mt-4">
         <FilePanel
           fileTree={docsTree}
           owner={owner}
