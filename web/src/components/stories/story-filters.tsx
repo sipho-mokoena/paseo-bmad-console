@@ -23,7 +23,11 @@ interface StoryFiltersProps {
   onSearchChange: (value: string) => void;
   filters: Filter<string>[];
   onFiltersChange: (filters: Filter<string>[]) => void;
-  epics: Epic[];
+  /** Offers an Epic filter when given; omitted when the epic is already fixed. */
+  epics?: Epic[];
+  placeholder?: string;
+  /** Hides the Filter control (search only). */
+  hideFilters?: boolean;
 }
 
 export function StoryFilters({
@@ -32,6 +36,8 @@ export function StoryFilters({
   filters,
   onFiltersChange,
   epics,
+  placeholder = "Search stories",
+  hideFilters = false,
 }: StoryFiltersProps) {
   const fields: FilterFieldConfig<string>[] = [
     {
@@ -40,15 +46,19 @@ export function StoryFilters({
       type: "multiselect",
       options: STATUS_OPTIONS,
     },
-    {
-      key: "epicId",
-      label: "Epic",
-      type: "select",
-      options: epics.map((e) => ({
-        value: e.id,
-        label: `Epic ${e.id}: ${e.title}`,
-      })),
-    },
+    ...(epics
+      ? [
+          {
+            key: "epicId",
+            label: "Epic",
+            type: "select" as const,
+            options: epics.map((e) => ({
+              value: e.id,
+              label: `Epic ${e.id}: ${e.title}`,
+            })),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -56,17 +66,19 @@ export function StoryFilters({
       <SearchField
         value={search}
         onChange={onSearchChange}
-        placeholder="Search stories"
+        placeholder={placeholder}
         className="order-1 min-w-0 flex-1 sm:order-none sm:max-w-sm"
       />
-      <div className="order-3 basis-full sm:order-none sm:basis-auto">
-        <Filters
-          filters={filters}
-          fields={fields}
-          onChange={onFiltersChange}
-          size="sm"
-        />
-      </div>
+      {!hideFilters && (
+        <div className="order-3 basis-full sm:order-none sm:basis-auto">
+          <Filters
+            filters={filters}
+            fields={fields}
+            onChange={onFiltersChange}
+            size="sm"
+          />
+        </div>
+      )}
     </div>
   );
 }

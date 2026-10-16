@@ -55,9 +55,11 @@ interface StoriesTableProps {
   stories: StoryDetail[];
   /** Opens the story detail (row click, Enter or Space). */
   onStorySelect?: (story: StoryDetail) => void;
+  /** Hides the Epic column (when the list is already scoped to one epic). */
+  hideEpicColumn?: boolean;
 }
 
-export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
+export function StoriesTable({ stories, onStorySelect, hideEpicColumn }: StoriesTableProps) {
   const [sort, setSort] = useState<SortState>(null);
   const [visible, setVisible] = useState(PAGE);
 
@@ -105,7 +107,7 @@ export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
         <table className="w-full table-fixed border-collapse text-[13px]">
           <thead className="sticky top-[calc(var(--app-header-h)+2.25rem)] z-10 bg-background">
             <tr className="border-b text-left text-xs text-muted-foreground">
-              {HEADERS.map((h) => {
+              {HEADERS.filter((h) => !(hideEpicColumn && h.key === "epicTitle")).map((h) => {
                 const active = h.key && sort?.key === h.key;
                 return (
                   <th
@@ -178,9 +180,11 @@ export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
                 <td className="px-2 py-1.5">
                   <StatusPill status={story.status} />
                 </td>
-                <td className="hidden truncate px-2 py-1.5 text-muted-foreground min-[1400px]:table-cell">
-                  {story.epicTitle || "-"}
-                </td>
+                {!hideEpicColumn && (
+                  <td className="hidden truncate px-2 py-1.5 text-muted-foreground min-[1400px]:table-cell">
+                    {story.epicTitle || "-"}
+                  </td>
+                )}
                 <td className="rounded-r-md px-2 py-1.5 text-right text-xs tabular-nums text-muted-foreground">
                   {story.totalTasks > 0 ? `${story.completedTasks}/${story.totalTasks}` : "-"}
                 </td>
