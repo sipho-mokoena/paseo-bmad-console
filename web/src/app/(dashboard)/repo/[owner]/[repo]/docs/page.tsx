@@ -27,39 +27,23 @@ export default async function DocsPage({
 
   if (!result.success) {
     return (
-      <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-medium tracking-tight">Library</h1>
-          <p className="text-muted-foreground mt-1">
-            Browse the project files
-          </p>
-        </div>
-        <div
-          className="flex items-center justify-center h-64 text-muted-foreground"
-          role="alert"
-        >
-          <p>{result.error}</p>
-        </div>
+      <div
+        className="flex min-h-40 items-center justify-center px-4 py-10 text-center text-[13px] text-muted-foreground"
+        role="alert"
+      >
+        <p>{result.error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-medium tracking-tight">Library</h1>
-        <p className="text-muted-foreground mt-1">
-          Browse the project files
-        </p>
-      </div>
-      <DocsBrowser
-        fileTree={result.data.fileTree}
-        docsTree={result.data.docsTree}
-        bmadCoreTree={result.data.bmadCoreTree}
-        owner={owner}
-        repo={repoName}
-        initialSelectedFile={initialFile}
-      />
-    </div>
+    <DocsBrowser
+      fileTree={result.data.fileTree}
+      docsTree={result.data.docsTree}
+      bmadCoreTree={result.data.bmadCoreTree}
+      owner={owner}
+      repo={repoName}
+      initialSelectedFile={initialFile}
+    />
   );
 }

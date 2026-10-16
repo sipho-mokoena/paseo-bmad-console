@@ -213,7 +213,7 @@ function LazyImage(props: React.ComponentProps<"img">) {
       src={resolveImageSrc(typeof src === "string" ? src : undefined, docAsset)}
       alt={alt ?? ""}
       loading="lazy"
-      className={cn("rounded-lg shadow-sm max-w-full h-auto", className)}
+      className={cn("rounded-lg border max-w-full h-auto", className)}
     />
   );
   /* eslint-enable @next/next/no-img-element */
@@ -255,7 +255,7 @@ export function MarkdownRenderer({ content, owner, repo, docPath }: MarkdownRend
     owner && repo && docPath ? { owner, repo, docPath } : null;
   return (
     <DocAssetCtx.Provider value={docAsset}>
-      <div className="prose prose-sm md:prose-base prose-zinc dark:prose-invert max-w-none break-words">
+      <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none break-words">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[

@@ -5,16 +5,11 @@ import { FileTree } from "./file-tree";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { TableOfContents } from "./table-of-contents";
 import { FileMetadataBar } from "./file-metadata-bar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { StaggeredList, StaggeredItem } from "@/components/shared/staggered-list";
+import { PillToggle, StateMessage } from "@/components/shared/list-kit";
+import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
+import { Pill } from "@/components/shared/pill";
 import {
-  FileText,
   FolderOpen,
-  Cog,
   AlertTriangle,
   FileOutput,
   Settings,
@@ -49,7 +44,7 @@ function CodeRenderer({
   }, [content, language]);
 
   return (
-    <pre className="hljs rounded-lg p-3 md:p-4 overflow-x-auto max-w-full text-sm leading-relaxed">
+    <pre className="hljs overflow-x-auto rounded-lg border p-3 text-[13px] leading-relaxed max-w-full">
       <code dangerouslySetInnerHTML={{ __html: html }} />
     </pre>
   );
@@ -73,7 +68,7 @@ function CollapsibleSection({
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="flex w-full items-center gap-1.5 py-1.5 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors duration-300"
+        className="flex min-h-7 w-full items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
       >
         {open ? (
           <ChevronDown className="h-3 w-3 shrink-0" />
@@ -98,18 +93,44 @@ function treeContainsPath(nodes: FileTreeNode[], path: string): boolean {
   return false;
 }
 
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function frontmatterValue(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (Array.isArray(v)) return v.map(frontmatterValue).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+function frontmatterRows(fm: Record<string, unknown>): DefinitionRow[] {
+  return Object.entries(fm).map(([label, value]) => ({
+    label,
+    value: frontmatterValue(value),
+  }));
+}
+
+type ViewMode = "preview" | "source";
+
 function FilePanel({
   fileTree,
   secondaryTree,
   owner,
   repo,
   initialSelectedFile,
+  sources,
 }: {
   fileTree: FileTreeNode[];
   secondaryTree?: FileTreeNode[];
   owner: string;
   repo: string;
   initialSelectedFile?: string;
+  /** When both BMAD and docs trees exist, switch between them in the panel header. */
+  sources?: { value: string; label: string; active: string; onChange: (v: string) => void };
 }) {
   const [selectedPath, setSelectedPath] = useState<string | null>(
     initialSelectedFile ?? null,
@@ -117,6 +138,7 @@ function FilePanel({
   const [parsedFile, setParsedFile] = useState<ParsedBmadFile | null>(null);
   const [loading, setLoading] = useState(!!initialSelectedFile);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<ViewMode>("preview");
   // Phone: the tree is a collapsible section that closes once a file is picked.
   const [treeOpen, setTreeOpen] = useState(!initialSelectedFile);
 
@@ -125,6 +147,7 @@ function FilePanel({
     setTreeOpen(false);
     setLoading(true);
     setError(null);
+    setMode("preview");
   }, []);
 
   useEffect(() => {
@@ -156,6 +179,14 @@ function FilePanel({
     };
   }, [selectedPath, owner, repo]);
 
+  const stats = useMemo(() => {
+    if (!parsedFile) return null;
+    const raw = parsedFile.rawContent ?? parsedFile.body;
+    const bytes = new TextEncoder().encode(raw).length;
+    const lines = raw.length === 0 ? 0 : raw.replace(/\n$/, "").split("\n").length;
+    return `${formatSize(bytes)} · ${lines} ${lines === 1 ? "line" : "lines"}`;
+  }, [parsedFile]);
+
   const hasSecondary = secondaryTree && secondaryTree.length > 0;
   const initialInSecondary =
     hasSecondary && initialSelectedFile
@@ -165,126 +196,118 @@ function FilePanel({
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-3">
-        <FolderOpen className="h-12 w-12 opacity-30" />
-        <p>No files found</p>
-      </div>
+      <StateMessage>
+        <span className="flex flex-col items-center gap-2">
+          <FolderOpen className="size-5 opacity-60" aria-hidden="true" />
+          No files found
+        </span>
+      </StateMessage>
     );
   }
 
+  const fm =
+    parsedFile?.frontmatter && Object.keys(parsedFile.frontmatter).length > 0
+      ? parsedFile.frontmatter
+      : null;
+  const codeLanguage =
+    parsedFile?.contentType === "yaml"
+      ? "yaml"
+      : parsedFile?.contentType === "json"
+        ? "json"
+        : "plaintext";
+
+  const tree = hasSecondary ? (
+    <div className="space-y-2">
+      <CollapsibleSection title="Project artifacts" icon={FileOutput} defaultOpen>
+        <FileTree
+          nodes={fileTree}
+          selectedPath={selectedPath || undefined}
+          onSelect={handleSelect}
+        />
+      </CollapsibleSection>
+      <div className="border-t" />
+      <CollapsibleSection
+        title="BMAD configuration"
+        icon={Settings}
+        defaultOpen={initialInSecondary}
+      >
+        <FileTree
+          nodes={secondaryTree}
+          selectedPath={selectedPath || undefined}
+          onSelect={handleSelect}
+        />
+      </CollapsibleSection>
+    </div>
+  ) : (
+    <FileTree
+      nodes={fileTree}
+      selectedPath={selectedPath || undefined}
+      onSelect={handleSelect}
+    />
+  );
+
   return (
-    <StaggeredList className="flex min-w-0 flex-col gap-3 md:flex-row md:gap-4 md:h-[calc(100vh-17rem)]" staggerDelay={0.1}>
-      <StaggeredItem className="md:h-full">
-      <Card className="glass-card w-full gap-0 overflow-hidden py-0 md:w-64 md:shrink-0 md:h-full md:py-6 md:gap-6">
-        <button
-          type="button"
-          onClick={() => setTreeOpen((o) => !o)}
-          aria-expanded={treeOpen}
-          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-medium md:hidden"
-        >
-          <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1 truncate">
-            {selectedPath ? selectedPath.split("/").pop() : "Files"}
+    <div className="-mx-2 -mb-4 -mt-2 flex min-w-0 flex-col md:-m-6 lg:h-[calc(100dvh-var(--app-header-h)-2.25rem-env(safe-area-inset-top))] lg:flex-row">
+      {/* Content column */}
+      <div className="min-w-0 flex-1 lg:overflow-y-auto">
+        <div className="z-10 flex min-h-9 items-center justify-between gap-2 border-b bg-background px-3 lg:sticky lg:top-0">
+          <span className="min-w-0 truncate text-xs text-muted-foreground">
+            {selectedPath && stats ? stats : ""}
           </span>
-          {treeOpen ? (
-            <ChevronDown className="h-4 w-4 shrink-0" />
-          ) : (
-            <ChevronRight className="h-4 w-4 shrink-0" />
-          )}
-        </button>
-        <ScrollArea className={`${treeOpen ? "" : "hidden md:block"} max-h-[55dvh] border-t p-2 md:max-h-none md:h-full md:border-t-0 md:p-3 [&_[data-slot=scroll-area-viewport]>div]:block!`}>
-          {hasSecondary ? (
-            <div className="space-y-2">
-              <CollapsibleSection
-                title="Project Artifacts"
-                icon={FileOutput}
-                defaultOpen
-              >
-                <FileTree
-                  nodes={fileTree}
-                  selectedPath={selectedPath || undefined}
-                  onSelect={handleSelect}
-                />
-              </CollapsibleSection>
-              <Separator />
-              <CollapsibleSection
-                title="BMAD Configuration"
-                icon={Settings}
-                defaultOpen={initialInSecondary}
-              >
-                <FileTree
-                  nodes={secondaryTree}
-                  selectedPath={selectedPath || undefined}
-                  onSelect={handleSelect}
-                />
-              </CollapsibleSection>
-            </div>
-          ) : (
-            <FileTree
-              nodes={fileTree}
-              selectedPath={selectedPath || undefined}
-              onSelect={handleSelect}
+          {selectedPath && parsedFile && (
+            <PillToggle
+              label="File view"
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: "preview", label: "Preview" },
+                { value: "source", label: "Source" },
+              ]}
             />
           )}
-        </ScrollArea>
-      </Card>
-      </StaggeredItem>
+        </div>
 
-      <StaggeredItem className="min-w-0 md:flex-1 md:h-full">
-      <Card className="glass-card overflow-hidden py-3 md:h-full md:py-6">
-        <ScrollArea className="p-3 md:h-full md:p-6">
-          <div aria-live="polite">
-            {loading ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Loading...
-              </div>
-            ) : error ? (
-              <div
-                className="flex flex-col items-center justify-center h-full gap-3"
-                role="alert"
-              >
-                {error.includes("Limite") ? (
-                  <Badge
-                    variant="outline"
-                    className="gap-1.5 text-warning-foreground border-warning/30"
-                  >
-                    <AlertTriangle className="size-3.5" />
-                    GitHub rate limit reached. Cached data is displayed.
-                  </Badge>
-                ) : (
-                  <p className="text-destructive text-sm">{error}</p>
-                )}
-              </div>
-            ) : selectedPath && parsedFile ? (
+        <div aria-live="polite" className="mx-auto w-full max-w-[800px] px-3 py-5 md:px-6">
+          {loading ? (
+            <StateMessage>Loading...</StateMessage>
+          ) : error ? (
+            <StateMessage role="alert">
+              {error.includes("Limite") ? (
+                <Pill className="gap-1.5 border-warning/30 text-warning-foreground">
+                  <AlertTriangle aria-hidden="true" />
+                  GitHub rate limit reached. Cached data is displayed.
+                </Pill>
+              ) : (
+                <span className="text-destructive-foreground">{error}</span>
+              )}
+            </StateMessage>
+          ) : selectedPath && parsedFile ? (
+            mode === "source" ? (
+              <pre className="whitespace-pre-wrap break-words rounded-lg border bg-card p-3 font-mono text-xs leading-relaxed">
+                {parsedFile.rawContent ?? parsedFile.body}
+              </pre>
+            ) : (
               <>
-                {parsedFile.metadata && (
-                  <FileMetadataBar metadata={parsedFile.metadata} />
+                {fm ? (
+                  <DefinitionTable rows={frontmatterRows(fm)} className="mb-6" />
+                ) : (
+                  parsedFile.metadata && <FileMetadataBar metadata={parsedFile.metadata} />
                 )}
                 {parsedFile.parseError ? (
                   <>
                     <div
-                      className="mb-4 rounded-lg border border-warning/20 bg-warning/10 px-4 py-3 text-sm"
+                      className="mb-4 rounded-lg border border-warning/30 px-3 py-2 text-[13px]"
                       role="alert"
                     >
-                      <div className="flex items-center gap-2 text-warning-foreground font-medium">
+                      <div className="flex items-center gap-2 font-medium text-warning-foreground">
                         <AlertTriangle className="h-4 w-4 shrink-0" />
-                        This file contains syntax errors. Raw content is
-                        displayed below.
+                        This file contains syntax errors. Raw content is displayed below.
                       </div>
-                      <p className="mt-2 text-xs font-mono text-muted-foreground">
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">
                         {parsedFile.parseError}
                       </p>
                     </div>
-                    <CodeRenderer
-                      content={parsedFile.body}
-                      language={
-                        parsedFile.contentType === "yaml"
-                          ? "yaml"
-                          : parsedFile.contentType === "json"
-                            ? "json"
-                            : "plaintext"
-                      }
-                    />
+                    <CodeRenderer content={parsedFile.body} language={codeLanguage} />
                   </>
                 ) : parsedFile.contentType === "markdown" ? (
                   <>
@@ -301,22 +324,77 @@ function FilePanel({
                 ) : parsedFile.contentType === "json" ? (
                   <CodeRenderer content={parsedFile.body} language="json" />
                 ) : (
-                  <pre className="text-sm font-mono whitespace-pre-wrap">
+                  <pre className="whitespace-pre-wrap font-mono text-[13px]">
                     {parsedFile.body}
                   </pre>
                 )}
               </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                <FileText className="h-12 w-12 opacity-30" />
-                <p>Select a file from the tree to view its content</p>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-      </Card>
-      </StaggeredItem>
-    </StaggeredList>
+            )
+          ) : (
+            <StateMessage>Select a file from the tree to view its content</StateMessage>
+          )}
+        </div>
+      </div>
+
+      {/* Files panel: on the right on desktop, a collapsible "Files" row on phones */}
+      <aside
+        aria-label="Files"
+        className="order-first flex min-w-0 shrink-0 flex-col border-b lg:order-none lg:h-full lg:w-72 lg:border-b-0 lg:border-l"
+      >
+        <button
+          type="button"
+          onClick={() => setTreeOpen((o) => !o)}
+          aria-expanded={treeOpen}
+          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-[13px] outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+        >
+          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate">
+            {selectedPath ? selectedPath.split("/").pop() : "Files"}
+          </span>
+          {treeOpen ? (
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          ) : (
+            <ChevronRight className="h-4 w-4 shrink-0" />
+          )}
+        </button>
+        <div className="hidden h-9 shrink-0 items-center gap-1 border-b px-2 lg:flex">
+          {sources ? (
+            <PillToggle
+              label="Source tree"
+              value={sources.active}
+              onChange={sources.onChange}
+              options={[
+                { value: "bmad", label: "BMAD" },
+                { value: "docs", label: "Docs" },
+              ]}
+            />
+          ) : (
+            <span className="inline-flex h-6 items-center gap-1.5 rounded-md bg-accent px-2 text-xs">
+              <FolderOpen className="size-3.5" aria-hidden="true" />
+              Files
+            </span>
+          )}
+        </div>
+        <div
+          className={`${treeOpen ? "" : "hidden lg:block"} max-h-[55dvh] overflow-y-auto border-t p-1.5 lg:max-h-none lg:min-h-0 lg:flex-1 lg:border-t-0`}
+        >
+          {sources && (
+            <div className="mb-1 lg:hidden">
+              <PillToggle
+                label="Source tree"
+                value={sources.active}
+                onChange={sources.onChange}
+                options={[
+                  { value: "bmad", label: "BMAD" },
+                  { value: "docs", label: "Docs" },
+                ]}
+              />
+            </div>
+          )}
+          {tree}
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -339,8 +417,13 @@ export function DocsBrowser({
 }: DocsBrowserProps) {
   const hasDocs = docsTree.length > 0;
   const hasBmad = fileTree.length > 0 || bmadCoreTree.length > 0;
+  const initialInDocs =
+    !!initialSelectedFile && treeContainsPath(docsTree, initialSelectedFile);
+  const [source, setSource] = useState<"bmad" | "docs">(
+    initialInDocs ? "docs" : "bmad",
+  );
 
-  // If only one source exists, no tabs needed
+  // If only one source exists, no switch needed
   if (!hasDocs) {
     return (
       <FilePanel
@@ -364,43 +447,31 @@ export function DocsBrowser({
     );
   }
 
-  // Determine which tab should be active based on initialSelectedFile location
-  const initialInDocs =
-    initialSelectedFile && treeContainsPath(docsTree, initialSelectedFile);
-  const defaultTab = initialInDocs ? "docs" : "bmad";
+  const sources = {
+    value: "bmad",
+    label: "Source tree",
+    active: source,
+    onChange: (v: string) => setSource(v as "bmad" | "docs"),
+  };
 
-  // Both exist — show tabs
-  return (
-    <Tabs defaultValue={defaultTab}>
-      <TabsList className="w-full sm:w-fit">
-        <TabsTrigger value="bmad" className="min-w-0 flex-1 gap-1.5 sm:flex-none">
-          <Cog className="size-4" />
-          BMAD Artifacts
-        </TabsTrigger>
-        <TabsTrigger value="docs" className="min-w-0 flex-1 gap-1.5 sm:flex-none">
-          <FolderOpen className="size-4" />
-          Project Documentation
-        </TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="bmad" className="mt-3 md:mt-4">
-        <FilePanel
-          fileTree={fileTree}
-          secondaryTree={bmadCoreTree.length > 0 ? bmadCoreTree : undefined}
-          owner={owner}
-          repo={repo}
-          initialSelectedFile={initialInDocs ? undefined : initialSelectedFile}
-        />
-      </TabsContent>
-
-      <TabsContent value="docs" className="mt-3 md:mt-4">
-        <FilePanel
-          fileTree={docsTree}
-          owner={owner}
-          repo={repo}
-          initialSelectedFile={initialInDocs ? initialSelectedFile : undefined}
-        />
-      </TabsContent>
-    </Tabs>
+  return source === "docs" ? (
+    <FilePanel
+      key="docs"
+      fileTree={docsTree}
+      owner={owner}
+      repo={repo}
+      initialSelectedFile={initialInDocs ? initialSelectedFile : undefined}
+      sources={sources}
+    />
+  ) : (
+    <FilePanel
+      key="bmad"
+      fileTree={fileTree}
+      secondaryTree={bmadCoreTree.length > 0 ? bmadCoreTree : undefined}
+      owner={owner}
+      repo={repo}
+      initialSelectedFile={initialInDocs ? undefined : initialSelectedFile}
+      sources={sources}
+    />
   );
 }

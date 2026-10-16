@@ -19,7 +19,7 @@ interface FileTreeProps {
 
 export function FileTree({ nodes, selectedPath, onSelect }: FileTreeProps) {
   return (
-    <div className="space-y-0.5 text-sm overflow-hidden">
+    <div className="overflow-hidden text-[13px]">
       {nodes.map((node) => (
         <TreeNode
           key={node.path}
@@ -76,11 +76,11 @@ function TreeNode({
             onSelect(node.path);
           }
         }}
+        aria-current={isSelected ? "true" : undefined}
         className={cn(
-          "flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left hover:bg-accent transition-colors",
-          isSelected && "bg-accent text-accent-foreground font-medium ring-1 ring-inset ring-primary",
+          "flex h-8 w-full items-center gap-1.5 rounded-md px-1.5 text-left outline-hidden transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:h-7",
+          isSelected && "bg-accent text-foreground",
         )}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {isDirectory ? (
           <>
@@ -91,9 +91,9 @@ function TreeNode({
               )}
             />
             {expanded ? (
-              <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
+              <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
             ) : (
-              <Folder className="h-4 w-4 shrink-0 text-primary" />
+              <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
           </>
         ) : (
@@ -113,7 +113,7 @@ function TreeNode({
         </Tooltip>
       </button>
       {isDirectory && expanded && node.children && (
-        <div>
+        <div className="ml-[13px] border-l pl-1">
           {node.children.map((child) => (
             <TreeNode
               key={child.path}

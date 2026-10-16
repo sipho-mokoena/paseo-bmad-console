@@ -1,5 +1,5 @@
-import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle2, Calendar, Workflow } from "lucide-react";
+import { StatusPill } from "@/components/shared/pill";
+import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
 import type { BmadFileMetadata, StoryStatus } from "@/lib/bmad/types";
 
 interface FileMetadataBarProps {
@@ -15,52 +15,22 @@ const statusValues = new Set([
   "unknown",
 ]);
 
+/** Status, steps, workflow type and completion date as a flat two-column table. */
 export function FileMetadataBar({ metadata }: FileMetadataBarProps) {
-  const hasStatus =
+  const rows: DefinitionRow[] = [];
+  if (
     metadata.status &&
     metadata.status !== "unknown" &&
-    statusValues.has(metadata.status);
-  const hasSteps =
-    metadata.stepsCompleted && metadata.stepsCompleted.length > 0;
-  const hasWorkflowType = !!metadata.workflowType;
-  const hasCompletedAt = !!metadata.completedAt;
-
-  if (!hasStatus && !hasSteps && !hasWorkflowType && !hasCompletedAt) {
-    return null;
+    statusValues.has(metadata.status)
+  ) {
+    rows.push({ label: "status", value: <StatusPill status={metadata.status as StoryStatus} /> });
   }
+  if (metadata.stepsCompleted && metadata.stepsCompleted.length > 0) {
+    rows.push({ label: "steps completed", value: String(metadata.stepsCompleted.length) });
+  }
+  if (metadata.workflowType) rows.push({ label: "type", value: metadata.workflowType });
+  if (metadata.completedAt) rows.push({ label: "completed", value: metadata.completedAt });
 
-  return (
-    <div className="glass-card flex flex-wrap items-center gap-3 rounded-lg px-4 py-3 mb-4 text-sm">
-      {hasStatus && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground">Status</span>
-          <StatusBadge status={metadata.status as StoryStatus} />
-        </div>
-      )}
-
-      {hasSteps && (
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <CheckCircle2 className="size-3.5" />
-          <span>
-            Steps completed: {metadata.stepsCompleted?.length}
-          </span>
-        </div>
-      )}
-
-      {hasWorkflowType && (
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Workflow className="size-3.5" />
-          <span>Type: {metadata.workflowType}</span>
-        </div>
-      )}
-
-      {hasCompletedAt && (
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Calendar className="size-3.5" />
-          <span>Completed on {metadata.completedAt}</span>
-        </div>
-      )}
-
-    </div>
-  );
+  if (rows.length === 0) return null;
+  return <DefinitionTable rows={rows} className="mb-6" />;
 }

@@ -59,10 +59,10 @@ export function TableOfContents({ content }: TableOfContentsProps) {
   const minLevel = Math.min(...headings.map((h) => h.level));
 
   return (
-    <div className="glass-card mb-6 overflow-hidden">
+    <div className="mb-6 overflow-hidden rounded-lg border">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-300"
+        className="flex min-h-9 w-full items-center gap-2 px-3 text-[13px] text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         aria-expanded={open}
         aria-controls={`toc-${tocId}`}
       >
@@ -73,7 +73,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
         />
       </button>
       {open && (
-        <nav id={`toc-${tocId}`} className="px-4 pb-4" aria-label="Table of Contents">
+        <nav id={`toc-${tocId}`} className="px-3 pb-3" aria-label="Table of Contents">
           <ul className="space-y-1">
             {headings.map((heading, i) => {
               const depth = heading.level - minLevel;
