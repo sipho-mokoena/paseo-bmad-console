@@ -167,9 +167,7 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
             </Button>
           )}
         </div>
-        <div className="border-t border-border/50 pt-2">
-          <UserMenu />
-        </div>
+        <UserMenu />
       </SidebarFooter>
     </Sidebar>
   );

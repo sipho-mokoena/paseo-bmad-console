@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
@@ -83,7 +83,15 @@ export function AppHeader() {
           </span>
         ))}
       </nav>
-      <AnimatedThemeToggler className="ml-auto rounded-full p-2 hover:bg-accent shrink-0" />
+      <Link
+        href="/search"
+        aria-label="Search"
+        className="ml-auto inline-flex h-8 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      >
+        <Search className="h-4 w-4" />
+        <span>Search</span>
+      </Link>
+      <AnimatedThemeToggler className="rounded-full p-2 hover:bg-accent shrink-0" />
       <ScrollProgress />
     </header>
   );
