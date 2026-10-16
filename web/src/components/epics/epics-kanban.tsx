@@ -1,5 +1,4 @@
-"use client";
-
+import Link from "next/link";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { ROW_CLASS } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
@@ -13,10 +12,11 @@ const kanbanColumns: { status: EpicStatus; label: string }[] = [
 
 interface EpicsKanbanProps {
   epics: Epic[];
-  onSelectEpic: (epicId: string) => void;
+  /** Builds the epic page link. */
+  hrefFor: (epicId: string) => string;
 }
 
-export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
+export function EpicsKanban({ epics, hrefFor }: EpicsKanbanProps) {
   if (epics.length === 0) {
     return (
       <p className="py-10 text-center text-[13px] text-muted-foreground">
@@ -36,10 +36,9 @@ export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
               <span className="ml-1.5 opacity-60">{columnEpics.length}</span>
             </h3>
             {columnEpics.map((epic) => (
-              <button
+              <Link
                 key={epic.id}
-                type="button"
-                onClick={() => onSelectEpic(epic.id)}
+                href={hrefFor(epic.id)}
                 aria-label={`Open epic ${epic.id}: ${epic.title}`}
                 className={cn(ROW_CLASS, "flex-wrap gap-x-2 gap-y-1")}
               >
@@ -53,7 +52,7 @@ export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
                   label={`Epic ${epic.id} progress`}
                   className="basis-full"
                 />
-              </button>
+              </Link>
             ))}
             {columnEpics.length === 0 && (
               <p className="px-2 py-3 text-xs text-muted-foreground">No epics</p>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StatusPill } from "@/components/shared/pill";
 import { ROW_CLASS } from "@/components/shared/list-kit";
 import { AfterText, TicketChips, hasTicketChips } from "./story-ticket-meta";
@@ -6,7 +7,7 @@ import type { StoryDetail } from "@/lib/bmad/types";
 
 interface StoryRowProps {
   story: StoryDetail;
-  onClick: () => void;
+  href: string;
   /** Shows the owning epic (search results listing stories of many epics). */
   showEpic?: boolean;
   /** Muted project name column (results spanning several projects). */
@@ -18,14 +19,13 @@ interface StoryRowProps {
  * History-style story row: id, title › description, pills, after text, status.
  * One line on desktop; on phones the pills wrap to a second line.
  */
-export function StoryRow({ story, onClick, showEpic, project, className }: StoryRowProps) {
+export function StoryRow({ story, href, showEpic, project, className }: StoryRowProps) {
   const ticket = story.ticket;
   const chips = hasTicketChips(ticket);
   const hasAfter = !!ticket && ticket.after.length > 0;
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Link
+      href={href}
       aria-label={`Open story ${story.id}: ${story.title}`}
       className={cn(ROW_CLASS, "flex-wrap gap-y-1 lg:flex-nowrap", className)}
     >
@@ -80,6 +80,6 @@ export function StoryRow({ story, onClick, showEpic, project, className }: Story
           )}
         </span>
       )}
-    </button>
+    </Link>
   );
 }

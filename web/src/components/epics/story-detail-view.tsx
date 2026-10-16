@@ -1,13 +1,28 @@
-import { StatusPill, Pill } from "@/components/shared/pill";
+import Link from "next/link";
+import { CheckCircle2, Circle } from "lucide-react";
+import { Pill } from "@/components/shared/pill";
 import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
 import { MarkdownRenderer } from "@/components/docs/markdown-renderer";
-import { CheckCircle2, Circle } from "lucide-react";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { riskTone } from "./story-ticket-meta";
-import type { StoryDetail, StoryTicketMeta } from "@/lib/bmad/types";
+import { cn } from "@/lib/utils";
+import { storyHref } from "@/lib/stories-browse";
+import type { StoryDetail } from "@/lib/bmad/types";
+
+export interface StoryRef {
+  ref: string;
+  /** Owning epic when the story is known (renders as a link); null for unknown refs. */
+  epicId: string | null;
+}
 
 interface StoryDetailViewProps {
   story: StoryDetail;
+  /** `/repo/<owner>/<repo>` */
+  base: string;
+  /** Prerequisites (`after`), resolved against the project. */
+  after: StoryRef[];
+  /** Stories that list this one in their `after`. */
+  blocks: StoryRef[];
 }
 
 function Section({
@@ -22,7 +37,7 @@ function Section({
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs text-muted-foreground">{title}</h4>
+        <h2 className="text-xs font-normal text-muted-foreground">{title}</h2>
         {aside}
       </div>
       {children}
@@ -30,82 +45,88 @@ function Section({
   );
 }
 
-function ticketRows(ticket: StoryTicketMeta): DefinitionRow[] {
-  const rows: DefinitionRow[] = [
-    { label: "type", value: <span className="capitalize">{ticket.type ?? "-"}</span> },
-    {
-      label: "risk",
-      value: ticket.risk ? (
-        <Pill tone={riskTone(ticket.risk)} className="capitalize">
-          {ticket.risk}
-        </Pill>
-      ) : (
-        "-"
-      ),
-    },
-    { label: "human in the loop", value: ticket.hitl ? "Yes" : "No" },
-  ];
-  if (ticket.assignee) rows.push({ label: "assignee", value: ticket.assignee });
-  if (ticket.covers.length > 0) {
-    rows.push({
-      label: "covers",
-      value: (
-        <span className="flex flex-wrap gap-1.5">
-          {ticket.covers.map((cap) => (
-            <Pill key={cap} tone="fill" className="font-mono">
-              {cap}
-            </Pill>
-          ))}
-        </span>
-      ),
-    });
+const CHIP_LINK =
+  "rounded-md outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&>[data-slot=pill]]:transition-colors hover:[&>[data-slot=pill]]:bg-accent hover:[&>[data-slot=pill]]:text-foreground";
+
+function RefChips({ refs, base }: { refs: StoryRef[]; base: string }) {
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {refs.map(({ ref, epicId }) =>
+        epicId ? (
+          <Link
+            key={ref}
+            href={storyHref(base, epicId, ref)}
+            aria-label={`Open story ${ref}`}
+            className={cn(CHIP_LINK, "inline-flex min-h-10 items-center md:min-h-0")}
+          >
+            <Pill className="font-mono">{ref}</Pill>
+          </Link>
+        ) : (
+          <Pill key={ref} className="font-mono" title="Not found in this project">
+            {ref}
+          </Pill>
+        ),
+      )}
+    </span>
+  );
+}
+
+function detailRows(story: StoryDetail, base: string, after: StoryRef[], blocks: StoryRef[]): DefinitionRow[] {
+  const ticket = story.ticket;
+  const rows: DefinitionRow[] = [];
+  if (ticket) {
+    rows.push(
+      { label: "type", value: <span className="capitalize">{ticket.type ?? "-"}</span> },
+      {
+        label: "risk",
+        value: ticket.risk ? (
+          <Pill tone={riskTone(ticket.risk)} className="capitalize">
+            {ticket.risk}
+          </Pill>
+        ) : (
+          "-"
+        ),
+      },
+      { label: "human in the loop", value: ticket.hitl ? "Yes" : "No" },
+    );
+    if (ticket.assignee) rows.push({ label: "assignee", value: ticket.assignee });
+    if (ticket.covers.length > 0) {
+      rows.push({
+        label: "covers",
+        value: (
+          <span className="flex flex-wrap gap-1.5">
+            {ticket.covers.map((cap) => (
+              <Pill key={cap} tone="fill" className="font-mono">
+                {cap}
+              </Pill>
+            ))}
+          </span>
+        ),
+      });
+    }
+    if (ticket.blockedReason) {
+      rows.push({
+        label: "blocked",
+        value: <span className="text-destructive-foreground">{ticket.blockedReason}</span>,
+      });
+    }
   }
-  if (ticket.after.length > 0) {
-    rows.push({
-      label: "after",
-      value: (
-        <span className="flex flex-wrap gap-1.5">
-          {ticket.after.map((ref) => (
-            <Pill key={ref} className="font-mono">
-              {ref}
-            </Pill>
-          ))}
-        </span>
-      ),
-    });
-  }
+  if (after.length > 0) rows.push({ label: "after", value: <RefChips refs={after} base={base} /> });
+  if (blocks.length > 0) rows.push({ label: "blocks", value: <RefChips refs={blocks} base={base} /> });
   return rows;
 }
 
-export function StoryDetailView({ story }: StoryDetailViewProps) {
+/** Body of the story page (the page supplies the header). */
+export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewProps) {
   const ticket = story.ticket;
   // Ticket stories: acceptanceCriteria[0] is the verify text, the rest are criteria.
   const verify = ticket ? story.acceptanceCriteria[0] : undefined;
   const criteria = ticket ? story.acceptanceCriteria.slice(1) : story.acceptanceCriteria;
+  const rows = detailRows(story, base, after, blocks);
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:pr-8">
-        <div className="flex min-w-0 items-baseline gap-3">
-          <span className="shrink-0 font-mono text-xs text-muted-foreground">{story.id}</span>
-          <h3 className="min-w-0 break-words text-base font-medium">{story.title}</h3>
-        </div>
-        <div className="shrink-0 self-start">
-          <StatusPill status={story.status} />
-        </div>
-      </div>
-
-      {ticket && (
-        <div className="space-y-2">
-          <DefinitionTable rows={ticketRows(ticket)} />
-          {story.status === "blocked" && ticket.blockedReason && (
-            <p className="text-[13px] text-destructive-foreground">
-              Blocked: {ticket.blockedReason}
-            </p>
-          )}
-        </div>
-      )}
+      {rows.length > 0 && <DefinitionTable rows={rows} />}
 
       {story.description && (
         <Section title="Description">

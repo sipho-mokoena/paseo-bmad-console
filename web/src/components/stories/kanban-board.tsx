@@ -1,5 +1,4 @@
-"use client";
-
+import Link from "next/link";
 import { ROW_CLASS, StateMessage } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
 import type { StoryDetail, StoryStatus } from "@/lib/bmad/types";
@@ -15,10 +14,11 @@ const kanbanColumns: { status: StoryStatus; label: string }[] = [
 
 interface KanbanBoardProps {
   stories: StoryDetail[];
-  onStorySelect?: (story: StoryDetail) => void;
+  /** Builds the story page link. */
+  hrefFor: (story: StoryDetail) => string;
 }
 
-export function KanbanBoard({ stories, onStorySelect }: KanbanBoardProps) {
+export function KanbanBoard({ stories, hrefFor }: KanbanBoardProps) {
   if (stories.length === 0) {
     return <StateMessage>No story matches the filters</StateMessage>;
   }
@@ -42,10 +42,9 @@ export function KanbanBoard({ stories, onStorySelect }: KanbanBoardProps) {
               <span className="ml-1.5 opacity-60">{columnStories.length}</span>
             </h3>
             {columnStories.map((story) => (
-              <button
+              <Link
                 key={story.id}
-                type="button"
-                onClick={() => onStorySelect?.(story)}
+                href={hrefFor(story)}
                 aria-label={`Open story ${story.id}: ${story.title}`}
                 title={story.epicTitle ? `${story.title} (${story.epicTitle})` : story.title}
                 className={cn(ROW_CLASS, "gap-2 lg:min-h-7 lg:py-1")}
@@ -59,7 +58,7 @@ export function KanbanBoard({ stories, onStorySelect }: KanbanBoardProps) {
                     {story.completedTasks}/{story.totalTasks}
                   </span>
                 )}
-              </button>
+              </Link>
             ))}
             {columnStories.length === 0 && (
               <p className="px-2 py-2 text-xs text-muted-foreground">No stories</p>

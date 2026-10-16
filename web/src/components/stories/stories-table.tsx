@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { StatusPill } from "@/components/shared/pill";
 import { StateMessage } from "@/components/shared/list-kit";
@@ -51,15 +52,46 @@ const HEADERS: { key: SortKey | null; label: string; className?: string }[] = [
 
 const PAGE = 60;
 
+/**
+ * A table cell's link. Every cell links to the same page so the whole row is a real
+ * link target (middle-click works); only the first is a tab stop.
+ */
+function CellLink({
+  href,
+  label,
+  className,
+  children,
+}: {
+  href: string;
+  /** Accessible name; set on the one cell that is a tab stop. */
+  label?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      tabIndex={label ? undefined : -1}
+      aria-label={label}
+      className={cn(
+        "block rounded-sm px-2 py-1.5 outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+        className,
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
 interface StoriesTableProps {
   stories: StoryDetail[];
-  /** Opens the story detail (row click, Enter or Space). */
-  onStorySelect?: (story: StoryDetail) => void;
+  /** Builds the story page link of a row. */
+  hrefFor: (story: StoryDetail) => string;
   /** Hides the Epic column (when the list is already scoped to one epic). */
   hideEpicColumn?: boolean;
 }
 
-export function StoriesTable({ stories, onStorySelect, hideEpicColumn }: StoriesTableProps) {
+export function StoriesTable({ stories, hrefFor, hideEpicColumn }: StoriesTableProps) {
   const [sort, setSort] = useState<SortState>(null);
   const [visible, setVisible] = useState(PAGE);
 
@@ -97,7 +129,7 @@ export function StoriesTable({ stories, onStorySelect, hideEpicColumn }: Stories
       <div className="xl:hidden" role="list" aria-label="Stories">
         {shown.map((story) => (
           <div key={story.id} role="listitem">
-            <StoryRow story={story} onClick={() => onStorySelect?.(story)} />
+            <StoryRow story={story} href={hrefFor(story)} />
           </div>
         ))}
         {more}
@@ -144,49 +176,52 @@ export function StoriesTable({ stories, onStorySelect, hideEpicColumn }: Stories
             {shown.map((story) => (
               <tr
                 key={story.id}
-                tabIndex={0}
-                aria-label={`Open story ${story.id}: ${story.title}`}
-                onClick={() => onStorySelect?.(story)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onStorySelect?.(story);
-                  }
-                }}
-                className="group/row cursor-pointer outline-hidden transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                className="group/row transition-colors hover:bg-accent has-[a:focus-visible]:bg-accent"
               >
-                <td className="rounded-l-md px-2 py-1.5 font-mono text-xs text-muted-foreground">
-                  {story.id}
+                <td className="rounded-l-md p-0 font-mono text-xs text-muted-foreground">
+                  <CellLink href={hrefFor(story)} label={`Open story ${story.id}: ${story.title}`}>
+                    {story.id}
+                  </CellLink>
                 </td>
-                <td className="px-2 py-1.5">
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="min-w-0 max-w-[60%] shrink-0 truncate">{story.title}</span>
-                    {story.description && (
-                      <>
-                        <span aria-hidden="true" className="text-muted-foreground">›</span>
-                        <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                          {story.description.replace(/\s+/g, " ")}
-                        </span>
-                      </>
-                    )}
-                  </div>
+                <td className="p-0">
+                  <CellLink href={hrefFor(story)}>
+                    <div className="flex min-w-0 items-baseline gap-2">
+                      <span className="min-w-0 max-w-[60%] shrink-0 truncate">{story.title}</span>
+                      {story.description && (
+                        <>
+                          <span aria-hidden="true" className="text-muted-foreground">›</span>
+                          <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                            {story.description.replace(/\s+/g, " ")}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </CellLink>
                 </td>
-                <td className="hidden px-2 py-1.5 xl:table-cell">
-                  <div className="flex items-center justify-start gap-1.5 overflow-hidden">
-                    {story.ticket && <TicketChips ticket={story.ticket} />}
-                    <AfterText ticket={story.ticket} />
-                  </div>
+                <td className="hidden p-0 xl:table-cell">
+                  <CellLink href={hrefFor(story)}>
+                    <div className="flex items-center justify-start gap-1.5 overflow-hidden">
+                      {story.ticket && <TicketChips ticket={story.ticket} />}
+                      <AfterText ticket={story.ticket} />
+                    </div>
+                  </CellLink>
                 </td>
-                <td className="px-2 py-1.5">
-                  <StatusPill status={story.status} />
+                <td className="p-0">
+                  <CellLink href={hrefFor(story)}>
+                    <StatusPill status={story.status} />
+                  </CellLink>
                 </td>
                 {!hideEpicColumn && (
-                  <td className="hidden truncate px-2 py-1.5 text-muted-foreground min-[1400px]:table-cell">
-                    {story.epicTitle || "-"}
+                  <td className="hidden p-0 text-muted-foreground min-[1400px]:table-cell">
+                    <CellLink href={hrefFor(story)} className="truncate">
+                      {story.epicTitle || "-"}
+                    </CellLink>
                   </td>
                 )}
-                <td className="rounded-r-md px-2 py-1.5 text-right text-xs tabular-nums text-muted-foreground">
-                  {story.totalTasks > 0 ? `${story.completedTasks}/${story.totalTasks}` : "-"}
+                <td className="rounded-r-md p-0 text-right text-xs tabular-nums text-muted-foreground">
+                  <CellLink href={hrefFor(story)}>
+                    {story.totalTasks > 0 ? `${story.completedTasks}/${story.totalTasks}` : "-"}
+                  </CellLink>
                 </td>
               </tr>
             ))}

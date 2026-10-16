@@ -7,6 +7,7 @@ import { GroupLabel, ROW_CLASS, StateMessage } from "@/components/shared/list-ki
 import { EpicRow } from "@/components/epics/epic-row";
 import { StoryRow } from "@/components/epics/story-row";
 import { cn } from "@/lib/utils";
+import { epicHref, storyHref } from "@/lib/stories-browse";
 import {
   MAX_QUERY_LENGTH,
   highlightSegments,
@@ -32,11 +33,9 @@ function base(p: { owner: string; name: string }) {
 function hrefFor(t: Target): string {
   switch (t.kind) {
     case "epic":
-      return `${base(t.hit.project)}/epics?epic=${encodeURIComponent(t.hit.epic.id)}`;
+      return epicHref(base(t.hit.project), t.hit.epic.id);
     case "story":
-      return `${base(t.hit.project)}/epics?epic=${encodeURIComponent(
-        t.hit.story.epicId,
-      )}&story=${encodeURIComponent(t.hit.story.id)}`;
+      return storyHref(base(t.hit.project), t.hit.story.epicId, t.hit.story.id);
     case "doc":
       return `${base(t.hit.project)}/docs?file=${encodeURIComponent(t.hit.path)}`;
   }
@@ -331,7 +330,7 @@ export function SearchView() {
                           <EpicRow
                             epic={hit.epic}
                             project={hit.project.displayName}
-                            onClick={r.onOpen}
+                            href={hrefFor({ kind: "epic", hit })}
                             className={r.selected ? "bg-accent" : undefined}
                           />
                         </div>
@@ -357,7 +356,7 @@ export function SearchView() {
                             story={hit.story}
                             showEpic
                             project={hit.project.displayName}
-                            onClick={r.onOpen}
+                            href={hrefFor({ kind: "story", hit })}
                             className={r.selected ? "bg-accent" : undefined}
                           />
                         </div>

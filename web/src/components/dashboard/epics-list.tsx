@@ -1,5 +1,6 @@
 import { EpicRow } from "@/components/epics/epic-row";
 import { GroupLabel, StateMessage } from "@/components/shared/list-kit";
+import { epicHref } from "@/lib/stories-browse";
 import type { Epic } from "@/lib/bmad/types";
 
 interface EpicsListProps {
@@ -23,7 +24,7 @@ export function EpicsList({ epics, owner, repo }: EpicsListProps) {
       <div role="list">
         {sorted.map((epic) => (
           <div key={epic.id} role="listitem">
-            <EpicRow epic={epic} href={`/repo/${owner}/${repo}/epics`} />
+            <EpicRow epic={epic} href={epicHref(`/repo/${owner}/${repo}`, epic.id)} />
           </div>
         ))}
       </div>

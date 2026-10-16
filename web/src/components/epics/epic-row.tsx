@@ -7,15 +7,14 @@ import type { Epic } from "@/lib/bmad/types";
 
 interface EpicRowProps {
   epic: Epic;
-  href?: string;
-  onClick?: () => void;
+  href: string;
   /** Muted project name column (results spanning several projects). */
   project?: string;
   className?: string;
 }
 
 /** History-style epic row: E1  Title › description   12/14  ▬▬▬  [Done]. */
-export function EpicRow({ epic, href, onClick, project, className }: EpicRowProps) {
+export function EpicRow({ epic, href, project, className }: EpicRowProps) {
   const body = (
     <>
       <span className="w-7 shrink-0 font-mono text-xs text-muted-foreground">
@@ -55,23 +54,11 @@ export function EpicRow({ epic, href, onClick, project, className }: EpicRowProp
       </span>
     </>
   );
-  const cls = cn(ROW_CLASS, "cursor-pointer", className);
+  const cls = cn(ROW_CLASS, className);
 
-  if (href) {
-    return (
-      <Link href={href} className={cls}>
-        {body}
-      </Link>
-    );
-  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`Open epic ${epic.id}: ${epic.title}`}
-      className={cls}
-    >
+    <Link href={href} className={cls}>
       {body}
-    </button>
+    </Link>
   );
 }
