@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, MoreHorizontal, Search } from "lucide-react";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
@@ -118,9 +118,6 @@ export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
           </DropdownMenu>
         )}
       </nav>
-      <Link href="/search" aria-label="Search" className={iconButton}>
-        <Search />
-      </Link>
       <ScrollProgress />
     </header>
   );
