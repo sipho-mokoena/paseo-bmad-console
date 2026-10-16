@@ -52,6 +52,20 @@ export interface StoryDetail {
   tasks: StoryTask[];
   completedTasks: number;
   totalTasks: number;
+  /** Ticket-tree metadata (bmad-ticket); absent for BMad v6 stories. */
+  ticket?: StoryTicketMeta;
+}
+
+export interface StoryTicketMeta {
+  type?: string;
+  risk?: string;
+  /** Human in the loop */
+  hitl?: boolean;
+  covers: string[];
+  /** Prerequisite ticket refs, e.g. "4.1" or "1.10" */
+  after: string[];
+  assignee?: string;
+  blockedReason?: string;
 }
 
 export interface StoryTask {

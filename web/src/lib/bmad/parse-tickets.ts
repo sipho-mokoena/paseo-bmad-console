@@ -136,15 +136,6 @@ export async function parseTicketTree(
         if (plan?.status === "dropped") continue;
         const status = plan?.status ?? "backlog";
         storyIds.push(id);
-        const meta = [
-          e.type && `Type: ${e.type}`,
-          e.risk && `Risk: ${e.risk}`,
-          plan?.assignee && `Assignee: ${plan.assignee}`,
-          plan?.blockedReason && `Blocked: ${plan.blockedReason}`,
-          e.hitl !== undefined && `Human in the loop: ${e.hitl ? "yes" : "no"}`,
-          e.covers?.length && `Covers: ${e.covers.join(", ")}`,
-          e.after?.length && `After: ${e.after.map(String).join(", ")}`,
-        ].filter(Boolean);
         stories.push({
           id,
           title: e.title ?? `Story ${id}`,
@@ -152,9 +143,19 @@ export async function parseTicketTree(
           statusExplicit: Boolean(plan),
           epicId,
           epicTitle,
-          description: [e.description, meta.join(" · ")]
-            .filter(Boolean)
-            .join("\n\n"),
+          description: e.description ?? "",
+          ticket: {
+            type: e.type,
+            risk: e.risk,
+            hitl: e.hitl,
+            covers: (e.covers ?? []).map(String),
+            // a bare number is a sibling in this epic; "4.1" is already a ref
+            after: (e.after ?? []).map((a) =>
+              String(a).includes(".") ? String(a) : `${epicId}.${a}`,
+            ),
+            assignee: plan?.assignee,
+            blockedReason: plan?.blockedReason,
+          },
           acceptanceCriteria: e.verify ? [e.verify] : [],
           tasks: [],
           completedTasks: 0,
