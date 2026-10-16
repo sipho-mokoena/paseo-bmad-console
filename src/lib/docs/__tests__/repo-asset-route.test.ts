@@ -12,7 +12,7 @@ import { getAuthenticatedSession, getAuthenticatedRepoConfig } from "@/lib/db/he
 import { GET } from "@/app/api/repo-asset/route";
 
 const OWNER = "local";
-const REPO = "sovren-1d3b23df";
+const REPO = "acme-1d3b23df";
 const SVG_BODY = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
 
 let repoRoot: string;
@@ -23,7 +23,7 @@ beforeAll(async () => {
   const base = await fs.mkdtemp(path.join(os.tmpdir(), "repo-asset-"));
   repoRoot = path.join(base, "repo");
   outsideRoot = path.join(base, "outside");
-  const wire = path.join(repoRoot, "_bmad-output/initiative-sovren/ux-sovren/wireframes");
+  const wire = path.join(repoRoot, "_bmad-output/initiative-acme/ux-acme/wireframes");
   await fs.mkdir(path.join(wire, "svg"), { recursive: true });
   await fs.writeFile(path.join(wire, "svg/00a-console-preflight-failed.svg"), SVG_BODY);
   await fs.writeFile(path.join(wire, "tiny.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
@@ -62,7 +62,7 @@ function request(params: Record<string, string | undefined>, raw = ""): Request 
 }
 
 const SVG_PATH =
-  "_bmad-output/initiative-sovren/ux-sovren/wireframes/svg/00a-console-preflight-failed.svg";
+  "_bmad-output/initiative-acme/ux-acme/wireframes/svg/00a-console-preflight-failed.svg";
 
 describe("GET /api/repo-asset", () => {
   it("returns 401 without a session", async () => {
@@ -88,7 +88,7 @@ describe("GET /api/repo-asset", () => {
       request({
         owner: OWNER,
         repo: REPO,
-        path: "_bmad-output/initiative-sovren/ux-sovren/wireframes/tiny.png",
+        path: "_bmad-output/initiative-acme/ux-acme/wireframes/tiny.png",
       }),
     );
     expect(res.status).toBe(200);
@@ -127,7 +127,7 @@ describe("GET /api/repo-asset", () => {
       request({
         owner: OWNER,
         repo: REPO,
-        path: "_bmad-output/initiative-sovren/ux-sovren/wireframes/notes.md",
+        path: "_bmad-output/initiative-acme/ux-acme/wireframes/notes.md",
       }),
     );
     expect(res.status).toBe(400);

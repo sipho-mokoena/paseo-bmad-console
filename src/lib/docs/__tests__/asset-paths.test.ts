@@ -7,19 +7,19 @@ import {
   isRelativeImageHref,
 } from "@/lib/docs/asset-paths";
 
-const DOC = "_bmad-output/initiative-sovren/ux-sovren/wireframes/index.md";
-const CTX = { owner: "local", repo: "sovren-1d3b23df", docPath: DOC };
+const DOC = "_bmad-output/initiative-acme/ux-acme/wireframes/index.md";
+const CTX = { owner: "local", repo: "acme-1d3b23df", docPath: DOC };
 
 describe("resolveRepoRelativePath", () => {
   it("resolves against the document directory", () => {
     expect(resolveRepoRelativePath(DOC, "svg/a.svg")).toBe(
-      "_bmad-output/initiative-sovren/ux-sovren/wireframes/svg/a.svg",
+      "_bmad-output/initiative-acme/ux-acme/wireframes/svg/a.svg",
     );
   });
 
   it("handles ./ and ../ inside the repo", () => {
     expect(resolveRepoRelativePath(DOC, "./svg/../img/b.png")).toBe(
-      "_bmad-output/initiative-sovren/ux-sovren/wireframes/img/b.png",
+      "_bmad-output/initiative-acme/ux-acme/wireframes/img/b.png",
     );
   });
 
@@ -36,7 +36,7 @@ describe("resolveRepoRelativePath", () => {
 
   it("decodes percent-encoded segments once and strips query strings", () => {
     expect(resolveRepoRelativePath(DOC, "svg/a%20b.svg?v=2")).toBe(
-      "_bmad-output/initiative-sovren/ux-sovren/wireframes/svg/a b.svg",
+      "_bmad-output/initiative-acme/ux-acme/wireframes/svg/a b.svg",
     );
   });
 });
@@ -50,7 +50,7 @@ describe("resolveImageSrc", () => {
   it("rewrites relative images to the repo-asset route", () => {
     const src = resolveImageSrc("svg/00a-console-preflight-failed.svg", CTX);
     expect(src).toBe(
-      "/api/repo-asset?owner=local&repo=sovren-1d3b23df&path=_bmad-output%2Finitiative-sovren%2Fux-sovren%2Fwireframes%2Fsvg%2F00a-console-preflight-failed.svg",
+      "/api/repo-asset?owner=local&repo=acme-1d3b23df&path=_bmad-output%2Finitiative-acme%2Fux-acme%2Fwireframes%2Fsvg%2F00a-console-preflight-failed.svg",
     );
   });
 

@@ -30,7 +30,7 @@ const TABLE = [
 ].join("\n");
 
 describe("description (plain summary) vs body (full markdown)", () => {
-  it("v6-project: whatsapp-like epic file", async () => {
+  it("v6-project: example-bot-like epic file", async () => {
     const long = "Filler sentence with `code`. ".repeat(40);
     const epic = `---\nepic_id: E14\nname: Alpha\n---\n\n# E14: Alpha\n\n**Epic:** E14 goal with [a link](x.md).\n\n${long}\n\n## Stories\n\n${TABLE}\n`;
     const p = (await getBmadProject(
