@@ -37,19 +37,31 @@ export function SegmentedProgressBar({
   const filledCount = Math.round((percent / 100) * totalSegments);
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("flex w-full items-stretch h-5 gap-[3px]", className)}
-    >
-      {Array.from({ length: totalSegments }, (_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "flex-1 rounded-[2px]",
-            i < filledCount ? color : "bg-muted-foreground/30",
-          )}
-        />
-      ))}
+    <div className={cn("flex w-full items-center h-5 min-w-0", className)}>
+      {/* Mobile: continuous bar, many tiny ticks squash on a phone */}
+      <div
+        className="md:hidden w-full h-2 rounded-full bg-muted-foreground/30 overflow-hidden"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className={cn("h-full rounded-full", color)} style={{ width: `${percent}%` }} />
+      </div>
+      <div
+        ref={containerRef}
+        className="hidden md:flex w-full h-full items-stretch gap-[3px] min-w-0 overflow-hidden"
+      >
+        {Array.from({ length: totalSegments }, (_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex-1 rounded-[2px]",
+              i < filledCount ? color : "bg-muted-foreground/30",
+            )}
+          />
+        ))}
+      </div>
     </div>
   );
 }

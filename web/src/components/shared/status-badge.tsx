@@ -47,7 +47,7 @@ export function StatusBadge({ status, compact }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={cn("min-w-24 justify-center", config.className, compact && "px-1.5 py-0 text-[10px] leading-4")}
+      className={cn("shrink-0 whitespace-nowrap justify-center md:min-w-24", config.className, compact && "px-1.5 py-0 text-[10px] leading-4")}
     >
       {config.label}
     </Badge>

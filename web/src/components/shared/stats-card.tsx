@@ -41,16 +41,16 @@ export function StatsCard({
         className,
       )}
     >
-      <CardContent className="p-6">
+      <CardContent className="px-3 py-0 md:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-4xl font-medium">{value}</p>
-            <p className="min-h-5 text-sm text-muted-foreground">
+            <p className="text-2xl md:text-4xl font-medium">{value}</p>
+            <p className="min-h-4 md:min-h-5 text-xs md:text-sm text-muted-foreground">
               {description ?? ""}
             </p>
           </div>
-          <div className={cn("rounded-xl p-3", c.bg)}>
+          <div className={cn("rounded-xl p-2 md:p-3", c.bg)}>
             <Icon className={cn("h-5 w-5", c.text)} />
           </div>
         </div>

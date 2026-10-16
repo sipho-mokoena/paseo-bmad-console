@@ -197,6 +197,17 @@
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
+/* Mobile: no inner panel chrome, the shell already supplies the gutters. */
+@media (max-width: 767px) {
+    .mesh-gradient {
+        background-color: transparent;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+        border-radius: 0;
+    }
+}
+
 /* Custom font variable override */
 @theme inline {
     --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -289,6 +300,19 @@
 
 .prose :is(h1, h2, h3, h4) a.autolink-heading::before {
     content: "#";
+}
+
+@media (max-width: 767px) {
+    .prose :is(h1, h2, h3, h4) a.autolink-heading {
+        display: none;
+    }
+    .prose :is(h1, h2, h3, h4)[id] {
+        scroll-margin-top: 4.5rem;
+    }
+    .prose pre,
+    .prose table {
+        max-width: 100%;
+    }
 }
 
 /* GitHub-style callouts */
