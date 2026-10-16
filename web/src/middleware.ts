@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 // Edge-compatible middleware: uses cookie presence to detect session.
 // Role-based access (admin) is enforced at the layout/page level via server components.
 export function middleware(request: NextRequest) {
+  // LOCAL ONLY: skip the login gate entirely
+  if (process.env.DEV_BYPASS_AUTH === "true") return NextResponse.next();
+
   const isLoginPage = request.nextUrl.pathname === "/login";
 
   // better-auth session cookie

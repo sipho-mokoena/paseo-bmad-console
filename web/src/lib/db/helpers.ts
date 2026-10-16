@@ -11,6 +11,16 @@ import type { RepoConfig, ActionResult, UserRole } from "@/lib/types";
  */
 export const getAuthenticatedSession = cache(
   async (): Promise<{ userId: string; role: UserRole; email: string } | null> => {
+    // LOCAL ONLY: act as a fixed admin user (upserted so Repo foreign keys hold)
+    if (process.env.DEV_BYPASS_AUTH === "true") {
+      const email = "local@localhost";
+      const user = await prisma.user.upsert({
+        where: { email },
+        update: {},
+        create: { email, name: "Local", role: "admin", emailVerified: true },
+      });
+      return { userId: user.id, role: "admin", email };
+    }
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) return null;
     const role = (session.user.role === "admin" ? "admin" : "user") satisfies UserRole;
