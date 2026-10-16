@@ -7,6 +7,8 @@ import type { StoryDetail } from "@/lib/bmad/types";
 interface StoryRowProps {
   story: StoryDetail;
   onClick: () => void;
+  /** Shows the owning epic (search results listing stories of many epics). */
+  showEpic?: boolean;
   className?: string;
 }
 
@@ -14,7 +16,7 @@ interface StoryRowProps {
  * History-style story row: id, title › description, pills, after text, status.
  * One line on desktop; on phones the pills wrap to a second line.
  */
-export function StoryRow({ story, onClick, className }: StoryRowProps) {
+export function StoryRow({ story, onClick, showEpic, className }: StoryRowProps) {
   const ticket = story.ticket;
   const chips = hasTicketChips(ticket);
   const hasAfter = !!ticket && ticket.after.length > 0;
@@ -28,6 +30,14 @@ export function StoryRow({ story, onClick, className }: StoryRowProps) {
       <span className="w-10 shrink-0 font-mono text-xs text-muted-foreground">
         {story.id}
       </span>
+      {showEpic && (
+        <span
+          title={story.epicTitle ? `Epic ${story.epicId}: ${story.epicTitle}` : `Epic ${story.epicId}`}
+          className="shrink-0 rounded-sm bg-muted px-1.5 font-mono text-[11px] leading-5 text-muted-foreground"
+        >
+          E{story.epicId}
+        </span>
+      )}
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span className="min-w-0 truncate lg:max-w-[50%] lg:shrink-0">{story.title}</span>
         {story.description && (

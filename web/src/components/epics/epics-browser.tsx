@@ -9,6 +9,7 @@ import { StoryRow } from "./story-row";
 import { EpicsKanban } from "./epics-kanban";
 import { EpicStoriesSheet } from "./epic-stories-sheet";
 import { StoryDetailView } from "./story-detail-view";
+import { groupEpicsByStatus } from "@/lib/stories-browse";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
 import { ArrowLeft } from "lucide-react";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
@@ -141,11 +142,7 @@ export function EpicsBrowser({
     return () => clearExtraSegments();
   }, [clearExtraSegments]);
 
-  const GROUPS: { status: Epic["status"]; label: string }[] = [
-    { status: "in-progress", label: "In progress" },
-    { status: "not-started", label: "Not started" },
-    { status: "done", label: "Done" },
-  ];
+  const groups = useMemo(() => groupEpicsByStatus(epics), [epics]);
 
   return (
     <div className="space-y-3 pb-4">
@@ -188,13 +185,8 @@ export function EpicsBrowser({
             </StateMessage>
           ) : layout === "timeline" ? (
             <div>
-              {GROUPS.map((g) => {
-                const list = epics.filter((e) =>
-                  g.status === "not-started"
-                    ? e.status !== "in-progress" && e.status !== "done"
-                    : e.status === g.status,
-                );
-                if (list.length === 0) return null;
+              {groups.map((g) => {
+                const list = g.epics;
                 return (
                   <section key={g.status} aria-label={g.label}>
                     <GroupLabel count={list.length}>{g.label}</GroupLabel>
