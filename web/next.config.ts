@@ -13,6 +13,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    // The Stories tab was merged into Epics.
+    return [
+      {
+        source: "/repo/:owner/:repo/stories",
+        destination: "/repo/:owner/:repo/epics",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
