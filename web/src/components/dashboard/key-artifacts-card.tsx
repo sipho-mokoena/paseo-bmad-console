@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { GroupLabel, ROW_CLASS } from "@/components/shared/list-kit";
 import { renderFileIcon } from "@/lib/bmad/file-icons";
 import type { FileTreeNode } from "@/lib/bmad/types";
 
@@ -32,21 +32,18 @@ export function KeyArtifactsCard({
   if (files.length === 0) return null;
 
   return (
-    <section className="glass-card p-3 md:p-6 space-y-3 md:space-y-4">
-      <div className="flex items-center gap-2">
-        <BookOpen className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-medium">Key Files</h2>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+    <section aria-label="Key files">
+      <GroupLabel count={files.length}>Key files</GroupLabel>
+      <div>
         {files.map((file) => (
-            <Link
-              key={file.path}
-              href={`/repo/${owner}/${repo}/docs?file=${encodeURIComponent(file.path)}`}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-10 text-sm hover:bg-accent transition-colors duration-300"
-            >
-              {renderFileIcon(file.name, "h-4 w-4 shrink-0 text-muted-foreground")}
-              <span className="truncate">{file.name}</span>
-            </Link>
+          <Link
+            key={file.path}
+            href={`/repo/${owner}/${repo}/docs?file=${encodeURIComponent(file.path)}`}
+            className={ROW_CLASS}
+          >
+            {renderFileIcon(file.name, "h-4 w-4 shrink-0 text-muted-foreground")}
+            <span className="truncate">{file.name}</span>
+          </Link>
         ))}
       </div>
     </section>

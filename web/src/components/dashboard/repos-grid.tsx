@@ -1,6 +1,6 @@
 import { RepoCard } from "./repo-card";
 import { AddRepoCard } from "./add-repo-card";
-import { StaggeredList, StaggeredItem } from "@/components/shared/staggered-list";
+import { GroupLabel, StateMessage } from "@/components/shared/list-kit";
 import type { BmadProject } from "@/lib/bmad/types";
 import type { RepoConfig } from "@/lib/types";
 
@@ -14,12 +14,9 @@ interface ReposGridProps {
 export function ReposGrid({ projects, repos, localFsEnabled, githubEnabled }: ReposGridProps) {
   if (repos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-lg font-medium text-muted-foreground">
-          No project imported
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground mb-4">
-          Add a BMAD repo to get started.
+      <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+        <p className="text-[13px] text-muted-foreground">
+          No project imported. Add a BMAD repo to get started.
         </p>
         <AddRepoCard localFsEnabled={localFsEnabled} githubEnabled={githubEnabled} />
       </div>
@@ -28,34 +25,36 @@ export function ReposGrid({ projects, repos, localFsEnabled, githubEnabled }: Re
 
   if (projects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-lg font-medium text-muted-foreground">
-          Failed to load projects
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Data from your {repos.length} repo{repos.length > 1 ? "s" : ""} could not be fetched. Check your connection or try again.
-        </p>
-      </div>
+      <StateMessage role="alert">
+        Data from your {repos.length} repo{repos.length > 1 ? "s" : ""} could
+        not be fetched. Check your connection or try again.
+      </StateMessage>
     );
   }
 
-  const descriptionMap = new Map(
-    repos.map((r) => [`${r.owner}/${r.name}`, r.description])
-  );
+  const byKey = new Map(repos.map((r) => [`${r.owner}/${r.name}`, r]));
 
   return (
-    <StaggeredList className="grid gap-3 md:gap-4 [&>*]:min-w-0 sm:grid-cols-2 lg:grid-cols-3" initialDelay={0.2} staggerDelay={0.08}>
-      {projects.map((project) => (
-        <StaggeredItem key={`${project.owner}/${project.repo}`}>
-          <RepoCard
-            project={project}
-            description={descriptionMap.get(`${project.owner}/${project.repo}`) ?? null}
-          />
-        </StaggeredItem>
-      ))}
-      <StaggeredItem>
+    <section aria-label="Projects">
+      <GroupLabel count={projects.length}>Projects</GroupLabel>
+      <div role="list">
+        {projects.map((project) => {
+          const repo = byKey.get(`${project.owner}/${project.repo}`);
+          return (
+            <div key={`${project.owner}/${project.repo}`} role="listitem">
+              <RepoCard
+                project={project}
+                description={repo?.description ?? null}
+                path={repo?.localPath ?? null}
+                syncedAt={repo?.lastSyncedAt ?? null}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-1">
         <AddRepoCard localFsEnabled={localFsEnabled} githubEnabled={githubEnabled} />
-      </StaggeredItem>
-    </StaggeredList>
+      </div>
+    </section>
   );
 }

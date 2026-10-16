@@ -54,14 +54,7 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="mesh-gradient min-h-full">
-      <div className="space-y-4 md:space-y-8 pt-2 md:pt-6 lg:pt-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-medium tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Overview of all your BMAD projects
-          </p>
-        </div>
+    <div className="page-pad space-y-4">
         {errors.length > 0 && (
           <AlertBanner
             variant="warning"
@@ -93,7 +86,6 @@ export default async function DashboardPage() {
           localFsEnabled={localFsEnabled}
           githubEnabled={!!token}
         />
-      </div>
     </div>
   );
 }

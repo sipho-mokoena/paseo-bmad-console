@@ -1,127 +1,66 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProgressRing } from "@/components/shared/progress-ring";
 import { ParseErrorsDialog } from "@/components/shared/parse-errors-dialog";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { Badge } from "@/components/ui/badge";
-import { GitBranch, FolderOpen, BookOpen, Layers } from "lucide-react";
-import type { BmadProject, Epic } from "@/lib/bmad/types";
+import { ProgressBar } from "@/components/shared/segmented-progress-bar";
+import { ROW_CLASS } from "@/components/shared/list-kit";
+import { Pill } from "@/components/shared/pill";
+import { formatShortRelative } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import type { BmadProject } from "@/lib/bmad/types";
 
 interface RepoCardProps {
   project: BmadProject;
   description: string | null;
+  path?: string | null;
+  syncedAt?: Date | string | null;
 }
 
-function getBarColor(percent: number) {
-  if (percent >= 75) return "bg-success";
-  if (percent >= 40) return "bg-warning";
-  return "bg-destructive";
-}
+/** One project as a History-style row: name › path, counts, % complete, relative time. */
+export function RepoCard({ project, description, path, syncedAt }: RepoCardProps) {
+  const sub =
+    project.owner === "local"
+      ? (path ?? description ?? "")
+      : `${project.owner}/${project.repo}`;
+  const errors = project.parseHealth?.errors ?? [];
 
-function EpicSummaryRow({ epic }: { epic: Epic }) {
   return (
-    <div className="flex items-center gap-2">
-      <StatusBadge status={epic.status} compact />
-      <span
-        className="text-xs text-muted-foreground truncate min-w-0 flex-1"
-        title={`${epic.id}. ${epic.title}`}
+    <div className="relative">
+      <Link
+        href={`/repo/${project.owner}/${project.repo}`}
+        className={cn(ROW_CLASS, "flex-wrap gap-y-0.5 lg:flex-nowrap", errors.length > 0 && "pr-9")}
       >
-        {epic.id}. {epic.title}
-      </span>
-      <span className="text-xs text-muted-foreground whitespace-nowrap">
-        {epic.completedStories}/{epic.totalStories}
-      </span>
-      <div
-        className="h-1 w-12 md:w-16 shrink-0 rounded-full bg-muted overflow-hidden"
-        role="progressbar"
-        aria-valuenow={epic.progressPercent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`Epic ${epic.id} progress: ${epic.progressPercent}%`}
-      >
-        <div
-          className={`h-full rounded-full ${getBarColor(epic.progressPercent)} transition-all duration-500`}
-          style={{ width: `${epic.progressPercent}%` }}
-        />
-      </div>
+        <span className="min-w-0 max-w-full truncate font-medium lg:max-w-[40%] lg:shrink-0">
+          {project.displayName}
+        </span>
+        {sub && (
+          <span className="hidden min-w-0 flex-1 items-baseline gap-2 lg:flex">
+            <span aria-hidden="true" className="text-muted-foreground">›</span>
+            <span className="min-w-0 truncate text-muted-foreground">{sub}</span>
+          </span>
+        )}
+        <span className="ml-auto flex shrink-0 items-center gap-3 text-xs tabular-nums text-muted-foreground">
+          <span>{project.epics.length} epics</span>
+          <span>{project.totalStories} stories</span>
+          <ProgressBar
+            percent={project.progressPercent}
+            label={`${project.displayName} progress: ${project.progressPercent}%`}
+            className="hidden w-20 sm:block"
+          />
+          <Pill className="tabular-nums">{project.progressPercent}%</Pill>
+          <span className="hidden w-16 text-right lg:inline">
+            {formatShortRelative(syncedAt)}
+          </span>
+        </span>
+        {sub && (
+          <span className="basis-full truncate text-xs text-muted-foreground lg:hidden">
+            {sub}
+          </span>
+        )}
+      </Link>
+      {errors.length > 0 && (
+        <span className="absolute right-1 top-1/2 -translate-y-1/2">
+          <ParseErrorsDialog errors={errors} />
+        </span>
+      )}
     </div>
-  );
-}
-
-export function RepoCard({ project, description }: RepoCardProps) {
-  const visibleEpics = project.epics.slice(0, 3);
-  const remainingEpics = Math.max(0, project.epics.length - 3);
-
-  return (
-    <Link href={`/repo/${project.owner}/${project.repo}`} className="block min-w-0">
-      <Card className="glass-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group cursor-pointer h-full">
-        <CardHeader className="pb-0 md:pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1 min-w-0">
-              <CardTitle className="text-lg group-hover:text-primary transition-colors flex items-center gap-2">
-                {project.displayName}
-                {(project.parseHealth?.errors.length ?? 0) > 0 && (
-                  <ParseErrorsDialog errors={project.parseHealth?.errors ?? []} />
-                )}
-              </CardTitle>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {project.owner === "local" ? (
-                  <FolderOpen className="h-3 w-3" />
-                ) : (
-                  <GitBranch className="h-3 w-3" />
-                )}
-                <span>
-                  {project.owner === "local"
-                    ? project.displayName
-                    : `${project.owner}/${project.repo}`}
-                </span>
-              </div>
-              {description && (
-                <p className="text-xs text-muted-foreground line-clamp-1">
-                  {description}
-                </p>
-              )}
-            </div>
-            <ProgressRing percent={project.progressPercent} size={52} strokeWidth={4} className="shrink-0" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Layers className="h-3.5 w-3.5" />
-              <span>{project.epics.length} epics</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <BookOpen className="h-3.5 w-3.5" />
-              <span>{project.totalStories} stories</span>
-            </div>
-          </div>
-          <div className="mt-3 flex gap-2 flex-wrap">
-            {project.completedStories > 0 && (
-              <Badge variant="outline" className="bg-success/15 text-success-foreground border-success/25 text-xs">
-                {project.completedStories} completed
-              </Badge>
-            )}
-            {project.inProgressStories > 0 && (
-              <Badge variant="outline" className="bg-info/15 text-info-foreground border-info/25 text-xs">
-                {project.inProgressStories} in progress
-              </Badge>
-            )}
-          </div>
-          {project.epics.length > 0 && (
-            <div className="mt-3 space-y-1.5 border-t border-border/40 pt-3">
-              {visibleEpics.map((epic) => (
-                <EpicSummaryRow key={epic.id} epic={epic} />
-              ))}
-              {remainingEpics > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  +{remainingEpics} epics
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </Link>
   );
 }

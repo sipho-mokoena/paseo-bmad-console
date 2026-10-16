@@ -1,60 +1,34 @@
-import { StatsCard } from "@/components/shared/stats-card";
-import { StaggeredList, StaggeredItem } from "@/components/shared/staggered-list";
-import { Layers, BookOpen, CheckCircle2, Zap } from "lucide-react";
+import { StatStrip } from "@/components/shared/list-kit";
+import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 
 interface ProjectStatsGridProps {
   totalEpics: number;
   totalStories: number;
   completedStories: number;
-  sprintProgress: number | null;
+  inProgressStories: number;
+  progressPercent: number;
 }
 
+/** Compact summary: one strip of label+number pairs and a slim progress bar. */
 export function ProjectStatsGrid({
   totalEpics,
   totalStories,
   completedStories,
-  sprintProgress,
+  inProgressStories,
+  progressPercent,
 }: ProjectStatsGridProps) {
   return (
-    <StaggeredList className="grid gap-2 md:gap-4 grid-cols-2 [&>*]:min-w-0 lg:grid-cols-4">
-      <StaggeredItem>
-        <StatsCard
-          title="Epics"
-          value={totalEpics}
-          icon={Layers}
-          color="violet"
-          description="Total epics"
-        />
-      </StaggeredItem>
-      <StaggeredItem>
-        <StatsCard
-          title="Stories"
-          value={totalStories}
-          icon={BookOpen}
-          color="info"
-          description="Total stories"
-        />
-      </StaggeredItem>
-      <StaggeredItem>
-        <StatsCard
-          title="Completed"
-          value={completedStories}
-          icon={CheckCircle2}
-          color="success"
-          description="Completed stories"
-        />
-      </StaggeredItem>
-      <StaggeredItem>
-        <StatsCard
-          title="Sprint"
-          value={sprintProgress !== null ? `${sprintProgress}%` : "—"}
-          icon={Zap}
-          color="warning"
-          description={
-            sprintProgress !== null ? "Sprint progress" : "No sprint defined"
-          }
-        />
-      </StaggeredItem>
-    </StaggeredList>
+    <div className="space-y-2">
+      <StatStrip
+        stats={[
+          { label: "Epics", value: totalEpics },
+          { label: "Stories", value: totalStories },
+          { label: "Completed", value: completedStories },
+          { label: "In progress", value: inProgressStories },
+          { label: "Complete", value: `${progressPercent}%` },
+        ]}
+      />
+      <ProgressBar percent={progressPercent} label={`Project progress: ${progressPercent}%`} />
+    </div>
   );
 }

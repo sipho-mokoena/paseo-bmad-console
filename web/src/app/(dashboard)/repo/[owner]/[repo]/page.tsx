@@ -1,7 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
 import { getGitHubToken } from "@/lib/github/client";
-import { ProgressRing } from "@/components/shared/progress-ring";
 import { ProjectStatsGrid } from "@/components/dashboard/project-stats-grid";
 import { EpicsList } from "@/components/dashboard/epics-list";
 import { VelocityMetrics } from "@/components/dashboard/velocity-metrics";
@@ -30,16 +29,6 @@ function extractPlanningArtifacts(fileTree: FileTreeNode[]): FileTreeNode[] {
   return planningDir?.children ?? [];
 }
 
-function getSprintProgress(project: {
-  sprintStatus: { stories: { status: string }[] } | null;
-}): number | null {
-  if (!project.sprintStatus) return null;
-  const stories = project.sprintStatus.stories;
-  if (stories.length === 0) return null;
-  const done = stories.filter((s) => s.status === "done").length;
-  return Math.round((done / stories.length) * 100);
-}
-
 export default async function RepoOverviewPage({ params }: RepoPageProps) {
   const { owner, repo: repoName } = await params;
   const userId = await getAuthenticatedUserId();
@@ -56,84 +45,67 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
   const planningArtifacts = extractPlanningArtifacts(project.fileTree);
 
   return (
-    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl md:text-3xl font-medium tracking-tight truncate">
-              {project.displayName}
-            </h1>
-            <RefreshRepoButton owner={owner} name={repoName} />
-            {!isLocal && (
-              <RepoSettingsModal
-                owner={owner}
-                name={repoName}
-                currentBranch={project.branch}
-              />
-            )}
-            <DeleteRepoButton
+    <div className="space-y-4">
+      {/* Source line + actions (the title lives in the header) */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-x-2 overflow-hidden text-[13px] text-muted-foreground [&>svg]:shrink-0">
+          {isLocal ? (
+            <>
+              <FolderOpen className="h-3.5 w-3.5" />
+              <span className="min-w-0 truncate">{repoConfig.localPath ?? "Local folder"}</span>
+            </>
+          ) : (
+            <>
+              <GitBranch className="h-3.5 w-3.5" />
+              <span>
+                {project.owner}/{project.repo} ({project.branch})
+              </span>
+            </>
+          )}
+          {repoConfig.lastSyncedAt && (
+            <span className="hidden shrink-0 items-center gap-2 sm:flex">
+              <span className="text-muted-foreground/50">·</span>
+              <Clock className="h-3 w-3" />
+              <span>{formatRelativeTime(repoConfig.lastSyncedAt)}</span>
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <RefreshRepoButton owner={owner} name={repoName} />
+          {!isLocal && (
+            <RepoSettingsModal
               owner={owner}
               name={repoName}
-              displayName={project.displayName}
+              currentBranch={project.branch}
             />
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-sm text-muted-foreground [&>svg]:shrink-0">
-            {isLocal ? (
-              <>
-                <FolderOpen className="h-4 w-4" />
-                <span className="min-w-0 break-all">{repoConfig.localPath ?? "Local folder"}</span>
-              </>
-            ) : (
-              <>
-                <GitBranch className="h-4 w-4" />
-                <span>
-                  {project.owner}/{project.repo} ({project.branch})
-                </span>
-              </>
-            )}
-            {repoConfig.lastSyncedAt && (
-              <>
-                <span className="text-muted-foreground/50">·</span>
-                <Clock className="h-3.5 w-3.5" />
-                <span>{formatRelativeTime(repoConfig.lastSyncedAt)}</span>
-              </>
-            )}
-          </div>
+          )}
+          <DeleteRepoButton
+            owner={owner}
+            name={repoName}
+            displayName={project.displayName}
+          />
         </div>
-        <ProgressRing
-          percent={project.progressPercent}
-          size={72}
-          strokeWidth={5}
-          className="shrink-0"
-        />
       </div>
 
-      {/* 4 Stats Cards en grille */}
       <ProjectStatsGrid
         totalEpics={project.epics.length}
         totalStories={project.totalStories}
         completedStories={project.completedStories}
-        sprintProgress={getSprintProgress(project)}
+        inProgressStories={project.inProgressStories}
+        progressPercent={project.progressPercent}
       />
 
-      {/* Velocity metrics */}
       {project.sprintStatus && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-medium">Velocity Metrics</h2>
-          <VelocityMetrics sprintStatus={project.sprintStatus} />
-        </section>
+        <VelocityMetrics sprintStatus={project.sprintStatus} />
       )}
 
-      {/* Key documents */}
+      <EpicsList epics={project.epics} owner={owner} repo={repoName} />
+
       <KeyArtifactsCard
         planningArtifacts={planningArtifacts}
         owner={owner}
         repo={repoName}
       />
-
-      {/* Epics list */}
-      <EpicsList epics={project.epics} owner={owner} repo={repoName} />
     </div>
   );
 }
