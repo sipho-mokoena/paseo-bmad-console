@@ -63,17 +63,38 @@ function TaskGauge({ completed, total }: { completed: number; total: number }) {
   );
 }
 
+/** Compares ticket ids such as "2.10" numerically, segment by segment. */
+function compareStoryIds(a: string, b: string): number {
+  const pa = a.split(".");
+  const pb = b.split(".");
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = Number(pa[i]);
+    const nb = Number(pb[i]);
+    if (pa[i] === undefined) return -1;
+    if (pb[i] === undefined) return 1;
+    if (!Number.isNaN(na) && !Number.isNaN(nb)) {
+      if (na !== nb) return na - nb;
+    } else if (pa[i] !== pb[i]) {
+      return pa[i].localeCompare(pb[i]);
+    }
+  }
+  return 0;
+}
+
 const columns: ColumnDef<StoryDetail>[] = [
   {
     accessorKey: "id",
-    header: "ID",
+    header: ({ column }) => (
+      <DataGridColumnHeader column={column} title="ID" />
+    ),
     cell: ({ row }) => (
       <span className="font-mono text-xs text-muted-foreground">
         S{row.getValue("id")}
       </span>
     ),
     size: 80,
-    enableSorting: false,
+    sortingFn: (rowA, rowB) =>
+      compareStoryIds(rowA.original.id, rowB.original.id),
   },
   {
     accessorKey: "title",
@@ -117,9 +138,11 @@ const columns: ColumnDef<StoryDetail>[] = [
 
 interface StoriesTableProps {
   stories: StoryDetail[];
+  /** Opens the story detail (row click, Enter or Space). */
+  onStorySelect?: (story: StoryDetail) => void;
 }
 
-export function StoriesTable({ stories }: StoriesTableProps) {
+export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
@@ -137,6 +160,7 @@ export function StoriesTable({ stories }: StoriesTableProps) {
     <DataGrid
       table={table}
       recordCount={stories.length}
+      onRowClick={onStorySelect}
       tableLayout={{
         headerSticky: true,
         headerBackground: true,

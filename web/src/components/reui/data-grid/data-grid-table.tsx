@@ -608,11 +608,20 @@ function DataGridTableHeadRowCell<TData>({
   const headerCellSpacing = headerCellSpacingVariants({
     size: props.tableLayout?.dense ? "dense" : "default",
   })
+  const sortState = column.getIsSorted()
+  const ariaSort = column.getCanSort()
+    ? sortState === "asc"
+      ? "ascending"
+      : sortState === "desc"
+        ? "descending"
+        : "none"
+    : undefined
 
   return (
     <th
       key={header.id}
       ref={dndRef}
+      aria-sort={ariaSort}
       style={{
         ...(props.tableLayout?.width === "fixed" &&
           !props.tableLayout?.columnsResizable && {
@@ -950,9 +959,23 @@ function DataGridTableBodyRow<TData>({
       data-row-pinned={isRowPinned || undefined}
       data-row-pinned-boundary={pinnedBoundary}
       onClick={() => props.onRowClick && props.onRowClick(row.original)}
+      role={props.onRowClick ? "button" : undefined}
+      tabIndex={props.onRowClick ? 0 : undefined}
+      onKeyDown={
+        props.onRowClick
+          ? (e) => {
+              if (e.target !== e.currentTarget) return
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                props.onRowClick?.(row.original)
+              }
+            }
+          : undefined
+      }
       className={cn(
         "hover:bg-muted/40 data-[state=selected]:bg-muted/50",
-        props.onRowClick && "cursor-pointer",
+        props.onRowClick &&
+          "cursor-pointer focus-visible:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
         !props.tableLayout?.stripped &&
           props.tableLayout?.rowBorder &&
           "border-border border-b [&:not(:last-child)>td]:border-b",

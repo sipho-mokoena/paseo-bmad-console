@@ -7,6 +7,12 @@ import { StoryFilters, type Filter } from "./story-filters";
 import { StoriesTable } from "./stories-table";
 import { KanbanBoard } from "./kanban-board";
 import { StaggeredList, StaggeredItem } from "@/components/shared/staggered-list";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { StoryDetailView } from "@/components/epics/story-detail-view";
 import type { StoryDetail, Epic } from "@/lib/bmad/types";
 
 interface StoriesViewProps {
@@ -18,6 +24,7 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
   const [view, setView] = useState<"table" | "kanban">("table");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filter<string>[]>([]);
+  const [selectedStory, setSelectedStory] = useState<StoryDetail | null>(null);
 
   const applyFilters = useCallback(
     (story: StoryDetail) => {
@@ -93,11 +100,30 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
 
       <StaggeredItem>
         {view === "table" ? (
-          <StoriesTable stories={filtered} />
+          <StoriesTable stories={filtered} onStorySelect={setSelectedStory} />
         ) : (
           <KanbanBoard stories={filtered} />
         )}
       </StaggeredItem>
+
+      <Sheet
+        open={selectedStory !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedStory(null);
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          {/* Visible heading lives in StoryDetailView; this is the accessible name. */}
+          <SheetTitle className="sr-only">
+            {selectedStory
+              ? `Story ${selectedStory.id}: ${selectedStory.title}`
+              : "Story"}
+          </SheetTitle>
+          <div className="px-4 pb-4">
+            {selectedStory && <StoryDetailView story={selectedStory} />}
+          </div>
+        </SheetContent>
+      </Sheet>
     </StaggeredList>
   );
 }
