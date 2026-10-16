@@ -1,13 +1,16 @@
+import { ProjectTabs } from "@/components/layout/project-tabs";
+
 interface RepoLayoutProps {
   children: React.ReactNode;
+  params: Promise<{ owner: string; repo: string }>;
 }
 
-export default function RepoLayout({ children }: RepoLayoutProps) {
+export default async function RepoLayout({ children, params }: RepoLayoutProps) {
+  const { owner, repo } = await params;
   return (
-    <div className="mesh-gradient min-h-full">
-      <div className="pt-2 md:pt-6 lg:pt-8">
-        {children}
-      </div>
-    </div>
+    <>
+      <ProjectTabs basePath={`/repo/${owner}/${repo}`} />
+      <div className="mesh-gradient min-h-full">{children}</div>
+    </>
   );
 }
