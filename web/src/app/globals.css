@@ -114,24 +114,24 @@
 }
 
 .dark {
-    --background: #101615;
+    --background: #181b1a;
     --foreground: #fafafa;
-    --card: #171d1c;
+    --card: #1e2120;
     --card-foreground: #fafafa;
-    --popover: #181b1a;
+    --popover: #1e2120;
     --popover-foreground: #fafafa;
-    --primary: #239956;
+    --primary: #20744a;
     --primary-foreground: #ffffff;
-    --secondary: #252b2a;
+    --secondary: #434645;
     --secondary-foreground: #fafafa;
-    --muted: #1a1f1e;
-    --muted-foreground: #a8adac;
-    --accent: #252b2a;
+    --muted: #1e2120;
+    --muted-foreground: #a1a5a4;
+    --accent: #272a29;
     --accent-foreground: #fafafa;
     --destructive: #c64f43;
     --border: #252b2a;
     --input: #2f3534;
-    --ring: #239956;
+    --ring: #20744a;
     --chart-1: #35c264;
     --chart-2: #5caaf6;
     --chart-3: #a890d5;
@@ -139,21 +139,21 @@
     --chart-5: #d8847b;
     --sidebar: #141716;
     --sidebar-foreground: #fafafa;
-    --sidebar-primary: #239956;
+    --sidebar-primary: #20744a;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #272a29;
     --sidebar-accent-foreground: #fafafa;
     --sidebar-border: #252b2a;
-    --sidebar-ring: #239956;
-    --destructive-foreground: #d8847b;
+    --sidebar-ring: #20744a;
+    --destructive-foreground: #cc7d75;
     --info: #5caaf6;
     --info-foreground: #5caaf6;
-    --success: #6cb17b;
-    --success-foreground: #6cb17b;
+    --success: #67a875;
+    --success-foreground: #67a875;
     --warning: #c09664;
     --warning-foreground: #c09664;
     --invert: #fafafa;
-    --invert-foreground: #101615;
+    --invert-foreground: #181b1a;
     --merged: #a890d5;
     --merged-foreground: #a890d5;
     --dot-grid-color: transparent;
@@ -164,7 +164,7 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground text-[13px] md:text-sm;
         background-image: repeating-linear-gradient(
             45deg,
             var(--dot-grid-color) 0,
@@ -187,24 +187,25 @@
     @apply bg-card border border-border rounded-xl;
 }
 
-/* Gradient mesh background */
-.mesh-gradient {
-    background-color: var(--sidebar);
-    border: 1px solid var(--sidebar-border);
-    padding: 0 15px;
-    margin: 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+/* Page content sits directly on the main background: no card, no shadow.
+   The class name is kept so existing markup stays unchanged. */
+:root {
+    --app-header-h: 3rem;
 }
 
-/* Mobile: no inner panel chrome, the shell already supplies the gutters. */
-@media (max-width: 767px) {
+@media (min-width: 768px) {
+    :root {
+        --app-header-h: 2.5rem;
+    }
+}
+
+.mesh-gradient {
+    padding: 0.5rem 0.5rem max(1rem, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
     .mesh-gradient {
-        background-color: transparent;
-        border: 0;
-        box-shadow: none;
-        padding: 0;
-        border-radius: 0;
+        padding: 1.5rem;
     }
 }
 

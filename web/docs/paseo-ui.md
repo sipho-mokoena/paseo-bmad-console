@@ -7,33 +7,54 @@ Extracted from `getpaseo/paseo` (main) for restyling BMAD Console. Two sources a
 
 Paths below are relative to the `getpaseo/paseo` repo root.
 
-## Colour: dark
+## Colour: dark (desktop app, sampled)
+
+The desktop app is more neutral than the website. Values below were sampled with PIL from the
+Paseo desktop screenshots (chat, History, model picker) and match `packages/app/src/styles/theme.ts`
+`paseoDarkColors` (surface0-4, surfaceSidebar, accent). They supersede the website tokens
+(`#101615` background, `#171d1c` card, `#239956` primary) used in the previous pass.
+
+| Token | Value | Sampled from | BMAD Console token |
+| --- | --- | --- | --- |
+| main / window background | `#181b1a` (surface0) | main area, header, tab strip | `--background` |
+| sidebar background | `#141716` (surfaceSidebar) | left sidebar | `--sidebar` |
+| hairline border | `#252b2a` | sidebar edge, header bottom, sidebar divider, modal rules | `--border` |
+| hover / selected row | `#272a29` (surface2) | selected workspace row, active tab, selected History row | `--accent`, `--sidebar-accent` |
+| raised surface | `#1e2120` (surface1) | modal, composer, search field | `--card`, `--popover`, `--muted` |
+| secondary pill / badge | `#434645` (surface3) | "Archived" badge, "Add model" button | `--secondary` |
+| primary green | `#20744a` | send button, Refresh button | `--primary`, `--ring` |
+| foreground | `#fafafa` | titles, body | `--foreground` |
+| muted text | `#a1a5a4` | header project name, sidebar actions, subtitles | `--muted-foreground` |
+| diff add / remove | `#67a875` / `#cc7d75` | +/- counters | `--success`, `--destructive-foreground` |
+| modal overlay | `#0b0c0c` over main | model picker backdrop | `bg-black/60` |
+
+Layout (`packages/app/src/constants/layout.ts`): `HEADER_INNER_HEIGHT` 36 (screens ~40px with border),
+`HEADER_INNER_HEIGHT_MOBILE` 56, `WORKSPACE_SECONDARY_HEADER_HEIGHT` 36 (tab strip), sidebar 320px.
+BMAD Console uses: sidebar 20rem, header 2.5rem desktop / 3rem phone (`--app-header-h`), tab strip 2.25rem,
+sidebar action rows 30px (40px on phones), content padding 24px desktop / 8px phone.
+
+### Website tokens (previous pass, superseded for dark)
 
 Website tokens, `packages/website/src/styles.css` (`@theme`, lines 670-690):
 
-| Token | Value | Use in BMAD Console |
-| --- | --- | --- |
-| background | `#101615` | page background |
-| foreground | `#fafafa` | primary text |
-| card | `#171d1c` | card surface |
-| muted | `#1a1f1e` | muted surface, code chips |
-| muted-foreground | `#a8adac` | secondary text |
-| extra-muted-foreground | `#717574` | tertiary text, captions |
-| border | `#252b2a` | all borders, dividers |
-| primary | `#239956` (fg `#ffffff`) | primary buttons, focus accent |
-| secondary | `#252b2a` (fg `#fafafa`) | secondary surfaces |
-| scrollbar-handle | `#717574` | thin scrollbars |
+| Token | Value |
+| --- | --- |
+| background | `#101615` |
+| card | `#171d1c` |
+| muted-foreground | `#a8adac` |
+| extra-muted-foreground | `#717574` |
+| primary | `#239956` |
 
 App surfaces, `packages/app/src/styles/theme.ts` `paseoDarkColors` (line 460):
 
 | Token | Value | Use in BMAD Console |
 | --- | --- | --- |
-| surface0 | `#181B1A` | popovers, dialogs |
-| surface1 | `#1E2120` | raised panels |
+| surface0 | `#181B1A` | main background |
+| surface1 | `#1E2120` | raised panels, modals |
 | surface2 | `#272A29` | hover / active rows |
-| surface3 / surface4 | `#434645` / `#595B5B` | strong borders, disabled tracks |
+| surface3 / surface4 | `#434645` / `#595B5B` | secondary pills, disabled tracks |
 | surfaceSidebar | `#141716` | sidebar background |
-| borderAccent | `#2F3534` | emphasised borders |
+| borderAccent | `#2F3534` | emphasised borders, inputs |
 | accent / accentBright | `#20744A` / `#7CCBA0` | brand accent, selected text |
 | destructive | `#C64F43` | destructive actions |
 
