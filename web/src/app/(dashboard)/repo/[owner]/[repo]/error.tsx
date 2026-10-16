@@ -31,7 +31,7 @@ export default function RepoError({
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-medium">
               {isPathStale
                 ? "Local folder not found"
                 : is404

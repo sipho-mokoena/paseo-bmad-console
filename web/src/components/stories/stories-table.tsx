@@ -56,7 +56,7 @@ function TaskGauge({ completed, total }: { completed: number; total: number }) {
           />
         )}
       </svg>
-      <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+      <span className="text-xs font-medium tabular-nums text-muted-foreground">
         {completed}/{total}
       </span>
     </div>

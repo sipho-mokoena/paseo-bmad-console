@@ -77,13 +77,13 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
       <SidebarHeader className="border-b border-border/50 px-6 py-4 group-data-[collapsible=icon]:px-2">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/logo_mybmad.png"
+            src="/logo.png"
             alt="MyBMAD"
             width={32}
             height={32}
             className="shrink-0 rounded-lg"
           />
-          <span className="font-semibold text-lg group-data-[collapsible=icon]:hidden">MyBMAD</span>
+          <span className="font-medium text-lg group-data-[collapsible=icon]:hidden">MyBMAD</span>
         </Link>
       </SidebarHeader>
 

@@ -61,7 +61,7 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl font-medium tracking-tight">
               {project.displayName}
             </h1>
             <RefreshRepoButton owner={owner} name={repoName} />
@@ -119,7 +119,7 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
       {/* Velocity metrics */}
       {project.sprintStatus && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Velocity Metrics</h2>
+          <h2 className="text-lg font-medium">Velocity Metrics</h2>
           <VelocityMetrics sprintStatus={project.sprintStatus} />
         </section>
       )}

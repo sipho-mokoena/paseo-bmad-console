@@ -122,7 +122,7 @@ export default function ProfilePage() {
   return (
     <div className="mesh-gradient min-h-full">
       <div className="space-y-8 pt-6 lg:pt-8">
-        <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
+        <h1 className="text-3xl font-medium tracking-tight">My Profile</h1>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Left column — Avatar & Password */}
@@ -136,7 +136,7 @@ export default function ProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-center">
-                  <p className="text-lg font-semibold">{name}</p>
+                  <p className="text-lg font-medium">{name}</p>
                   <p className="text-sm text-muted-foreground">{email}</p>
                 </div>
                 {role && (

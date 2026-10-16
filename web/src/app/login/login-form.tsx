@@ -93,13 +93,13 @@ export function LoginForm({ githubEnabled, registrationEnabled }: LoginFormProps
     <Card className="glass-card w-full max-w-sm">
       <CardHeader className="flex flex-col items-center text-center">
         <Image
-          src="/logo_mybmad.png"
+          src="/logo.png"
           alt="MyBMAD"
           width={64}
           height={64}
           className="mb-2"
         />
-        <CardTitle className="text-2xl font-bold">MyBMAD</CardTitle>
+        <CardTitle className="text-2xl font-medium">MyBMAD</CardTitle>
         <CardDescription>
           {isSignUp ? "Créer un compte" : "Connectez-vous à votre dashboard"}
         </CardDescription>

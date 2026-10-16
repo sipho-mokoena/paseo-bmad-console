@@ -57,7 +57,7 @@ export default async function DashboardPage() {
     <div className="mesh-gradient min-h-full">
       <div className="space-y-8 pt-6 lg:pt-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-medium tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
             Overview of all your BMAD projects
           </p>

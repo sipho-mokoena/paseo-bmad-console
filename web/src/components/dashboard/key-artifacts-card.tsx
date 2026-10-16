@@ -35,7 +35,7 @@ export function KeyArtifactsCard({
     <section className="glass-card p-6 space-y-4">
       <div className="flex items-center gap-2">
         <BookOpen className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold">Key Files</h2>
+        <h2 className="text-lg font-medium">Key Files</h2>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {files.map((file) => (

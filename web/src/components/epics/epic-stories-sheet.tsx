@@ -74,7 +74,7 @@ export function EpicStoriesSheet({
           ) : (
             <>
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
                   {epic.id}
                 </span>
                 <SheetTitle className="text-lg">{epic.title}</SheetTitle>
@@ -136,7 +136,7 @@ export function EpicStoriesSheet({
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary shrink-0">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-medium text-primary shrink-0">
                           {story.id}
                         </span>
                         <span className="font-medium text-sm truncate">

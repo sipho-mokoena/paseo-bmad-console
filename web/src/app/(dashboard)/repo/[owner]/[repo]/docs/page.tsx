@@ -29,7 +29,7 @@ export default async function DocsPage({
     return (
       <div className="space-y-8 pb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Library</h1>
+          <h1 className="text-3xl font-medium tracking-tight">Library</h1>
           <p className="text-muted-foreground mt-1">
             Browse the project files
           </p>
@@ -47,7 +47,7 @@ export default async function DocsPage({
   return (
     <div className="space-y-8 pb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Library</h1>
+        <h1 className="text-3xl font-medium tracking-tight">Library</h1>
         <p className="text-muted-foreground mt-1">
           Browse the project files
         </p>

@@ -55,7 +55,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-3.75 z-30 flex h-14 items-center gap-4 bg-sidebar border border-sidebar-border rounded-lg mt-3.75 mr-3.75 shadow-sm px-6 overflow-hidden">
+    <header className="sticky top-3.75 z-30 flex h-14 items-center gap-4 bg-sidebar border border-sidebar-border rounded-lg mt-3.75 mr-3.75 px-6 overflow-hidden">
       <SidebarTrigger className="-ml-2" />
       <Separator orientation="vertical" className="h-6" />
       <nav className="flex items-center gap-1.5 text-lg min-w-0">

@@ -53,7 +53,7 @@ export function ProgressRing({
         y="50%"
         textAnchor="middle"
         dy=".3em"
-        className={cn("text-xs font-semibold", colors.fill)}
+        className={cn("text-xs font-medium", colors.fill)}
       >
         {percent}%
       </text>

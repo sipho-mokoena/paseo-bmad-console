@@ -27,7 +27,7 @@ export default async function StoriesPage({ params }: StoriesPageProps) {
   return (
     <div className="space-y-8 pb-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Stories</h1>
+        <h1 className="text-3xl font-medium tracking-tight">Stories</h1>
         <p className="text-muted-foreground mt-1">
           {project.stories.length} stories across {project.epics.length}{" "}
           epics

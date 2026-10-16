@@ -15,10 +15,10 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+          <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
             Story {story.id}
           </span>
-          <h3 className="text-lg font-semibold">{story.title}</h3>
+          <h3 className="text-lg font-medium">{story.title}</h3>
         </div>
         <StatusBadge status={story.status} />
       </div>
@@ -27,7 +27,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {story.description && (
         <Card className="glass-card">
           <CardContent className="p-5">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
               Description
             </h4>
             <MarkdownRenderer content={story.description} />
@@ -39,7 +39,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {story.acceptanceCriteria.length > 0 && (
         <Card className="glass-card">
           <CardContent className="p-5">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
               Acceptance Criteria
             </h4>
             <ul className="space-y-2">
@@ -59,7 +59,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
         <Card className="glass-card">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                 Tasks
               </h4>
               <span className="text-xs text-muted-foreground">

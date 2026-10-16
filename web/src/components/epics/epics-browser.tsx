@@ -148,7 +148,7 @@ export function EpicsBrowser({
       return (
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Epics</h1>
+            <h1 className="text-3xl font-medium tracking-tight">Epics</h1>
             <p className="text-muted-foreground mt-1">
               {totalEpics} epics &middot; {totalStories} stories
             </p>
@@ -161,7 +161,7 @@ export function EpicsBrowser({
     if ((view === "stories" || view === "story") && selectedEpic) {
       return (
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-medium tracking-tight">
             Epic {selectedEpic.id}: {selectedEpic.title}
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -247,10 +247,10 @@ export function EpicsBrowser({
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                         {selectedEpic.id}
                       </span>
-                      <h3 className="text-lg font-semibold">
+                      <h3 className="text-lg font-medium">
                         {selectedEpic.title}
                       </h3>
                     </div>
@@ -309,7 +309,7 @@ export function EpicsBrowser({
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
                             {story.id}
                           </span>
                           <span className="font-medium truncate">

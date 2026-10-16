@@ -38,7 +38,7 @@ export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
                 className={`h-2.5 w-2.5 rounded-full ${col.color}`}
                 aria-hidden="true"
               />
-              <h3 className="text-sm font-semibold">{col.label}</h3>
+              <h3 className="text-sm font-medium">{col.label}</h3>
               <Badge variant="secondary" className="ml-auto text-xs">
                 {columnEpics.length}
               </Badge>
@@ -63,7 +63,7 @@ export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary shrink-0">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
                           {epic.id}
                         </span>
                         <span className="font-medium text-sm leading-tight truncate">
