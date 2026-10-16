@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import { middleware } from "./middleware";
 
@@ -59,5 +59,29 @@ describe("middleware", () => {
     const res = middleware(req);
 
     expect(res.status).toBe(200);
+  });
+
+  describe("DEV_BYPASS_AUTH", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("skips the login gate outside production", () => {
+      vi.stubEnv("NODE_ENV", "development");
+      vi.stubEnv("DEV_BYPASS_AUTH", "true");
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const res = middleware(createRequest("/dashboard"));
+
+      expect(res.status).toBe(200);
+    });
+
+    it("is ignored in production", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("DEV_BYPASS_AUTH", "true");
+      const res = middleware(createRequest("/dashboard"));
+
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
+    });
   });
 });

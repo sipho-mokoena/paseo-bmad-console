@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDevAuthBypassEnabled, warnIfDevAuthBypassActive } from "@/lib/auth/dev-bypass";
 
 // Edge-compatible middleware: uses cookie presence to detect session.
 // Role-based access (admin) is enforced at the layout/page level via server components.
 export function middleware(request: NextRequest) {
-  // LOCAL ONLY: skip the login gate entirely
-  if (process.env.DEV_BYPASS_AUTH === "true") return NextResponse.next();
+  // LOCAL ONLY: skip the login gate (never honoured when NODE_ENV=production).
+  if (isDevAuthBypassEnabled()) {
+    warnIfDevAuthBypassActive();
+    return NextResponse.next();
+  }
 
   const isLoginPage = request.nextUrl.pathname === "/login";
 

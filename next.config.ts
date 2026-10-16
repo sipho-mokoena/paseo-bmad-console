@@ -1,9 +1,19 @@
 import type { NextConfig } from "next";
+import { assertNoDevAuthBypassInProduction } from "./src/lib/auth/dev-bypass";
+
+// `next build` / `next start` refuse to run with the dev-only login bypass configured.
+assertNoDevAuthBypassInProduction();
+
+// Extra hostnames allowed to reach the dev server (e.g. a Tailscale name or LAN IP).
+// Comma-separated; empty by default.
+const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Dev server reached over Tailscale (tailnet only); Next blocks other hosts in dev otherwise.
-  allowedDevOrigins: ["arm-lab-thinkstation-p5.tailcb64b8.ts.net", "arm-lab-thinkstation-p5", "100.72.152.8"],
+  allowedDevOrigins,
   images: {
     unoptimized: true,
     remotePatterns: [

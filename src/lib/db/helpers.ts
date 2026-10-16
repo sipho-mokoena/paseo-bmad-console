@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { auth } from "@/lib/auth/auth";
+import { isDevAuthBypassEnabled, warnIfDevAuthBypassActive } from "@/lib/auth/dev-bypass";
 
 import { headers } from "next/headers";
 import { prisma } from "@/lib/db/client";
@@ -11,8 +12,10 @@ import type { RepoConfig, ActionResult, UserRole } from "@/lib/types";
  */
 export const getAuthenticatedSession = cache(
   async (): Promise<{ userId: string; role: UserRole; email: string } | null> => {
-    // LOCAL ONLY: act as a fixed admin user (upserted so Repo foreign keys hold)
-    if (process.env.DEV_BYPASS_AUTH === "true") {
+    // LOCAL ONLY: act as a fixed admin user (upserted so Repo foreign keys hold).
+    // Never honoured when NODE_ENV=production.
+    if (isDevAuthBypassEnabled()) {
+      warnIfDevAuthBypassActive();
       const email = "local@localhost";
       const user = await prisma.user.upsert({
         where: { email },
