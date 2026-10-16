@@ -44,13 +44,13 @@ export function EpicsList({ epics, owner, repo }: EpicsListProps) {
         <CardTitle className="text-lg">Epics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
           {sorted.map((epic) => (
             <Link
               key={epic.id}
               href={`/repo/${owner}/${repo}/epics`}
               className={cn(
-                "flex items-center justify-between rounded-lg border border-border/50 border-l-3 p-3 transition-colors duration-300 hover:bg-accent/50",
+                "flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border/50 border-l-3 p-2.5 md:p-3 transition-colors duration-300 hover:bg-accent/50",
                 statusBorderColor[epic.status] ?? "border-l-muted-foreground",
               )}
             >
@@ -58,15 +58,15 @@ export function EpicsList({ epics, owner, repo }: EpicsListProps) {
                 <span className="text-xs font-mono text-muted-foreground shrink-0">
                   E{epic.id}
                 </span>
-                <span className="font-medium truncate">
+                <span className="font-medium line-clamp-2 sm:truncate break-words">
                   {epic.title}
                 </span>
               </div>
-              <div className="flex items-center gap-3 shrink-0 ml-4">
+              <div className="flex items-center gap-3 shrink-0 sm:ml-4 pl-7 sm:pl-0">
                 <SegmentedProgressBar
                   percent={epic.progressPercent}
                   color={getProgressColor(epic.progressPercent)}
-                  className="hidden sm:flex h-2 w-24"
+                  className="hidden sm:flex h-2 w-16 md:w-24"
                 />
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {epic.completedStories}/{epic.totalStories} stories

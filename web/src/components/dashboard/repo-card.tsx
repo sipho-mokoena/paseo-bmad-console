@@ -32,7 +32,7 @@ function EpicSummaryRow({ epic }: { epic: Epic }) {
         {epic.completedStories}/{epic.totalStories}
       </span>
       <div
-        className="h-1 w-16 shrink-0 rounded-full bg-muted overflow-hidden"
+        className="h-1 w-12 md:w-16 shrink-0 rounded-full bg-muted overflow-hidden"
         role="progressbar"
         aria-valuenow={epic.progressPercent}
         aria-valuemin={0}
@@ -53,11 +53,11 @@ export function RepoCard({ project, description }: RepoCardProps) {
   const remainingEpics = Math.max(0, project.epics.length - 3);
 
   return (
-    <Link href={`/repo/${project.owner}/${project.repo}`}>
+    <Link href={`/repo/${project.owner}/${project.repo}`} className="block min-w-0">
       <Card className="glass-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group cursor-pointer h-full">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
+        <CardHeader className="pb-0 md:pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1 min-w-0">
               <CardTitle className="text-lg group-hover:text-primary transition-colors flex items-center gap-2">
                 {project.displayName}
                 {(project.parseHealth?.errors.length ?? 0) > 0 && (
@@ -82,11 +82,11 @@ export function RepoCard({ project, description }: RepoCardProps) {
                 </p>
               )}
             </div>
-            <ProgressRing percent={project.progressPercent} size={52} strokeWidth={4} />
+            <ProgressRing percent={project.progressPercent} size={52} strokeWidth={4} className="shrink-0" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Layers className="h-3.5 w-3.5" />
               <span>{project.epics.length} epics</span>

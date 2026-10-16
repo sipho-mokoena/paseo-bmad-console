@@ -27,7 +27,7 @@ export function GlobalStatsBar({ projects }: GlobalStatsBarProps) {
     totalStories > 0 ? Math.round((n / totalStories) * 100) : 0;
 
   return (
-    <StaggeredList className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <StaggeredList className="grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-5">
       <StaggeredItem className="h-full">
         <StatsCard
           title="Projects"
@@ -74,7 +74,7 @@ export function GlobalStatsBar({ projects }: GlobalStatsBarProps) {
           }
         />
       </StaggeredItem>
-      <StaggeredItem className="h-full sm:col-span-2 xl:col-span-1">
+      <StaggeredItem className="h-full col-span-2 xl:col-span-1">
         <StatsCard
           title="In Progress"
           value={inProgressStories}

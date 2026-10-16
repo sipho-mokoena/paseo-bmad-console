@@ -56,12 +56,12 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
   const planningArtifacts = extractPlanningArtifacts(project.fileTree);
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-medium tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-medium tracking-tight truncate">
               {project.displayName}
             </h1>
             <RefreshRepoButton owner={owner} name={repoName} />
@@ -78,11 +78,11 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
               displayName={project.displayName}
             />
           </div>
-          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-sm text-muted-foreground [&>svg]:shrink-0">
             {isLocal ? (
               <>
                 <FolderOpen className="h-4 w-4" />
-                <span>{repoConfig.localPath ?? "Local folder"}</span>
+                <span className="min-w-0 break-all">{repoConfig.localPath ?? "Local folder"}</span>
               </>
             ) : (
               <>
@@ -105,6 +105,7 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
           percent={project.progressPercent}
           size={72}
           strokeWidth={5}
+          className="shrink-0"
         />
       </div>
 

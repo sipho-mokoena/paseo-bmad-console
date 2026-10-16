@@ -21,7 +21,7 @@ export function VelocityMetrics({
   const blockedCount = stories.filter((s) => s.status === "blocked").length;
 
   return (
-    <StaggeredList className="grid gap-4 grid-cols-3">
+    <StaggeredList className="grid gap-2 md:gap-4 grid-cols-2 md:grid-cols-3 [&>*]:min-w-0">
       <StaggeredItem>
         <StatsCard
           title="Velocity"
@@ -40,7 +40,7 @@ export function VelocityMetrics({
           color="info"
         />
       </StaggeredItem>
-      <StaggeredItem>
+      <StaggeredItem className="col-span-2 md:col-span-1">
         <StatsCard
           title="Blocked"
           value={blockedCount}

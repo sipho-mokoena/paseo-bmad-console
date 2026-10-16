@@ -16,7 +16,7 @@ export function ProjectStatsGrid({
   sprintProgress,
 }: ProjectStatsGridProps) {
   return (
-    <StaggeredList className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+    <StaggeredList className="grid gap-2 md:gap-4 grid-cols-2 [&>*]:min-w-0 lg:grid-cols-4">
       <StaggeredItem>
         <StatsCard
           title="Epics"

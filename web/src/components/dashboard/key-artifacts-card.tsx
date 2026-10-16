@@ -32,7 +32,7 @@ export function KeyArtifactsCard({
   if (files.length === 0) return null;
 
   return (
-    <section className="glass-card p-6 space-y-4">
+    <section className="glass-card p-3 md:p-6 space-y-3 md:space-y-4">
       <div className="flex items-center gap-2">
         <BookOpen className="h-5 w-5 text-primary" />
         <h2 className="text-lg font-medium">Key Files</h2>
@@ -42,7 +42,7 @@ export function KeyArtifactsCard({
             <Link
               key={file.path}
               href={`/repo/${owner}/${repo}/docs?file=${encodeURIComponent(file.path)}`}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm hover:bg-accent transition-colors duration-300"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-10 text-sm hover:bg-accent transition-colors duration-300"
             >
               {renderFileIcon(file.name, "h-4 w-4 shrink-0 text-muted-foreground")}
               <span className="truncate">{file.name}</span>

@@ -44,7 +44,7 @@ export function ReposGrid({ projects, repos, localFsEnabled, githubEnabled }: Re
   );
 
   return (
-    <StaggeredList className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" initialDelay={0.2} staggerDelay={0.08}>
+    <StaggeredList className="grid gap-3 md:gap-4 [&>*]:min-w-0 sm:grid-cols-2 lg:grid-cols-3" initialDelay={0.2} staggerDelay={0.08}>
       {projects.map((project) => (
         <StaggeredItem key={`${project.owner}/${project.repo}`}>
           <RepoCard
