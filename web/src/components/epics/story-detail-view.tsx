@@ -23,8 +23,8 @@ function TicketDefinitions({
 }) {
   return (
     <Card className="glass-card">
-      <CardContent className="p-5 space-y-4">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+      <CardContent className="px-3 py-0 md:p-5 space-y-4">
+        <dl className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-3 md:gap-y-4 sm:grid-cols-4">
           <div>
             <dt className={LABEL}>Type</dt>
             <dd className="mt-1 text-sm capitalize">{ticket.type ?? "-"}</dd>
@@ -102,16 +102,16 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
   const criteria = ticket ? story.acceptanceCriteria.slice(1) : story.acceptanceCriteria;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pr-8">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:pr-8">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="inline-flex shrink-0 items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
             Story {story.id}
           </span>
-          <h3 className="text-lg font-medium">{story.title}</h3>
+          <h3 className="min-w-0 text-base md:text-lg font-medium break-words">{story.title}</h3>
         </div>
-        <StatusBadge status={story.status} />
+        <div className="shrink-0 self-start"><StatusBadge status={story.status} /></div>
       </div>
 
       {/* Ticket metadata (ticket-tree stories only) */}
@@ -120,7 +120,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {/* Description */}
       {story.description && (
         <Card className="glass-card">
-          <CardContent className="p-5">
+          <CardContent className="px-3 py-0 md:p-5">
             <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
               Description
             </h4>
@@ -132,7 +132,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {/* Verify: for ticket stories acceptanceCriteria[0] is the verify text */}
       {ticket && verify && (
         <Card className="glass-card">
-          <CardContent className="p-5">
+          <CardContent className="px-3 py-0 md:p-5">
             <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
               Verify
             </h4>
@@ -144,7 +144,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {/* Acceptance Criteria (BMad v6: all items; ticket stories: items after Verify) */}
       {criteria.length > 0 && (
         <Card className="glass-card">
-          <CardContent className="p-5">
+          <CardContent className="px-3 py-0 md:p-5">
             <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
               Acceptance Criteria
             </h4>
@@ -152,7 +152,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
               {criteria.map((criterion, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
                   <span className="mt-0.5 text-muted-foreground">•</span>
-                  <span>{criterion}</span>
+                  <span className="min-w-0 break-words">{criterion}</span>
                 </li>
               ))}
             </ul>
@@ -163,7 +163,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
       {/* Tasks */}
       {story.tasks.length > 0 && (
         <Card className="glass-card">
-          <CardContent className="p-5">
+          <CardContent className="px-3 py-0 md:p-5">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                 Tasks
@@ -185,7 +185,7 @@ export function StoryDetailView({ story }: StoryDetailViewProps) {
                   ) : (
                     <Circle className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                   )}
-                  <span className={task.completed ? "text-muted-foreground line-through" : ""}>
+                  <span className={`min-w-0 break-words ${task.completed ? "text-muted-foreground line-through" : ""}`}>
                     {task.description}
                   </span>
                 </li>

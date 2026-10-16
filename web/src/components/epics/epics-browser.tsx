@@ -147,14 +147,14 @@ export function EpicsBrowser({
   const renderTitle = () => {
     if (view === "epics") {
       return (
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-medium tracking-tight">Epics</h1>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-medium tracking-tight">Epics</h1>
             <p className="text-muted-foreground mt-1">
               {totalEpics} epics &middot; {totalStories} stories
             </p>
           </div>
-          <ProgressRing percent={totalEpicProgress} size={56} strokeWidth={4} />
+          <ProgressRing percent={totalEpicProgress} size={56} strokeWidth={4} className="shrink-0" />
         </div>
       );
     }
@@ -162,7 +162,7 @@ export function EpicsBrowser({
     if ((view === "stories" || view === "story") && selectedEpic) {
       return (
         <div>
-          <h1 className="text-3xl font-medium tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-medium tracking-tight break-words">
             Epic {selectedEpic.id}: {selectedEpic.title}
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -176,7 +176,7 @@ export function EpicsBrowser({
   };
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
       {renderTitle()}
 
       {/* Back button */}
@@ -244,26 +244,26 @@ export function EpicsBrowser({
           <div className="space-y-4">
             {/* Epic header summary */}
             <Card className="glass-card">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
+              <CardContent className="px-3 py-0 md:p-5">
+                <div className="flex items-start justify-between gap-2 md:gap-4">
+                  <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                         {selectedEpic.id}
                       </span>
-                      <h3 className="text-lg font-medium">
+                      <h3 className="min-w-0 text-base md:text-lg font-medium break-words">
                         {selectedEpic.title}
                       </h3>
                     </div>
                     {selectedEpic.description && (
-                      <p className="text-sm text-muted-foreground ml-11">
+                      <p className="text-sm text-muted-foreground md:ml-11">
                         {selectedEpic.description}
                       </p>
                     )}
                   </div>
-                  <StatusBadge status={selectedEpic.status} />
+                  <StatusBadge status={selectedEpic.status} compact />
                 </div>
-                <div className="mt-3 ml-11">
+                <div className="mt-3 md:ml-11">
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                     <span>
                       {selectedEpic.completedStories} of{" "}
@@ -292,7 +292,7 @@ export function EpicsBrowser({
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {epicStories.map((story) => (
                   <Card
                     key={story.id}
@@ -307,26 +307,26 @@ export function EpicsBrowser({
                       }
                     }}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between gap-4">
+                    <CardContent className="px-3 py-0 md:p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
                             {story.id}
                           </span>
-                          <span className="font-medium truncate">
+                          <span className="min-w-0 font-medium line-clamp-2 sm:truncate break-words">
                             {story.title}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-3 shrink-0 pl-10 sm:pl-0">
                           {story.totalTasks > 0 && (
                             <span className="text-xs text-muted-foreground">
                               {story.completedTasks}/{story.totalTasks} tasks
                             </span>
                           )}
-                          <StatusBadge status={story.status} />
+                          <StatusBadge status={story.status} compact />
                         </div>
                       </div>
-                      <StoryRowDetails story={story} className="ml-10" />
+                      <StoryRowDetails story={story} className="md:ml-10" />
                     </CardContent>
                   </Card>
                 ))}

@@ -28,7 +28,7 @@ export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
   }
 
   return (
-    <StaggeredList className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <StaggeredList className="grid grid-cols-1 gap-4 md:grid-cols-3 [&>*]:min-w-0">
       {kanbanColumns.map((col) => {
         const columnEpics = epics.filter((e) => e.status === col.status);
         return (
@@ -60,17 +60,17 @@ export function EpicsKanban({ epics, onSelectEpic }: EpicsKanbanProps) {
                   className="glass-card cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
                   aria-label={`Open epic ${epic.id}: ${epic.title}`}
                 >
-                  <CardContent className="p-4 space-y-3">
+                  <CardContent className="px-3 py-0 md:p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
                           {epic.id}
                         </span>
-                        <span className="font-medium text-sm leading-tight truncate">
+                        <span className="font-medium text-sm leading-tight line-clamp-2 break-words">
                           {epic.title}
                         </span>
                       </div>
-                      <StatusBadge status={epic.status} />
+                      <StatusBadge status={epic.status} compact />
                     </div>
 
                     <div className="space-y-1.5">

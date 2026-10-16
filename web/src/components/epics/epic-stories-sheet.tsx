@@ -51,7 +51,7 @@ export function EpicStoriesSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl overflow-y-auto"
+        className="w-full max-w-full sm:max-w-2xl overflow-y-auto overflow-x-hidden"
       >
         <SheetHeader className="border-b">
           {inDetailView && selectedStory ? (
@@ -78,14 +78,14 @@ export function EpicStoriesSheet({
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary shrink-0">
                   {epic.id}
                 </span>
-                <SheetTitle className="text-lg">{epic.title}</SheetTitle>
+                <SheetTitle className="min-w-0 text-base md:text-lg break-words">{epic.title}</SheetTitle>
               </div>
               {epic.description && (
-                <SheetDescription className="ml-11">
+                <SheetDescription className="md:ml-11">
                   {epic.description}
                 </SheetDescription>
               )}
-              <div className="ml-11 mt-2 space-y-1.5">
+              <div className="md:ml-11 mt-2 space-y-1.5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>
                     {epic.completedStories}/{epic.totalStories} stories
@@ -108,7 +108,7 @@ export function EpicStoriesSheet({
           )}
         </SheetHeader>
 
-        <div className="px-4 pb-4">
+        <div className="px-3 md:px-4 pb-4">
           {inDetailView && selectedStory ? (
             <StoryDetailView story={selectedStory} />
           ) : stories.length === 0 ? (
@@ -134,26 +134,26 @@ export function EpicStoriesSheet({
                   className="glass-card cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
                   aria-label={`Open story ${story.id}: ${story.title}`}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between gap-3">
+                  <CardContent className="px-3 py-0 md:p-3">
+                    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-medium text-primary shrink-0">
                           {story.id}
                         </span>
-                        <span className="font-medium text-sm truncate">
+                        <span className="font-medium text-sm line-clamp-2 sm:truncate break-words min-w-0">
                           {story.title}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0 pl-8 sm:pl-0">
                         {story.totalTasks > 0 && (
                           <span className="text-xs text-muted-foreground">
                             {story.completedTasks}/{story.totalTasks}
                           </span>
                         )}
-                        <StatusBadge status={story.status} />
+                        <StatusBadge status={story.status} compact />
                       </div>
                     </div>
-                    <StoryRowDetails story={story} className="ml-8" />
+                    <StoryRowDetails story={story} className="md:ml-8" />
                   </CardContent>
                 </Card>
               ))}

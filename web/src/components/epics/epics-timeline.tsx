@@ -56,7 +56,7 @@ export function EpicsTimeline({ epics, onSelectEpic }: EpicsTimelineProps) {
         <StaggeredItem key={epic.id}>
           <div className="flex gap-4">
             {/* Stepper column */}
-            <div className="flex flex-col items-center">
+            <div className="hidden md:flex flex-col items-center">
               {/* Top connector */}
               <div
                 className={`w-0.5 flex-1 ${i === 0 ? "bg-transparent" : connectorColor(epics[i - 1].status)}`}
@@ -70,7 +70,7 @@ export function EpicsTimeline({ epics, onSelectEpic }: EpicsTimelineProps) {
             </div>
 
             {/* Card */}
-            <div className="flex-1 py-2">
+            <div className="min-w-0 flex-1 py-1 md:py-2">
               <EpicTimelineCard
                 epic={epic}
                 onClick={onSelectEpic ? () => onSelectEpic(epic.id) : undefined}

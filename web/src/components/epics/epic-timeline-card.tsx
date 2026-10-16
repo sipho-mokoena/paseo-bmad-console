@@ -28,22 +28,25 @@ export function EpicTimelineCard({ epic, onClick }: EpicTimelineCardProps) {
         },
       })}
     >
-      <CardContent className="p-5">
+      <CardContent className="px-3 py-0 md:p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-2">
+          <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                 {epic.id}
               </span>
-              <h3 className="font-medium">{epic.title}</h3>
+              <h3 className="min-w-0 flex-1 font-medium break-words">{epic.title}</h3>
+              <span className="md:hidden shrink-0">
+                <StatusBadge status={epic.status} compact />
+              </span>
             </div>
             {epic.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 ml-11">
+              <p className="text-sm text-muted-foreground line-clamp-2 md:ml-11">
                 {epic.description}
               </p>
             )}
-            <div className="ml-11 flex items-center gap-4">
-              <div className="flex-1">
+            <div className="md:ml-11 flex items-center gap-4">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                   <span>
                     {epic.completedStories} of {epic.totalStories} stories
@@ -56,7 +59,9 @@ export function EpicTimelineCard({ epic, onClick }: EpicTimelineCardProps) {
                   className="h-5"
                 />
               </div>
-              <StatusBadge status={epic.status} />
+              <span className="hidden md:block shrink-0">
+                <StatusBadge status={epic.status} />
+              </span>
             </div>
           </div>
         </div>
