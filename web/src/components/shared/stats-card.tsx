@@ -14,8 +14,8 @@ interface StatsCardProps {
 const colorStyles = {
   primary: { bg: "bg-primary/10", text: "text-primary" },
   violet: {
-    bg: "bg-violet-500/15",
-    text: "text-violet-600 dark:text-violet-400",
+    bg: "bg-merged/15",
+    text: "text-merged-foreground",
   },
   info: { bg: "bg-info/15", text: "text-info-foreground" },
   success: { bg: "bg-success/15", text: "text-success-foreground" },
@@ -44,7 +44,7 @@ export function StatsCard({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-4xl font-bold">{value}</p>
+            <p className="text-4xl font-medium">{value}</p>
             {description && (
               <p className="text-sm text-muted-foreground">{description}</p>
             )}

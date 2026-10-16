@@ -326,12 +326,12 @@ function GitHubRepoList({
       {error && <p className="text-destructive text-sm">{error}</p>}
       {importError && <p className="text-destructive text-sm">{importError}</p>}
       {detectWarning && (
-        <p className="text-amber-600 dark:text-amber-400 text-xs">
+        <p className="text-warning text-xs">
           {detectWarning}
         </p>
       )}
       {unknownDetectCount > 0 && (
-        <p className="text-amber-600 dark:text-amber-400 text-xs">
+        <p className="text-warning text-xs">
           BMAD detection failed for {unknownDetectCount}{" "}
           {unknownDetectCount === 1 ? "repository" : "repositories"} —
           these may be mis-labelled as &ldquo;no BMAD&rdquo;.

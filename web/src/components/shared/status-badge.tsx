@@ -21,7 +21,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   },
   "ready-for-dev": {
     label: "Ready for Dev",
-    className: "bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/25",
+    className: "bg-merged/15 text-merged-foreground border-merged/25",
   },
   backlog: {
     label: "Backlog",

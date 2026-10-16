@@ -7,7 +7,7 @@ import type { StoryDetail, StoryStatus } from "@/lib/bmad/types";
 
 const kanbanColumns: { status: StoryStatus; label: string; color: string }[] = [
   { status: "backlog", label: "Backlog", color: "bg-muted-foreground" },
-  { status: "ready-for-dev", label: "Ready for Dev", color: "bg-purple-500" },
+  { status: "ready-for-dev", label: "Ready for Dev", color: "bg-merged" },
   { status: "in-progress", label: "In Progress", color: "bg-info" },
   { status: "review", label: "In Review", color: "bg-warning" },
   { status: "blocked", label: "Blocked", color: "bg-destructive" },
@@ -39,7 +39,7 @@ export function KanbanBoard({ stories }: KanbanBoardProps) {
           <StaggeredItem key={col.status} className="space-y-3">
             <div className="flex items-center gap-2">
               <div className={`h-2.5 w-2.5 rounded-full ${col.color}`} aria-hidden="true" />
-              <h3 className="text-sm font-semibold">{col.label}</h3>
+              <h3 className="text-sm font-medium">{col.label}</h3>
               <Badge variant="secondary" className="ml-auto text-xs">
                 {columnStories.length}
               </Badge>
