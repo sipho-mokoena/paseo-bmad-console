@@ -44,10 +44,6 @@ const STATUS: Record<
   unknown: { label: "Unknown", tone: "neutral", icon: CircleDashed },
 };
 
-export function statusLabel(status: StoryStatus | EpicStatus): string {
-  return (STATUS[status] ?? STATUS.unknown).label;
-}
-
 export function StatusPill({
   status,
   className,

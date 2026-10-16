@@ -1,6 +1,6 @@
 import { Pill, type PillTone } from "@/components/shared/pill";
 import { cn } from "@/lib/utils";
-import type { StoryDetail, StoryTicketMeta } from "@/lib/bmad/types";
+import type { StoryTicketMeta } from "@/lib/bmad/types";
 
 const RISK_TONE: Record<string, PillTone> = {
   low: "neutral",
@@ -66,21 +66,5 @@ export function AfterText({
     <span title={text} className={cn("truncate text-2xs text-muted-foreground", className)}>
       {text}
     </span>
-  );
-}
-
-/** Kept for existing call sites: the chips row under a story. */
-export function StoryRowDetails({
-  story,
-  className,
-}: {
-  story: StoryDetail;
-  className?: string;
-}) {
-  if (!story.ticket || !hasTicketChips(story.ticket)) return null;
-  return (
-    <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", className)}>
-      <TicketChips ticket={story.ticket} maxCovers={99} />
-    </div>
   );
 }

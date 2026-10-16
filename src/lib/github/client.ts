@@ -26,7 +26,7 @@ export function createUserOctokit(accessToken: string) {
         }
         return false;
       },
-      onSecondaryRateLimit: (retryAfter, options, octokit) => {
+      onSecondaryRateLimit: (_retryAfter, options, octokit) => {
         octokit.log.warn(
           `Secondary rate limit for ${options.method} ${options.url}`
         );

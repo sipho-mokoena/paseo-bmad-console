@@ -80,10 +80,3 @@ function sortTree(nodes: FileTreeNode[]): FileTreeNode[] {
       children: n.children ? sortTree(n.children) : undefined,
     }));
 }
-
-export function normalizeStoryId(raw: string): string {
-  return raw
-    .replace(/^(?:story|S)[_-]?/i, "")
-    .replace(/[._]/, ".")
-    .trim();
-}

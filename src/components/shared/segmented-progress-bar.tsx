@@ -27,14 +27,3 @@ export function ProgressBar({ percent, className, label }: ProgressBarProps) {
     </div>
   );
 }
-
-/** Legacy name. Same thin continuous bar; height classes from old call sites are dropped. */
-export function SegmentedProgressBar({ percent, className, label }: ProgressBarProps) {
-  return (
-    <ProgressBar
-      percent={percent}
-      label={label}
-      className={className?.replace(/(?:^|\s)(?:[a-z]+:)?h-\S+/g, "")}
-    />
-  );
-}
