@@ -1,5 +1,4 @@
 # Development Docker Compose — PostgreSQL only
-# For production with Traefik and HTTPS, use: docker compose -f docker/docker-compose.prod.yml up -d
 
 services:
   postgres:
@@ -22,7 +21,7 @@ services:
       retries: 20
 
 # NOTE: In development, run the app with `pnpm dev` (hot reload, fast refresh).
-# This file only provides PostgreSQL. For production, see docker/docker-compose.prod.yml.
+# This file only provides PostgreSQL for local development.
 
 volumes:
   postgres_data:

@@ -75,9 +75,9 @@ When self-hosting Paseo BMAD Console:
 - **Never commit** `.env` or `.env.local` files to version control
 - Use strong, randomly generated secrets for `BETTER_AUTH_SECRET` and `REVALIDATE_SECRET`
 - Use environment-specific GitHub OAuth Apps (separate dev/prod apps)
-- Keep your Docker images and dependencies up to date
-- Restrict database access to the application container only
-- Enable HTTPS (handled automatically by the Traefik setup in `docker-compose.prod.yml`)
+- Keep your dependencies up to date
+- Restrict database access to the application only
+- Serve the app over HTTPS (for example behind a reverse proxy)
 
 ---
 
@@ -90,7 +90,7 @@ When self-hosting Paseo BMAD Console:
 **Risk:** GitHub OAuth tokens stored in the `account` table are not encrypted at rest. If an attacker gains read access to the database, they could use these tokens to access users' GitHub repositories.
 
 **Current mitigations:**
-- Database access is restricted to the application container only (Docker network isolation)
+- Database access should be restricted to the application only (network isolation)
 - The application enforces session-based authentication before any token usage
 - PostgreSQL connections use password authentication
 

@@ -12,7 +12,6 @@ const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   allowedDevOrigins,
   images: {
     unoptimized: true,

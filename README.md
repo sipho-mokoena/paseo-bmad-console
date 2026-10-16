@@ -69,7 +69,7 @@ pnpm dev -H 0.0.0.0
 
 ```bash
 pnpm dev              # dev server on port 3002
-pnpm build            # production build (standalone output)
+pnpm build            # production build
 pnpm start            # start the production server
 pnpm lint             # ESLint
 pnpm test             # Vitest
@@ -95,7 +95,6 @@ src/
     auth/         Better Auth setup and the dev-bypass guard
     db/           Prisma client and session helpers
 docs/             guides and the Paseo UI reference
-docker/           production compose file (Traefik + PostgreSQL) and deploy guide
 prisma/           schema and migrations
 scripts/          setup.sh, create-admin.ts
 ```
@@ -106,7 +105,6 @@ scripts/          setup.sh, create-admin.ts
 - [Local folder import](./docs/LOCAL_FOLDER.md)
 - [API endpoints](./docs/API.md)
 - [Paseo UI reference](./docs/paseo-ui.md)
-- [Production deployment with Docker](./docker/DEPLOY.md)
 - [Contributing](./CONTRIBUTING.md), [Security](./SECURITY.md)
 
 ## Credits and license

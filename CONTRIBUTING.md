@@ -158,7 +158,7 @@ Closes #issue
 ```
 feat(epics): add timeline view with drag-to-collapse
 fix(github): handle 403 on private repo access
-docs: update deployment guide for Traefik v3
+docs: update the setup guide
 chore(deps): upgrade Next.js to 16.2
 ```
 
