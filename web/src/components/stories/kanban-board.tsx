@@ -28,7 +28,7 @@ export function KanbanBoard({ stories }: KanbanBoardProps) {
   }
 
   return (
-    <StaggeredList className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+    <StaggeredList className="-mx-2 flex scroll-px-2 snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2 md:mx-0 md:grid md:snap-none md:grid-cols-3 md:gap-4 md:overflow-visible md:px-0 md:pb-0 xl:grid-cols-6">
       {kanbanColumns.map((col) => {
         const columnStories = stories.filter(
           (s) =>
@@ -36,7 +36,7 @@ export function KanbanBoard({ stories }: KanbanBoardProps) {
             (col.status === "backlog" && s.status === "unknown")
         );
         return (
-          <StaggeredItem key={col.status} className="space-y-3">
+          <StaggeredItem key={col.status} className="w-[85%] shrink-0 snap-start space-y-3 md:w-auto md:min-w-0 md:shrink">
             <div className="flex items-center gap-2">
               <div className={`h-2.5 w-2.5 rounded-full ${col.color}`} aria-hidden="true" />
               <h3 className="text-sm font-medium">{col.label}</h3>
@@ -50,9 +50,9 @@ export function KanbanBoard({ stories }: KanbanBoardProps) {
                   key={story.id}
                   className="glass-card hover:shadow-sm transition-shadow duration-300"
                 >
-                  <CardContent className="p-3 space-y-2">
+                  <CardContent className="px-3 py-0 md:p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-medium text-sm leading-tight">
+                      <span className="min-w-0 break-words font-medium text-sm leading-tight">
                         {story.title}
                       </span>
                       <span className="text-xs font-mono text-muted-foreground shrink-0">

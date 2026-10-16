@@ -9,6 +9,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DataGrid,
   DataGridContainer,
@@ -156,7 +157,55 @@ export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
     initialState: { pagination: { pageSize: 20 } },
   });
 
+  const [visible, setVisible] = useState(30);
+  const shown = stories.slice(0, visible);
+
   return (
+    <>
+    {/* Phone: stacked rows, a squashed 5-column grid is unreadable */}
+    <div className="md:hidden space-y-2" role="list" aria-label="Stories">
+      {shown.map((story) => (
+        <div
+          key={story.id}
+          role="listitem"
+        >
+          <button
+            type="button"
+            onClick={() => onStorySelect?.(story)}
+            className="flex min-h-14 w-full flex-col gap-1 rounded-lg border bg-card px-3 py-2.5 text-left transition-colors active:bg-accent"
+          >
+            <span className="flex items-center justify-between gap-2">
+              <span className="font-mono text-xs text-muted-foreground">S{story.id}</span>
+              <StatusBadge status={story.status} compact />
+            </span>
+            <span className="text-sm font-medium break-words">{story.title}</span>
+            {(story.epicTitle || story.totalTasks > 0) && (
+              <span className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span className="min-w-0 truncate">{story.epicTitle || ""}</span>
+                {story.totalTasks > 0 && (
+                  <span className="shrink-0 tabular-nums">
+                    {story.completedTasks}/{story.totalTasks} tasks
+                  </span>
+                )}
+              </span>
+            )}
+          </button>
+        </div>
+      ))}
+      {stories.length === 0 && (
+        <p className="py-8 text-center text-sm text-muted-foreground">No story matches the filters</p>
+      )}
+      {visible < stories.length && (
+        <Button
+          variant="outline"
+          className="h-10 w-full"
+          onClick={() => setVisible((v) => v + 30)}
+        >
+          Show more ({stories.length - visible} left)
+        </Button>
+      )}
+    </div>
+    <div className="hidden md:block">
     <DataGrid
       table={table}
       recordCount={stories.length}
@@ -178,5 +227,7 @@ export function StoriesTable({ stories, onStorySelect }: StoriesTableProps) {
         />
       )}
     </DataGrid>
+    </div>
+    </>
   );
 }

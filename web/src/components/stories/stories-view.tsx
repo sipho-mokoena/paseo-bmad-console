@@ -65,8 +65,8 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
   }, [stories, search, applyFilters]);
 
   return (
-    <StaggeredList className="space-y-4" role="region" aria-label="Stories list" staggerDelay={0.1}>
-      <StaggeredItem className="flex items-center justify-between gap-4">
+    <StaggeredList className="min-w-0 space-y-3 md:space-y-4" role="region" aria-label="Stories list" staggerDelay={0.1}>
+      <StaggeredItem className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-4">
         <StoryFilters
           search={search}
           onSearchChange={setSearch}
@@ -74,12 +74,12 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
           onFiltersChange={setFilters}
           epics={epics}
         />
-        <div className="flex gap-1 border rounded-lg p-1" role="group" aria-label="Display mode">
+        <div className="order-2 flex shrink-0 gap-1 border rounded-lg p-1 sm:order-none" role="group" aria-label="Display mode">
           <Button
             variant={view === "table" ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setView("table")}
-            className="gap-1.5"
+            className="h-9 gap-1.5 md:h-8"
             aria-label="Table view"
           >
             <LayoutList className="h-4 w-4" />
@@ -89,7 +89,7 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
             variant={view === "kanban" ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setView("kanban")}
-            className="gap-1.5"
+            className="h-9 gap-1.5 md:h-8"
             aria-label="Kanban view"
           >
             <Columns3 className="h-4 w-4" />
@@ -112,14 +112,14 @@ export function StoriesView({ stories, epics }: StoriesViewProps) {
           if (!open) setSelectedStory(null);
         }}
       >
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent side="right" className="w-full max-w-full sm:max-w-2xl overflow-y-auto overflow-x-hidden">
           {/* Visible heading lives in StoryDetailView; this is the accessible name. */}
           <SheetTitle className="sr-only">
             {selectedStory
               ? `Story ${selectedStory.id}: ${selectedStory.title}`
               : "Story"}
           </SheetTitle>
-          <div className="px-4 pb-4">
+          <div className="px-3 pt-12 md:pt-0 md:px-4 pb-4">
             {selectedStory && <StoryDetailView story={selectedStory} />}
           </div>
         </SheetContent>
