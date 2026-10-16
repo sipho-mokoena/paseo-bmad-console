@@ -1,4 +1,4 @@
-# Dockerfile — my-bmad
+# Dockerfile — paseo-bmad-console
 # Note : reste a la racine (et non docker/Dockerfile) pour simplifier le build context
 FROM node:20-alpine AS base
 

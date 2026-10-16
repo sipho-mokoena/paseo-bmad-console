@@ -53,3 +53,7 @@ import { sanitizeError } from "@/lib/errors";
   - BMAD parsers: `src/lib/bmad/__tests__/`
   - Middleware: `src/middleware.test.ts`
   - Utilities: `src/lib/__tests__/`
+
+## Auth bypass
+
+`DEV_BYPASS_AUTH` (local development only) is implemented in `src/lib/auth/dev-bypass.ts`. Never read `process.env.DEV_BYPASS_AUTH` directly: use `isDevAuthBypassEnabled()`, which is false in production. Production start and build fail if the variable is set.

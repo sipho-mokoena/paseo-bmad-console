@@ -19,7 +19,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 ### Option 1 — GitHub Security Advisories (Preferred)
 
-Use [GitHub's private vulnerability reporting](https://github.com/DevHDI/my-bmad/security/advisories/new) to report the issue confidentially.
+Use GitHub's private vulnerability reporting (the **Security** tab of this repository, then **Report a vulnerability**) to report the issue confidentially.
 
 ### Option 2 — Direct Contact
 

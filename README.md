@@ -1,208 +1,114 @@
 # Paseo BMAD Console
 
-A web dashboard - https://mybmad.hichem.cloud/ - to visualize and track [BMAD (Breakthrough Method of Agile AI-Driven Development)](https://github.com/bmad-method/bmad-method) projects from your GitHub repositories — or directly from local folders.
+A dashboard for [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) projects. It reads the planning and implementation artifacts of a BMAD project, from a GitHub repository or from a folder on the machine running the server, and shows them as epics, stories, specs, design documents and a searchable document library.
 
-> **License:** MIT — see [LICENSE](./LICENSE) for details.
+> Fork of [bmad-code-org/bmad-method-ui](https://github.com/bmad-code-org/bmad-method-ui) (MIT). See [NOTICE](./NOTICE).
+> The UI follows the look of the Paseo desktop app. This project is not affiliated with Paseo.
 
----
+## Features
 
-## Table of Contents
+- Projects from GitHub repositories or, when self-hosted, from local folders ([docs/LOCAL_FOLDER.md](./docs/LOCAL_FOLDER.md)).
+- Epics and stories with status, progress and ticket metadata (list and kanban views, epic and story detail pages).
+- Specs and Design tabs that group the planning documents of a project.
+- Library: browse project documents with Markdown rendering, syntax highlighting and Mermaid diagrams, and images referenced by relative path from local projects.
+- Search across the documents of all your projects.
+- Several BMAD layouts, detected automatically: v6 default, v6 project layout, ticket tree, and v4.
+- Email/password login, optional GitHub OAuth, admin and user roles.
 
-- [What is Paseo BMAD Console?](#what-is-paseo-bmad-console)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Available Scripts](#available-scripts)
-- [Production Deployment](#production-deployment-docker)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [License](#license)
+## Requirements
 
----
+- Node.js 22+
+- pnpm 10+
+- PostgreSQL 15+ (a docker compose file with PostgreSQL 17 is included)
 
-## What is Paseo BMAD Console?
-
-Paseo BMAD Console connects to your GitHub repositories (or local folders), reads the BMAD project structure (epics, stories, sprint status, docs), and displays everything in a clean, real-time dashboard. It is designed for solo developers and small teams who use the BMAD methodology with AI coding agents.
-
-**Key features:**
-- Import any GitHub repository that follows the BMAD structure
-- **Import local folders** — no GitHub needed for self-hosted setups ([learn more](./docs/LOCAL_FOLDER.md))
-- Visualize epic progress and story status at a glance
-- Support for chunked epics (individual files in `epics/` directory) as well as a single `epics.md`
-- Browse BMAD docs and planning artifacts directly in the app
-- Track sprint status and velocity metrics
-- Repo settings modal to switch branches directly from the UI
-- Email/password authentication and optional GitHub OAuth login
-- Multi-user support with role management (admin / user)
-- Self-hostable with Docker and automatic TLS via Traefik
-
----
-
-<img width="1720" alt="Screenshot 1" src="./docs/screen1.png" />
-<img width="1720" alt="Screenshot 2" src="./docs/screen2.png" />
-<img width="1720" alt="Screenshot 3" src="./docs/screen3.png" />
-<img width="1720" alt="Screenshot 4" src="./docs/screen4.png" />
-<img width="1720" alt="Screenshot 5" src="./docs/screen5.png" />
-<img width="1720" alt="Screenshot 6" src="./docs/screen6.png" />
-<img width="1720" alt="Screenshot 7" src="./docs/screen7.png" />
-<img width="1720" alt="Screenshot 8" src="./docs/screen8.png" />
-
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Framework | [Next.js 16](https://nextjs.org) (App Router) |
-| Language | TypeScript |
-| Database | PostgreSQL + [Prisma](https://prisma.io) |
-| Auth | [Better Auth](https://better-auth.com) (email/password + GitHub OAuth) |
-| GitHub API | [@octokit/rest](https://github.com/octokit/rest.js) |
-| UI | React 19 + Tailwind CSS v4 + shadcn/ui |
-| Deployment | Docker + Traefik (automatic TLS) |
-| Tests | [Vitest](https://vitest.dev) |
-
----
-
-## Quick Start
-
-> Full guide with all environment variables explained: **[docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md)**
+## Quick start
 
 ```bash
-git clone https://github.com/DevHDI/my-bmad.git
-cd my-bmad
 pnpm install
-
-# Auto-generate .env with secrets
-bash scripts/setup.sh
-
-# Start PostgreSQL
-docker compose up -d
-
-# Run migrations & create admin
-pnpm db:migrate
-pnpm db:create-admin --email you@example.com --password your_password --name Admin
-
-# Start dev server
-pnpm dev
+cp .env.example .env        # or: bash scripts/setup.sh  (generates the secrets for you)
+docker compose up -d        # PostgreSQL on localhost:5433
+pnpm db:push                # create the schema
+pnpm db:create-admin --email you@example.com --password change-me --name Admin
+pnpm dev                    # http://localhost:3002
 ```
 
-Open [http://localhost:3002](http://localhost:3002) and log in.
+Edit `.env` first: set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `BETTER_AUTH_URL` and `REVALIDATE_SECRET`. The full variable reference is in [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md).
 
----
+### Local development without login
 
-## Project Structure
-
-```
-my-bmad/
-├── src/
-│   ├── app/                    # Next.js App Router pages and API routes
-│   │   ├── (dashboard)/        # Authenticated dashboard pages
-│   │   │   ├── page.tsx        # Home — projects overview
-│   │   │   ├── repo/           # Per-repository views (epics, stories, docs)
-│   │   │   ├── admin/          # Admin panel (user management)
-│   │   │   └── profile/        # User profile
-│   │   ├── api/
-│   │   │   ├── auth/           # Better Auth handler
-│   │   │   ├── health/         # Health check endpoint
-│   │   │   └── revalidate/     # Cache revalidation webhook
-│   │   └── login/              # Login page
-│   ├── components/             # React components
-│   │   ├── dashboard/          # Dashboard-specific components
-│   │   ├── docs/               # Markdown/doc viewer components
-│   │   ├── epics/              # Epics & stories components
-│   │   ├── layout/             # Sidebar, header, nav
-│   │   └── ui/                 # shadcn/ui base components
-│   ├── lib/
-│   │   ├── auth/               # Better Auth configuration
-│   │   ├── bmad/               # BMAD parser (reads repo structure)
-│   │   ├── db/                 # Prisma client and helpers
-│   │   └── github/             # Octokit client with retry/throttle
-│   └── actions/                # Next.js Server Actions
-├── prisma/
-│   ├── schema.prisma           # Database schema
-│   └── migrations/             # Migration history
-├── docker/
-│   ├── docker-compose.prod.yml # Production Docker Compose
-│   └── DEPLOY.md               # Production deployment guide
-├── docs/                       # Documentation
-├── _bmad/                      # BMAD methodology system (used to build this app)
-└── _bmad-output/               # Planning artifacts generated during development
-```
-
----
-
-## Available Scripts
+For a trusted, single-user machine you can skip the login screen:
 
 ```bash
-pnpm dev              # Start development server (port 3002)
-pnpm build            # Build for production
-pnpm start            # Start production server
-pnpm lint             # Run ESLint
-pnpm test             # Run tests (Vitest)
-pnpm test:watch       # Run tests in watch mode
-pnpm db:generate      # Generate Prisma client
-pnpm db:migrate       # Run database migrations (dev)
-pnpm db:push          # Push schema changes without migration
-pnpm db:studio        # Open Prisma Studio (database GUI)
-pnpm db:create-admin  # Create an admin user from the CLI
+# .env
+DEV_BYPASS_AUTH=true
 ```
 
----
+Every request then acts as a built-in local admin (`local@localhost`) and the server prints a loud warning at startup.
 
-## Production Deployment (Docker)
+> **Warning: never enable this on a shared or public host.** It disables authentication completely.
+> The bypass is only honoured when `NODE_ENV` is not `production` and `DEV_BYPASS_AUTH` is exactly `true`. If `DEV_BYPASS_AUTH` is set while `NODE_ENV=production`, `next build` and server start fail with an error.
 
-See the full guide in [`docker/DEPLOY.md`](./docker/DEPLOY.md).
+### Local folders
 
-**Quick summary:**
+Set `ENABLE_LOCAL_FS=true` to let users add a project by absolute folder path. **This is for self-hosted use only:** the server reads files on its own disk, so enable it only when the app runs on the machine that holds the projects and every user who can log in is trusted with that access. Leave it unset on any multi-tenant or public deployment.
 
-1. Clone the repo on your VPS
-2. Create `.env` and `.env.local` from `.env.example`
-3. Create the external Docker network: `docker network create web`
-4. Launch: `docker compose --env-file .env -f docker/docker-compose.prod.yml up -d`
-5. Run migrations: `docker compose ... exec my-bmad npx prisma migrate deploy`
+### Reaching the dev server from a phone or another machine
 
-The stack includes:
-- **Next.js** application container
-- **PostgreSQL** database
-- **Traefik** reverse proxy with automatic Let's Encrypt TLS
+`next dev` blocks requests from hostnames it does not know. To open the dev server over Tailscale or the LAN, bind it to the right interface and list the extra hostnames:
 
----
+```bash
+# .env
+ALLOWED_DEV_ORIGINS=my-laptop.tailnet-name.ts.net,100.64.0.10
+
+pnpm dev -H 0.0.0.0
+```
+
+`ALLOWED_DEV_ORIGINS` is a comma-separated list, empty by default. Set `BETTER_AUTH_URL` to the URL you browse from.
+
+## Scripts
+
+```bash
+pnpm dev              # dev server on port 3002
+pnpm build            # production build (standalone output)
+pnpm start            # start the production server
+pnpm lint             # ESLint
+pnpm test             # Vitest
+pnpm db:generate      # generate the Prisma client
+pnpm db:migrate       # prisma migrate dev
+pnpm db:push          # push the schema without a migration
+pnpm db:studio        # Prisma Studio
+pnpm db:create-admin  # create an admin user from the CLI
+```
+
+Type check with `pnpm exec tsc --noEmit`.
+
+## Project structure
+
+```
+src/
+  app/            Next.js App Router: (dashboard) pages, login, api/ (auth, health, revalidate, search, repo-asset)
+  actions/        Server actions
+  components/     dashboard, epics, stories, docs, search, layout, shared, ui (shadcn), reui (data grid, filters)
+  lib/
+    bmad/         parsers and the layout adapters (layouts/)
+    content-provider/  GitHub and local-folder providers
+    auth/         Better Auth setup and the dev-bypass guard
+    db/           Prisma client and session helpers
+docs/             guides and the Paseo UI reference
+docker/           production compose file (Traefik + PostgreSQL) and deploy guide
+prisma/           schema and migrations
+scripts/          setup.sh, create-admin.ts
+```
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Getting Started](./docs/GETTING_STARTED.md) | Full local setup guide with all environment variables |
-| [Local Folder Import](./docs/LOCAL_FOLDER.md) | Import BMAD projects from the filesystem without GitHub |
-| [API Endpoints](./docs/API.md) | REST API reference (revalidation, health check) |
-| [Production Deployment](./docker/DEPLOY.md) | Docker + Traefik deployment guide |
-| [Contributing](./CONTRIBUTING.md) | How to contribute to the project |
-| [Security](./SECURITY.md) | Vulnerability reporting policy |
+- [Getting started and environment variables](./docs/GETTING_STARTED.md)
+- [Local folder import](./docs/LOCAL_FOLDER.md)
+- [API endpoints](./docs/API.md)
+- [Paseo UI reference](./docs/paseo-ui.md)
+- [Production deployment with Docker](./docker/DEPLOY.md)
+- [Contributing](./CONTRIBUTING.md), [Security](./SECURITY.md)
 
----
+## Credits and license
 
-## Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before submitting a pull request.
-
----
-
-## Security
-
-Found a vulnerability? Please read our [SECURITY.md](./SECURITY.md) and report it responsibly.
-
----
-
-## License
-
-This project is licensed under the **MIT License**.
-
-You are free to use, modify, and distribute this software, including for
-commercial purposes, as long as the original copyright notice is preserved.
-See [LICENSE](./LICENSE) for the full license text.
-
----
-
-## Acknowledgements
-
-Built with the [BMAD Method](https://github.com/bmad-method/bmad-method) — an AI-driven agile development methodology.
+MIT, see [LICENSE](./LICENSE) and [NOTICE](./NOTICE). The application derives from the "my-bmad" dashboard by Hichem (DevHDI), itself part of the bmad-code-org/bmad-method-ui lineage. Built for the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD).

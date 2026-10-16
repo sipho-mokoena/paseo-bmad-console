@@ -17,7 +17,7 @@ export default function LoginPage() {
         />
       </Suspense>
       <p className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] text-xs text-muted-foreground">
-        Made with ❤️ by Hichem
+        Paseo BMAD Console
       </p>
     </div>
   );

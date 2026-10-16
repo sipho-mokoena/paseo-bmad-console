@@ -14,7 +14,7 @@ Triggers cache revalidation for a specific tag. Requires authentication via the 
 
 **Example:**
 ```bash
-curl -X POST https://mybmad.example.com/api/revalidate \
+curl -X POST https://bmad.example.com/api/revalidate \
   -H "Content-Type: application/json" \
   -H "x-revalidate-secret: your_secret_here" \
   -d '{"tag": "repo-owner-name"}'
@@ -32,3 +32,11 @@ Health check endpoint for monitoring and load balancers.
 **Responses:**
 - `200 OK` — `{ "status": "ok" }`
 - `503 Service Unavailable` — `{ "status": "error" }`
+
+## GET `/api/search?q=<query>`
+
+Searches the documents of all projects owned by the signed-in user. Requires a session; returns `401` otherwise. Responses are not cached.
+
+## GET `/api/repo-asset?owner=&repo=&path=`
+
+Serves an image from a BMAD directory of one of the signed-in user's local projects, so Markdown documents can reference images by relative path. Requires a session (`401` otherwise), only works for local projects (`ENABLE_LOCAL_FS=true`), allows a fixed set of image types, enforces a size limit and rejects path traversal.

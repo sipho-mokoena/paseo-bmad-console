@@ -1,17 +1,8 @@
 {
-  "name": "my-bmad",
+  "name": "paseo-bmad-console",
   "version": "0.1.0",
-  "description": "A web dashboard to visualize and track BMAD (Breakthrough Method of Agile AI-Driven Development) projects from GitHub repositories.",
+  "description": "A web dashboard for BMAD projects: epics, stories, specs, design documents and a searchable library with Mermaid diagrams.",
   "license": "MIT",
-  "author": "Hichem (DevHDI)",
-  "homepage": "https://github.com/DevHDI/my-bmad",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/DevHDI/my-bmad.git"
-  },
-  "bugs": {
-    "url": "https://github.com/DevHDI/my-bmad/issues"
-  },
   "keywords": [
     "bmad",
     "dashboard",

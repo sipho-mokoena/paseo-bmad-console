@@ -1,0 +1,11 @@
+Paseo BMAD Console
+
+Fork of bmad-code-org/bmad-method-ui (MIT).
+
+The web application in this repository derives from the "my-bmad" dashboard by
+Hichem (DevHDI), copyright (c) 2026, MIT licensed (see LICENSE). The git history
+also carries the VS Code extension work from bmad-code-org/bmad-method-ui
+(copyright (c) 2025-2026 Elvince, MIT), which this repository no longer ships.
+
+The visual design follows the look of the Paseo desktop app (getpaseo/paseo).
+This project is not affiliated with Paseo.

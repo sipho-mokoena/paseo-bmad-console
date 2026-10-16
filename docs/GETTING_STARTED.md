@@ -4,8 +4,8 @@ Step-by-step guide to run Paseo BMAD Console locally.
 
 ## Prerequisites
 
-- **Node.js** 20+
-- **pnpm** 9+
+- **Node.js** 22+
+- **pnpm** 10+
 - **Docker** (for PostgreSQL, or use your own PostgreSQL 15+ instance)
 - A **GitHub OAuth App** — optional, only needed for GitHub login ([create one here](https://github.com/settings/developers))
 - A **GitHub Personal Access Token** — optional but recommended for rate limits when importing GitHub repos
@@ -13,8 +13,8 @@ Step-by-step guide to run Paseo BMAD Console locally.
 ## 1. Clone the repository
 
 ```bash
-git clone https://github.com/DevHDI/my-bmad.git
-cd my-bmad
+git clone <this repository URL>
+cd paseo-bmad-console
 ```
 
 ## 2. Install dependencies
@@ -67,7 +67,7 @@ The base URL where your app runs. For local development:
 BETTER_AUTH_URL=http://localhost:3002
 ```
 
-In production, set this to your real domain (e.g. `https://mybmad.example.com`).
+In production, set this to your real domain (e.g. `https://bmad.example.com`).
 
 ### Revalidation secret (`REVALIDATE_SECRET`)
 
@@ -158,6 +158,8 @@ Open [http://localhost:3002](http://localhost:3002) — log in and start importi
 | `GITHUB_CLIENT_SECRET` | No | — | GitHub OAuth App Client Secret. |
 | `GITHUB_PAT` | No | — | Personal Access Token for higher GitHub API rate limits (60 → 5,000 req/h). |
 | `ALLOW_REGISTRATION` | No | `false` | Set to `true` to allow new users to sign up via email/password. |
-| `ENABLE_LOCAL_FS` | No | `false` | Set to `true` to enable [local folder imports](./LOCAL_FOLDER.md). |
+| `ENABLE_LOCAL_FS` | No | `false` | Set to `true` to enable [local folder imports](./LOCAL_FOLDER.md). Self-hosted only: the server reads folders on its own machine. |
+| `ALLOWED_DEV_ORIGINS` | No | empty | Comma-separated extra hostnames/IPs allowed to reach `next dev` (Tailscale name, LAN IP). |
+| `DEV_BYPASS_AUTH` | No | unset | Local development only: skip login. Ignored, and a startup error, when `NODE_ENV=production`. See the README. |
 
 > The `scripts/setup.sh` script auto-generates `BETTER_AUTH_SECRET` and `REVALIDATE_SECRET` for you.

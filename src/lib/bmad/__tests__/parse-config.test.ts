@@ -24,7 +24,7 @@ function makeProvider(files: Record<string, string>): ContentProvider {
 describe("parseConfigContent", () => {
   it("extracts output_folder and strips {project-root} prefix", () => {
     const yaml = `
-user_name: Hichem
+user_name: Alex
 output_folder: "{project-root}/_bmad-output"
 `;
     expect(parseConfigContent(yaml)).toEqual({ outputDir: "_bmad-output" });
@@ -46,7 +46,7 @@ output_folder: "{project-root}/_bmad-output"
   });
 
   it("returns null when output_folder is missing", () => {
-    const yaml = `user_name: Hichem`;
+    const yaml = `user_name: Alex`;
     expect(parseConfigContent(yaml)).toBeNull();
   });
 
@@ -103,7 +103,7 @@ describe("getBmadConfig", () => {
 
   it("falls back to default when config is missing output_folder", async () => {
     const provider = makeProvider({
-      [CORE_CONFIG_PATH]: `user_name: Hichem`,
+      [CORE_CONFIG_PATH]: `user_name: Alex`,
     });
     const config = await getBmadConfig(provider, [CORE_CONFIG_PATH]);
     expect(config.outputDir).toBe(DEFAULT_OUTPUT_DIR);
