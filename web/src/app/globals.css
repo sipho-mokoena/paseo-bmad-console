@@ -111,6 +111,24 @@
     --merged: #7347af;
     --merged-foreground: #7347af;
     --dot-grid-color: transparent;
+
+    /* Type scale (rev 9): body 15px, secondary 13.5px, micro 12px minimum. */
+    --text-2xs: 0.75rem;
+    --text-2xs--line-height: 1rem;
+    --text-xs: 0.84375rem;
+    --text-xs--line-height: 1.25rem;
+    --text-sm: 0.9375rem;
+    --text-sm--line-height: 1.4rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5rem;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.6rem;
+    --text-xl: 1.3125rem;
+    --text-xl--line-height: 1.75rem;
+    --text-2xl: 1.625rem;
+    --text-2xl--line-height: 2.1rem;
+    --text-3xl: 2rem;
+    --text-3xl--line-height: 2.4rem;
 }
 
 .dark {
@@ -164,7 +182,7 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground text-[13px] md:text-sm;
+        @apply bg-background text-foreground text-sm md:text-sm;
         background-image: repeating-linear-gradient(
             45deg,
             var(--dot-grid-color) 0,
@@ -189,12 +207,12 @@
 
 /* Page content sits directly on the main background: no card, no shadow. */
 :root {
-    --app-header-h: 3rem;
+    --app-header-h: 3.25rem;
 }
 
 @media (min-width: 768px) {
     :root {
-        --app-header-h: 2.5rem;
+        --app-header-h: 2.75rem;
     }
 }
 
@@ -208,7 +226,7 @@
     }
 }
 
-/* Custom font variable override (rev 8) */
+/* Custom font variable override (rev 8, scale bump 2) */
 @theme inline {
     --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
@@ -240,14 +258,23 @@
     background: oklch(0.5 0 0 / 8%);
     padding: 0.15em 0.4em;
     border-radius: 0.3em;
-    font-size: 0.875em;
+    font-size: max(0.9em, 13px);
 }
 
 .dark .prose :not(pre) > code {
     background: oklch(1 0 0 / 10%);
 }
 
+.prose {
+    font-size: 15px;
+}
+
+.prose pre code {
+    font-size: inherit;
+}
+
 .prose pre {
+    font-size: max(0.9em, 13px);
     border-radius: 0.5rem;
     border: 1px solid oklch(0.5 0 0 / 10%);
 }
@@ -258,6 +285,10 @@
 
 .prose table {
     border-collapse: collapse;
+}
+
+.prose:not(.md-compact) :is(th, td) {
+    font-size: 14.5px;
 }
 
 .prose thead th {
@@ -333,13 +364,13 @@
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     margin-bottom: 0.25rem;
 }
 
 .callout-content p {
     margin: 0.25rem 0;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
 }
 
 .callout-note {
@@ -459,9 +490,9 @@
     mix-blend-mode: normal;
 }
 
-/* Compact markdown (epic and story detail panels): flat, 13px, hairline tables */
+/* Compact markdown (epic and story detail panels): flat, 15px, hairline tables */
 .md-compact {
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.55;
 }
 
@@ -488,13 +519,13 @@
     padding-bottom: 0;
     margin-top: 1em;
     margin-bottom: 0.4em;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     line-height: 1.4;
 }
 
 .md-compact :where(h1) {
-    font-size: 14px;
+    font-size: 15.5px;
 }
 
 .md-compact blockquote {
@@ -504,7 +535,7 @@
 }
 
 .md-compact table {
-    font-size: 12px;
+    font-size: 13.5px;
     margin: 0;
     width: 100%;
     border: 1px solid var(--border);
@@ -539,4 +570,20 @@
 .md-compact :where(code)::before,
 .md-compact :where(code)::after {
     content: none;
+}
+
+/* Form controls: 16px on phones (iOS Safari zooms the page when a focused
+   field is smaller), 15px from md up. Unlayered so it beats utility classes. */
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]),
+textarea,
+select {
+    font-size: 16px;
+}
+
+@media (min-width: 768px) {
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]),
+    textarea,
+    select {
+        font-size: 15px;
+    }
 }

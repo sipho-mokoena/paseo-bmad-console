@@ -99,6 +99,27 @@ Status badges use the status colour at low alpha for the fill: 12% in light (`1f
 - Line height: `leading-relaxed` for body copy, `leading-[0.95]` only on hero display text.
 - Tracking: `tracking-tight` on display headings; changelog titles use `-0.01em` (`styles.css`).
 
+### Paseo BMAD Console type scale (rev 9)
+
+Defined once in `@theme` in `src/app/globals.css`; utilities scale with it. Root font-size stays 16px, so rem spacing is unchanged.
+
+| Token / use | Before | After |
+| --- | --- | --- |
+| Body, UI text (`text-sm`, body; was `text-[13px] md:text-sm`) | 13px phone / 14px desktop | **15px** both |
+| Secondary, muted (`text-xs`) | 12px | **13.5px** (`0.84375rem`) |
+| Micro labels, pills, badges (`text-2xs`, new) | 9-11px | **12px** (`0.75rem`), never smaller |
+| `text-base` / `text-lg` / `text-xl` / `text-2xl` / `text-3xl` | 16 / 18 / 20 / 24 / 30 | 16 / 18 / 21 / 26 / 32 |
+| Header page title | 14px medium | 16px medium (`text-base`) |
+| Epic and story page H1 | 14 / 16px | 18px phone, 22px from md |
+| `.md-compact` body / h / h1 / table | 13 / 13 / 14 / 12px | 15 / 15 / 15.5 / 13.5px |
+| `.prose` body, table cells, code | 14px, 12.9px, 0.875em | 15px, 14.5px, `max(0.9em, 13px)` |
+
+Heights raised with the text: header 40px -> 44px desktop (48 -> 52px phone, `--app-header-h`), project tab strip 36 -> 40px, tabs 28 -> 32px, sidebar rows 30 -> 32px, pills 20 -> 22px, badges 16/18 -> 20px, table header rows 32/36 -> 36/40px. Sticky offsets use `calc(var(--app-header-h) + 2.5rem)` for the tab strip.
+
+iOS rule: `input`, `textarea` and `select` are 16px below `md` (iOS Safari zooms the page when a focused field is smaller) and 15px from `md`. This is an unlayered rule at the end of `globals.css`, so it wins over utility classes. Do not set `text-xs`/`text-sm` on form fields expecting it to apply.
+
+`src/lib/__tests__/type-scale.test.ts` checks the theme sizes and that no arbitrary font size below 12px exists in `src`.
+
 ## Radii (`theme.ts` L609 `BORDER_RADIUS`, px)
 
 none 0, sm 2, base 4, md 6, lg 8, xl 12, 2xl 16, full 9999.
