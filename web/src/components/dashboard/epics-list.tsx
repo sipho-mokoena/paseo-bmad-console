@@ -1,7 +1,6 @@
-import { EpicRow } from "@/components/epics/epic-row";
-import { GroupLabel, StateMessage } from "@/components/shared/list-kit";
-import { epicHref } from "@/lib/stories-browse";
-import { compareEpicIds } from "@/lib/bmad/ids";
+import { Suspense } from "react";
+import { EpicsListView } from "@/components/dashboard/epics-list-view";
+import { StateMessage } from "@/components/shared/list-kit";
 import type { Epic } from "@/lib/bmad/types";
 
 interface EpicsListProps {
@@ -21,18 +20,7 @@ export function EpicsList({ epics, owner, repo, lookedFor }: EpicsListProps) {
       </StateMessage>;
   }
 
-  const sorted = [...epics].sort((a, b) => compareEpicIds(a.id, b.id));
-
-  return (
-    <section aria-label="Epics">
-      <GroupLabel count={sorted.length}>Epics</GroupLabel>
-      <div role="list">
-        {sorted.map((epic) => (
-          <div key={epic.id} role="listitem">
-            <EpicRow epic={epic} href={epicHref(`/repo/${owner}/${repo}`, epic.id)} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+  return <Suspense>
+      <EpicsListView epics={epics} base={`/repo/${owner}/${repo}`} />
+    </Suspense>;
 }

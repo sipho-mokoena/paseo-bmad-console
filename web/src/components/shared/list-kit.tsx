@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Small muted group label, like "Today" in Paseo History. */
@@ -8,7 +8,7 @@ export function GroupLabel({
   className,
 }: {
   children: React.ReactNode;
-  count?: number;
+  count?: number | string;
   className?: string;
 }) {
   return (
@@ -109,12 +109,15 @@ export function SearchField({
   placeholder,
   className,
   ariaLabel,
+  clearable = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   className?: string;
   ariaLabel?: string;
+  /** Shows a clear button when there is text, and makes Esc clear it. */
+  clearable?: boolean;
 }) {
   return (
     <div className={cn("relative min-w-0", className)}>
@@ -123,10 +126,30 @@ export function SearchField({
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={
+          clearable
+            ? (e) => {
+                if (e.key === "Escape" && value) {
+                  e.preventDefault();
+                  onChange("");
+                }
+              }
+            : undefined
+        }
         placeholder={placeholder}
         aria-label={ariaLabel ?? placeholder}
-        className="h-10 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-[13px] outline-hidden placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 md:h-9 [&::-webkit-search-cancel-button]:hidden"
+        className={cn("h-10 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-[13px] outline-hidden placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 md:h-9 [&::-webkit-search-cancel-button]:hidden", clearable && "pr-10 md:pr-9")}
       />
+      {clearable && value && (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={() => onChange("")}
+          className="absolute right-0 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:size-9"
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }
