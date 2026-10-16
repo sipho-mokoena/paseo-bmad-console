@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { refreshRepoData } from "@/actions/repo-actions";
 
-interface RefreshRepoButtonProps {
+interface RefreshRepoOptions {
   owner: string;
   name: string;
 }
@@ -24,7 +24,8 @@ function formatFileCount(count: number): string {
   return `${count} BMAD file${count > 1 ? "s" : ""} detected.`;
 }
 
-export function RefreshRepoButton({ owner, name }: RefreshRepoButtonProps) {
+/** Refresh logic + result dialog; the trigger lives elsewhere (e.g. a menu item). */
+export function useRefreshRepo({ owner, name }: RefreshRepoOptions) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,19 +57,8 @@ export function RefreshRepoButton({ owner, name }: RefreshRepoButtonProps) {
     }
   }
 
-  return (
+  const dialog = (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-9 w-9 text-muted-foreground hover:text-foreground"
-        aria-label="Refresh data"
-        onClick={handleRefresh}
-        disabled={refreshing}
-      >
-        <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-      </Button>
-
       <Dialog open={dialogOpen} onOpenChange={(open) => {
         if (!refreshing) setDialogOpen(open);
       }}>
@@ -112,4 +102,6 @@ export function RefreshRepoButton({ owner, name }: RefreshRepoButtonProps) {
       </Dialog>
     </>
   );
+
+  return { refreshing, refresh: handleRefresh, dialog };
 }

@@ -9,9 +9,6 @@ import { LayoutDetails, LayoutNotice, LayoutPill } from "@/components/dashboard/
 import { KeyArtifactsCard } from "@/components/dashboard/key-artifacts-card";
 import { GitBranch, Clock, FolderOpen } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
-import { DeleteRepoButton } from "@/components/shared/delete-repo-button";
-import { RefreshRepoButton } from "@/components/shared/refresh-repo-button";
-import { RepoSettingsModal } from "@/components/shared/repo-settings-modal";
 import {
   getAuthenticatedUserId,
   getAuthenticatedRepoConfig,
@@ -48,8 +45,8 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
 
   return (
     <div className="space-y-4">
-      {/* Source line + actions (the title lives in the header) */}
-      <div className="flex items-center justify-between gap-2">
+      {/* Source line (the title lives in the header; project actions live in the sidebar) */}
+      <div className="flex items-center gap-2">
         <div className="flex min-w-0 items-center gap-x-2 overflow-hidden text-[13px] text-muted-foreground [&>svg]:shrink-0">
           {isLocal ? (
             <>
@@ -72,21 +69,6 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
               <span>{formatRelativeTime(repoConfig.lastSyncedAt)}</span>
             </span>
           )}
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <RefreshRepoButton owner={owner} name={repoName} />
-          {!isLocal && (
-            <RepoSettingsModal
-              owner={owner}
-              name={repoName}
-              currentBranch={project.branch}
-            />
-          )}
-          <DeleteRepoButton
-            owner={owner}
-            name={repoName}
-            displayName={project.displayName}
-          />
         </div>
       </div>
 

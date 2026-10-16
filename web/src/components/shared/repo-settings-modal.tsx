@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -23,45 +22,55 @@ import {
 import { listRepoBranches, updateRepoBranch } from "@/actions/repo-actions";
 
 interface RepoSettingsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   owner: string;
   name: string;
   currentBranch: string;
 }
 
-export function RepoSettingsModal({
+/** Controlled settings dialog; the form state is mounted only while open so it starts fresh each time. */
+export function RepoSettingsModal(props: RepoSettingsModalProps) {
+  if (!props.open) return null;
+  return <RepoSettingsForm {...props} />;
+}
+
+function RepoSettingsForm({
+  open,
+  onOpenChange,
   owner,
   name,
   currentBranch,
 }: RepoSettingsModalProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [branches, setBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState(currentBranch);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleOpenChange(nextOpen: boolean) {
-    if (saving) return;
-    setOpen(nextOpen);
-    setError(null);
-
-    if (nextOpen) {
-      setSelectedBranch(currentBranch);
-      setLoading(true);
-      const result = await listRepoBranches({ owner, name });
+  useEffect(() => {
+    let cancelled = false;
+    listRepoBranches({ owner, name }).then((result) => {
+      if (cancelled) return;
       setLoading(false);
-      if (result.success) {
-        setBranches(result.data);
-      } else {
-        setError(result.error);
-      }
-    }
+      if (result.success) setBranches(result.data);
+      else setError(result.error);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [owner, name]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (saving) return;
+    setError(null);
+    onOpenChange(nextOpen);
   }
 
   async function handleSave() {
     if (selectedBranch === currentBranch) {
-      setOpen(false);
+      onOpenChange(false);
       return;
     }
 
@@ -75,7 +84,7 @@ export function RepoSettingsModal({
     setSaving(false);
 
     if (result.success) {
-      setOpen(false);
+      onOpenChange(false);
       router.refresh();
     } else {
       setError(result.error);
@@ -86,16 +95,6 @@ export function RepoSettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-muted-foreground hover:text-foreground"
-          aria-label="Project settings"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Project settings</DialogTitle>
@@ -143,7 +142,7 @@ export function RepoSettingsModal({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => setOpen(false)}
+            onClick={() => onOpenChange(false)}
             disabled={saving}
           >
             Cancel

@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 import { CircleHelp, Moon, Plus, Search, Shield, Sun } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { AddRepoDialog } from "@/components/layout/add-repo-dialog";
+import { ProjectActionsMenu } from "@/components/layout/project-actions-menu";
 import { UserMenu } from "@/components/layout/user-menu";
 import { cn } from "@/lib/utils";
 import type { RepoConfig } from "@/lib/types";
@@ -129,13 +130,13 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
                 ? (repo.localPath?.split("/").filter(Boolean).pop() ?? repo.name)
                 : `${repo.owner}/${repo.name}`;
             return (
+              <div key={`${repo.owner}/${repo.name}`} className="group/row relative">
               <Link
-                key={`${repo.owner}/${repo.name}`}
                 href={basePath}
                 onClick={closeOnMobile}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2 py-1.5 outline-hidden transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                  "flex items-center gap-2.5 rounded-md py-1.5 pr-10 pl-2 md:pr-8 outline-hidden transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                   active && "bg-sidebar-accent",
                 )}
               >
@@ -153,6 +154,8 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
                   </span>
                 </span>
               </Link>
+              <ProjectActionsMenu repo={repo} alwaysVisible={active} />
+              </div>
             );
           })}
           {repos.length === 0 && (

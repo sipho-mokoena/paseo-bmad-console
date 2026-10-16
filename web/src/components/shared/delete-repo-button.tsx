@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,19 +10,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { deleteRepo } from "@/actions/repo-actions";
 
-interface DeleteRepoButtonProps {
+interface RemoveRepoDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   owner: string;
   name: string;
   displayName: string;
 }
 
-export function DeleteRepoButton({ owner, name, displayName }: DeleteRepoButtonProps) {
+export function RemoveRepoDialog({ open, onOpenChange, owner, name, displayName }: RemoveRepoDialogProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +32,7 @@ export function DeleteRepoButton({ owner, name, displayName }: DeleteRepoButtonP
     try {
       const result = await deleteRepo({ owner, name });
       if (result.success) {
-        setOpen(false);
+        onOpenChange(false);
         router.push("/");
         router.refresh();
         return;
@@ -47,17 +46,7 @@ export function DeleteRepoButton({ owner, name, displayName }: DeleteRepoButtonP
   }
 
   return (
-    <Dialog open={open} onOpenChange={(value) => { if (deleting) return; setOpen(value); if (!value) setError(null); }}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-muted-foreground hover:text-destructive"
-          aria-label="Remove project"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={(value) => { if (deleting) return; onOpenChange(value); if (!value) setError(null); }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Remove project</DialogTitle>
@@ -69,7 +58,7 @@ export function DeleteRepoButton({ owner, name, displayName }: DeleteRepoButtonP
           <p role="alert" className="text-sm text-destructive px-1">{error}</p>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={deleting}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
