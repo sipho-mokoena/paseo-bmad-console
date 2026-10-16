@@ -6,6 +6,7 @@ interface StatsCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
+  /** Subtitle line. Always rendered (empty string keeps the slot height). */
   description?: string;
   className?: string;
   color?: "primary" | "info" | "success" | "warning" | "destructive" | "violet";
@@ -36,18 +37,18 @@ export function StatsCard({
   return (
     <Card
       className={cn(
-        "glass-card",
+        "glass-card h-full",
         className,
       )}
     >
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-4xl font-medium">{value}</p>
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
+            <p className="min-h-5 text-sm text-muted-foreground">
+              {description ?? ""}
+            </p>
           </div>
           <div className={cn("rounded-xl p-3", c.bg)}>
             <Icon className={cn("h-5 w-5", c.text)} />
