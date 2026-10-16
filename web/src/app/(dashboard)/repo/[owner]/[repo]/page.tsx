@@ -91,6 +91,10 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
 
       <LayoutNotice layout={project.layout} />
 
+      {project.sprintStatus && (
+        <VelocityMetrics sprintStatus={project.sprintStatus} />
+      )}
+
       <ProjectStatsGrid
         totalEpics={project.epics.length}
         totalStories={project.totalStories}
@@ -98,10 +102,6 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
         inProgressStories={project.inProgressStories}
         progressPercent={project.progressPercent}
       />
-
-      {project.sprintStatus && (
-        <VelocityMetrics sprintStatus={project.sprintStatus} />
-      )}
 
       <LayoutDetails layout={project.layout} errors={project.parseHealth?.errors ?? []} />
 
