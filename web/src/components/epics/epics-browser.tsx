@@ -1,22 +1,30 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Columns3, LayoutList } from "lucide-react";
 import { StatusPill } from "@/components/shared/pill";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { GroupLabel, PillToggle, StateMessage } from "@/components/shared/list-kit";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { StoryFilters, type Filter } from "@/components/stories/story-filters";
+import { StoriesTable } from "@/components/stories/stories-table";
+import { KanbanBoard } from "@/components/stories/kanban-board";
 import { EpicRow } from "./epic-row";
 import { StoryRow } from "./story-row";
 import { EpicsKanban } from "./epics-kanban";
 import { EpicStoriesSheet } from "./epic-stories-sheet";
 import { StoryDetailView } from "./story-detail-view";
-import { groupEpicsByStatus } from "@/lib/stories-browse";
+import {
+  epicHref,
+  filterStoriesByStatus,
+  groupEpicsByStatus,
+  searchStories,
+} from "@/lib/stories-browse";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
-import { ArrowLeft } from "lucide-react";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
 type EpicsLayout = "timeline" | "kanban";
-
-type View = "epics" | "stories" | "story";
 
 interface EpicsBrowserProps {
   epics: Epic[];
@@ -33,182 +41,111 @@ export function EpicsBrowser({
   totalEpics,
   totalStories,
 }: EpicsBrowserProps) {
-  const [view, setView] = useState<View>("epics");
-  const [selectedEpicId, setSelectedEpicId] = useState<string | null>(null);
-  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
-  const [layout, setLayout] = useState<EpicsLayout>("timeline");
-  const [sheetEpicId, setSheetEpicId] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { setExtraSegments, clearExtraSegments } = useBreadcrumb();
+
+  // The drill-in level lives in the URL (?epic=<id>) so Back and shared links work.
+  // An unknown id falls back to the epic list.
+  const epicParam = searchParams.get("epic");
+  const selectedEpic = useMemo(
+    () => (epicParam ? (epics.find((e) => e.id === epicParam) ?? null) : null),
+    [epics, epicParam],
+  );
+
+  const [layout, setLayout] = useState<EpicsLayout>("timeline");
+  const [storyView, setStoryView] = useState<"table" | "kanban">("table");
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Filter<string>[]>([]);
+  const [selectedStory, setSelectedStory] = useState<StoryDetail | null>(null);
+  const [sheetEpicId, setSheetEpicId] = useState<string | null>(null);
+
+  // Search and filters belong to one level: reset them when the level changes
+  // (also covers browser Back/Forward). Derived from props at render time.
+  const [trackedEpicId, setTrackedEpicId] = useState<string | null>(
+    selectedEpic?.id ?? null,
+  );
+  if (trackedEpicId !== (selectedEpic?.id ?? null)) {
+    setTrackedEpicId(selectedEpic?.id ?? null);
+    setSearch("");
+    setFilters([]);
+    setSelectedStory(null);
+  }
 
   const sheetEpic = useMemo(
     () => epics.find((e) => e.id === sheetEpicId) ?? null,
     [epics, sheetEpicId],
   );
-
   const sheetEpicStories = useMemo(
     () => (sheetEpicId ? stories.filter((s) => s.epicId === sheetEpicId) : []),
     [stories, sheetEpicId],
   );
-
-  const openEpicSheet = useCallback((epicId: string) => {
-    setSheetEpicId(epicId);
-  }, []);
-
   const handleSheetOpenChange = useCallback((open: boolean) => {
     if (!open) setSheetEpicId(null);
   }, []);
 
-  const selectedEpic = useMemo(
-    () => epics.find((e) => e.id === selectedEpicId) ?? null,
-    [epics, selectedEpicId],
-  );
-
-  const epicStories = useMemo(
-    () =>
-      selectedEpicId ? stories.filter((s) => s.epicId === selectedEpicId) : [],
-    [stories, selectedEpicId],
-  );
-
-  const selectedStory = useMemo(
-    () => stories.find((s) => s.id === selectedStoryId) ?? null,
-    [stories, selectedStoryId],
-  );
-
   const goToEpics = useCallback(() => {
-    setView("epics");
-    setSelectedEpicId(null);
-    setSelectedStoryId(null);
-  }, []);
+    setSearch("");
+    setFilters([]);
+    router.push(pathname);
+  }, [router, pathname]);
 
-  const goToStories = useCallback((epicId: string) => {
-    setView("stories");
-    setSelectedEpicId(epicId);
-    setSelectedStoryId(null);
-  }, []);
+  const goToEpic = useCallback(
+    (epicId: string) => router.push(epicHref(pathname, epicId)),
+    [router, pathname],
+  );
 
-  const goToStory = useCallback((storyId: string) => {
-    setView("story");
-    setSelectedStoryId(storyId);
-  }, []);
-
-  // Listen for section-reset event from sidebar to reset to epics list
+  // Clicking the active "Epics" tab returns to the epic list and clears search.
   useEffect(() => {
-    const handleReset = () => goToEpics();
+    const handleReset = () => {
+      setSearch("");
+      setFilters([]);
+      setSelectedStory(null);
+    };
     window.addEventListener("section-reset", handleReset);
     return () => window.removeEventListener("section-reset", handleReset);
-  }, [goToEpics]);
+  }, []);
 
-  // Sync breadcrumb context with internal navigation state
+  // Breadcrumb: "Epics > Epic N" while inside an epic.
   useEffect(() => {
-    const segments: { label: string; onClick?: () => void }[] = [];
-
-    if (view === "epics") {
-      // No extra segment — header already shows "Epics"
-    } else if (view === "stories" && selectedEpic) {
-      segments.push({ label: "Epics", onClick: goToEpics });
-      segments.push({
-        label: `Epic ${selectedEpic.id}`,
-      });
-    } else if (view === "story" && selectedEpic) {
-      segments.push({ label: "Epics", onClick: goToEpics });
-      segments.push({
-        label: `Epic ${selectedEpic.id}`,
-        onClick: () => goToStories(selectedEpic.id),
-      });
-      if (selectedStory) {
-        segments.push({
-          label: `Story ${selectedStory.id}`,
-        });
-      }
-    }
-
-    if (segments.length > 0) {
-      setExtraSegments(segments);
+    if (selectedEpic) {
+      setExtraSegments([
+        { label: "Epics", onClick: goToEpics },
+        { label: `Epic ${selectedEpic.id}` },
+      ]);
     } else {
       clearExtraSegments();
     }
-  }, [
-    view,
-    selectedEpic,
-    selectedStory,
-    setExtraSegments,
-    clearExtraSegments,
-    goToEpics,
-    goToStories,
-  ]);
+  }, [selectedEpic, setExtraSegments, clearExtraSegments, goToEpics]);
 
-  // Clear extra segments when unmounting
-  useEffect(() => {
-    return () => clearExtraSegments();
-  }, [clearExtraSegments]);
+  useEffect(() => () => clearExtraSegments(), [clearExtraSegments]);
 
   const groups = useMemo(() => groupEpicsByStatus(epics), [epics]);
 
+  const searching = !selectedEpic && search.trim() !== "";
+
+  const visibleStories = useMemo(() => {
+    if (!selectedEpic && !searching) return [];
+    const pool = selectedEpic
+      ? stories.filter((s) => s.epicId === selectedEpic.id)
+      : stories;
+    return filterStoriesByStatus(searchStories(pool, search), filters);
+  }, [stories, selectedEpic, searching, search, filters]);
+
   return (
-    <div className="space-y-3 pb-4">
-      {view !== "epics" && (
-        <button
-          type="button"
-          onClick={
-            view === "story" && selectedEpic
-              ? () => goToStories(selectedEpic.id)
-              : goToEpics
-          }
-          aria-label={view === "story" ? "Back to stories" : "Back to epics"}
-          className="inline-flex h-8 items-center gap-1.5 rounded-md text-[13px] text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-7"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          {view === "story" ? "Back to stories" : "Back to epics"}
-        </button>
-      )}
-
-      {view === "epics" && (
+    <div className="min-w-0 space-y-3 pb-4" role="region" aria-label="Epics">
+      {selectedEpic && (
         <>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[13px] text-muted-foreground">
-              {totalEpics} epics &middot; {totalStories} stories
-            </p>
-            <PillToggle
-              label="Epics display mode"
-              value={layout}
-              onChange={setLayout}
-              options={[
-                { value: "timeline", label: "List", ariaLabel: "List view" },
-                { value: "kanban", label: "Board", ariaLabel: "Board view" },
-              ]}
-            />
-          </div>
-
-          {epics.length === 0 ? (
-            <StateMessage>
-              No epic found. Epics will appear here once defined in the planning artifacts.
-            </StateMessage>
-          ) : layout === "timeline" ? (
-            <div>
-              {groups.map((g) => {
-                const list = g.epics;
-                return (
-                  <section key={g.status} aria-label={g.label}>
-                    <GroupLabel count={list.length}>{g.label}</GroupLabel>
-                    <div role="list">
-                      {list.map((epic) => (
-                        <div key={epic.id} role="listitem">
-                          <EpicRow epic={epic} onClick={() => goToStories(epic.id)} />
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          ) : (
-            <EpicsKanban epics={epics} onSelectEpic={openEpicSheet} />
-          )}
-        </>
-      )}
-
-      {view === "stories" && selectedEpic && (
-        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={goToEpics}
+            aria-label="Back to epics"
+            className="inline-flex h-10 items-center gap-1.5 rounded-md text-[13px] text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-7"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to epics
+          </button>
           <div className="space-y-2 px-2">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs text-muted-foreground">E{selectedEpic.id}</span>
@@ -229,25 +166,114 @@ export function EpicsBrowser({
               />
             </div>
           </div>
+        </>
+      )}
 
-          <GroupLabel count={epicStories.length}>Stories</GroupLabel>
-          {epicStories.length === 0 ? (
-            <StateMessage>No story found for this epic</StateMessage>
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
+        <StoryFilters
+          search={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          onFiltersChange={setFilters}
+          placeholder={selectedEpic ? "Search this epic" : "Search all stories"}
+          hideFilters={!selectedEpic && !searching}
+        />
+        {selectedEpic ? (
+          <PillToggle
+            label="Display mode"
+            value={storyView}
+            onChange={setStoryView}
+            options={[
+              { value: "table", label: "Table", icon: LayoutList, ariaLabel: "Table view" },
+              { value: "kanban", label: "Board", icon: Columns3, ariaLabel: "Board view" },
+            ]}
+            className="order-2 sm:order-none"
+          />
+        ) : (
+          !searching && (
+            <PillToggle
+              label="Epics display mode"
+              value={layout}
+              onChange={setLayout}
+              options={[
+                { value: "timeline", label: "List", ariaLabel: "List view" },
+                { value: "kanban", label: "Board", ariaLabel: "Board view" },
+              ]}
+              className="order-2 sm:order-none"
+            />
+          )
+        )}
+      </div>
+
+      {selectedEpic ? (
+        storyView === "table" ? (
+          <StoriesTable stories={visibleStories} onStorySelect={setSelectedStory} hideEpicColumn />
+        ) : (
+          <KanbanBoard stories={visibleStories} onStorySelect={setSelectedStory} />
+        )
+      ) : searching ? (
+        <>
+          <GroupLabel count={visibleStories.length}>Results</GroupLabel>
+          {visibleStories.length === 0 ? (
+            <StateMessage>No story matches the search</StateMessage>
           ) : (
-            <div role="list">
-              {epicStories.map((story) => (
+            <div role="list" aria-label="Search results">
+              {visibleStories.map((story) => (
                 <div key={story.id} role="listitem">
-                  <StoryRow story={story} onClick={() => goToStory(story.id)} />
+                  <StoryRow story={story} showEpic onClick={() => setSelectedStory(story)} />
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </>
+      ) : epics.length === 0 ? (
+        <StateMessage>
+          No epic found. Epics will appear here once defined in the planning artifacts.
+        </StateMessage>
+      ) : (
+        <>
+          <p className="text-[13px] text-muted-foreground">
+            {totalEpics} epics &middot; {totalStories} stories
+          </p>
+          {layout === "timeline" ? (
+            <div>
+              {groups.map((g) => (
+                <section key={g.status} aria-label={g.label}>
+                  <GroupLabel count={g.epics.length}>{g.label}</GroupLabel>
+                  <div role="list">
+                    {g.epics.map((epic) => (
+                      <div key={epic.id} role="listitem">
+                        <EpicRow epic={epic} onClick={() => goToEpic(epic.id)} />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <EpicsKanban epics={epics} onSelectEpic={setSheetEpicId} />
+          )}
+        </>
       )}
 
-      {view === "story" && selectedStory && (
-        <StoryDetailView story={selectedStory} />
-      )}
+      <Sheet
+        open={selectedStory !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedStory(null);
+        }}
+      >
+        <SheetContent side="right" className="w-full max-w-full sm:max-w-2xl overflow-y-auto overflow-x-hidden">
+          {/* Visible heading lives in StoryDetailView; this is the accessible name. */}
+          <SheetTitle className="sr-only">
+            {selectedStory
+              ? `Story ${selectedStory.id}: ${selectedStory.title}`
+              : "Story"}
+          </SheetTitle>
+          <div className="px-3 pt-12 md:pt-4 md:px-4 pb-4">
+            {selectedStory && <StoryDetailView story={selectedStory} />}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <EpicStoriesSheet
         open={sheetEpicId !== null}

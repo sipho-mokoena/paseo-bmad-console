@@ -1,30 +1,16 @@
-import { redirect, notFound } from "next/navigation";
-import { getCachedBmadProject } from "@/lib/bmad/cached-project";
-import { getGitHubToken } from "@/lib/github/client";
-import { StoriesView } from "@/components/stories/stories-view";
-import {
-  getAuthenticatedUserId,
-  getAuthenticatedRepoConfig,
-} from "@/lib/db/helpers";
+import { permanentRedirect } from "next/navigation";
+import { storiesRedirectTarget } from "@/lib/stories-browse";
 
-interface StoriesPageProps {
+interface StoriesRedirectProps {
   params: Promise<{ owner: string; repo: string }>;
+  searchParams: Promise<{ epic?: string | string[] }>;
 }
 
-export default async function StoriesPage({ params }: StoriesPageProps) {
-  const { owner, repo: repoName } = await params;
-  const userId = await getAuthenticatedUserId();
-  if (!userId) redirect("/login");
-
-  const repoConfig = await getAuthenticatedRepoConfig(userId, owner, repoName);
-  if (!repoConfig) return notFound();
-
-  const isLocal = repoConfig.sourceType === "local";
-  const token = isLocal ? undefined : (await getGitHubToken(userId)) ?? undefined;
-  const project = await getCachedBmadProject(repoConfig, token, userId);
-  if (!project) return notFound();
-
-  return (
-    <StoriesView stories={project.stories} epics={project.epics} />
+/** The Stories page was merged into Epics; keep old links and bookmarks working. */
+export default async function StoriesRedirect({ params, searchParams }: StoriesRedirectProps) {
+  const { owner, repo } = await params;
+  const { epic } = await searchParams;
+  permanentRedirect(
+    storiesRedirectTarget(`/repo/${owner}/${repo}`, Array.isArray(epic) ? epic[0] : epic),
   );
 }

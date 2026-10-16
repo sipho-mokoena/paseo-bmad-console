@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupEpicsByStatus, searchStories } from "../stories-browse";
+import { groupEpicsByStatus, searchStories, filterStoriesByStatus, epicHref, storiesRedirectTarget } from "../stories-browse";
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
 
 const epic = (id: string, status: Epic["status"]): Epic => ({
@@ -49,5 +49,39 @@ describe("searchStories", () => {
   });
   it("returns everything for an empty query", () => {
     expect(searchStories(all, "  ")).toHaveLength(3);
+  });
+});
+
+describe("filterStoriesByStatus", () => {
+  const stories = [
+    { id: "1.1", status: "done" },
+    { id: "1.2", status: "backlog" },
+    { id: "1.3", status: "review" },
+  ];
+  const f = (operator: string, values: string[], field = "status") => ({ field, operator, values });
+
+  it("keeps everything with no usable filter", () => {
+    expect(filterStoriesByStatus(stories, [])).toHaveLength(3);
+    expect(filterStoriesByStatus(stories, [f("is_any_of", [])])).toHaveLength(3);
+    expect(filterStoriesByStatus(stories, [f("is", ["done"], "epicId")])).toHaveLength(3);
+  });
+
+  it("includes and excludes by status", () => {
+    expect(filterStoriesByStatus(stories, [f("is_any_of", ["done", "review"])]).map((s) => s.id)).toEqual(["1.1", "1.3"]);
+    expect(filterStoriesByStatus(stories, [f("is_not", ["done"])]).map((s) => s.id)).toEqual(["1.2", "1.3"]);
+  });
+});
+
+describe("epicHref", () => {
+  it("builds the ?epic= link and encodes the id", () => {
+    expect(epicHref("/repo/a/b/epics", "3")).toBe("/repo/a/b/epics?epic=3");
+    expect(epicHref("/x", "a b")).toBe("/x?epic=a%20b");
+  });
+});
+
+describe("storiesRedirectTarget", () => {
+  it("points at epics and keeps ?epic=", () => {
+    expect(storiesRedirectTarget("/repo/o/r")).toBe("/repo/o/r/epics");
+    expect(storiesRedirectTarget("/repo/o/r", "3")).toBe("/repo/o/r/epics?epic=3");
   });
 });
