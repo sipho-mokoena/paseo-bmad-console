@@ -5,6 +5,10 @@ import { SearchShortcut } from "@/components/layout/search-shortcut";
 import { BreadcrumbProvider } from "@/contexts/breadcrumb-context";
 import { getRepos } from "@/lib/db/helpers";
 
+// Repos come from the database on every request. Without a session lookup nothing
+// else makes these pages dynamic, so they would be prerendered at build time.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
