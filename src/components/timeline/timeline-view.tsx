@@ -370,6 +370,7 @@ const refOf = (g: DepGraph, key: string, prefix: string, titles?: Map<string, st
     key: prefix + key,
     label: n ? (n.kind === "story" ? n.id : epicLabel(n.id)) : key,
     title: n?.title ?? titles?.get(key) ?? key,
+    status: n?.status,
   };
 };
 

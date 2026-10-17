@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { FileTree } from "./file-tree";
 import { DocumentPane } from "./document-pane";
-import { PillToggle, StateMessage } from "@/components/shared/list-kit";
+import { PillToggle, SearchField, StateMessage } from "@/components/shared/list-kit";
 import {
   FolderOpen,
   FileOutput,
@@ -12,24 +12,29 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { FileTreeNode } from "@/lib/bmad/types";
+import { filterFileTree, parseFilterTerms } from "@/lib/file-tree-filter";
 
 function CollapsibleSection({
   title,
   icon: Icon,
   defaultOpen,
+  forceOpen = false,
   children,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   defaultOpen: boolean;
+  /** Open regardless of the saved state (used while a filter is active). */
+  forceOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [savedOpen, setOpen] = useState(defaultOpen);
+  const open = forceOpen || savedOpen;
 
   return (
     <div>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(!savedOpen)}
         aria-expanded={open}
         className="flex min-h-8 w-full items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
       >

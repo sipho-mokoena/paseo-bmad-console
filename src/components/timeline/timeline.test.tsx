@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { buildStoryGraph, type GraphStoryInput } from "@/lib/dependency-graph";
+import { HEADER_H, NODE_H, WAVE_LABEL_BASELINE, layoutLayers } from "@/lib/timeline-layout";
+import { DetailsPanel, type DetailItem } from "./details-panel";
 import { GraphChart, nodeLabel } from "./graph-chart";
 import { ScopeSelect } from "./scope-select";
 import { TimelineEmpty } from "./timeline-empty";
@@ -26,6 +28,10 @@ describe("TimelineViewMenu", () => {
     expect(out).toContain("View");
     expect(out).toContain('aria-haspopup="menu"');
     expect(out).toContain("View options, 2 on");
+  });
+  it("has no description line under Size by risk", () => {
+    const out = renderToStaticMarkup(<TimelineViewMenu {...base} />);
+    expect(out).not.toContain("Bars last");
   });
   it("shows no badge when no toggle is on", () => {
     const out = renderToStaticMarkup(<TimelineViewMenu {...base} state={{ critical: false, all: false, risk: false }} />);
@@ -66,5 +72,55 @@ describe("ScopeSelect", () => {
   });
   it("shows All epics when nothing is scoped", () => {
     expect(renderToStaticMarkup(<ScopeSelect value="" epics={epics} onChange={() => {}} />)).toContain("All epics");
+  });
+});
+
+describe("DetailsPanel", () => {
+  const ref = (label: string, status: string) => ({ key: label, label, title: `Title ${label}`, status });
+  const item: DetailItem = {
+    key: "3.4", id: "3.4", kind: "story", title: "Join a peer", status: "backlog", epicId: "3", epicTitle: "Mesh", risk: "medium", start: 2, end: 4,
+    ready: false, critical: false, blockedBy: [ref("3.2", "in-progress")], after: [ref("3.1", "done"), ref("3.2", "in-progress")], blocks: [ref("3.5", "backlog")],
+  };
+  const render = (i: DetailItem) => renderToStaticMarkup(<DetailsPanel item={i} base="/repo/o/r" onSelect={() => {}} onClose={() => {}} />);
+  it("lists prerequisites with open ones, blocks and links", () => {
+    const out = render(item);
+    expect(out).toContain('aria-label="Details of 3.4"');
+    expect(out).toContain("Prerequisites");
+    expect(out).toContain("Blocked by 1 open prerequisite");
+    expect(out).toContain("open</span>");
+    expect(out).toContain("Blocks");
+    expect(out).toContain("Waves 3 to 4");
+    expect(out).toContain('href="/repo/o/r/epics/3/3.4"');
+    expect(out).toContain('href="/repo/o/r/epics/3"');
+    expect(out).not.toContain("Blocked by 0");
+    expect(out).not.toContain("Ready now");
+    expect(out).not.toContain("Critical path");
+  });
+  it("shows flags only when true", () => {
+    const out = render({ ...item, ready: true, critical: true });
+    expect(out).toContain("Ready now");
+    expect(out).toContain("Critical path");
+  });
+  it("says No dependencies once and omits empty sections", () => {
+    const out = render({ ...item, blockedBy: [], after: [], blocks: [] });
+    expect(out.match(/No dependencies/g)).toHaveLength(1);
+    expect(out).not.toContain("Prerequisites");
+    expect(out).not.toContain("None");
+  });
+  it("has no story link for epics", () => {
+    const out = render({ ...item, kind: "epic", id: "3" });
+    expect(out).not.toContain("Open story");
+    expect(out).toContain("Open epic");
+  });
+});
+
+describe("graph header", () => {
+  it("leaves room above the wave labels and before the first row", () => {
+    expect(WAVE_LABEL_BASELINE - 12).toBeGreaterThanOrEqual(12);
+    expect(HEADER_H - WAVE_LABEL_BASELINE).toBeGreaterThanOrEqual(12);
+    const g = buildStoryGraph([st("1.1", "1"), st("1.2", "1", ["1.1"])], [{ id: "1" }]);
+    const l = layoutLayers(g);
+    expect(l.placed.get("1.1")!.y).toBe(HEADER_H);
+    expect(l.height).toBeGreaterThanOrEqual(HEADER_H + NODE_H);
   });
 });

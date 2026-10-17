@@ -17,6 +17,8 @@ BMAD data has no dates, so the chart is a schedule computed from the dependency 
 - Critical path: the heaviest chain of unfinished work. Done items cost nothing.
 - Cycles are reported and one back edge per cycle is dropped, so the layout never loops.
 
+The details panel of a selected item shows its id and status, the epic, wave, risk and type, flags (Ready now, Critical path) only when true, then Prerequisites (with open ones marked and a count of what blocks the item) and Blocks as rows that select that item in the chart, and the Open story and Open epic actions.
+
 ## Views
 
 - Gantt: epics as collapsible groups, bars coloured by status, an epic bar spanning its stories with a progress fill, and connectors for the selected item or for all items.
@@ -26,7 +28,7 @@ Both charts are the same on phones and desktops and scroll sideways inside their
 
 For screen readers, every bar and node has a name with its id, title, status, wave and the items blocking it ("3.8 A Peer joins, Backlog, wave 13, blocked by 3.6, 3.7"), and a hidden status line announces the waves, the item count, unresolved references and cycles.
 
-Toolbar: the view toggle (Gantt | Graph), a View dropdown and a Filter dropdown on the left, then the Scope dropdown and search on the right. Scope is a styled dropdown, not the browser's native select. The Filter dropdown is a multiselect of Ready now and the statuses (Done, In review, In progress, Blocked, Ready for dev, Backlog); the selection shows as removable chips with a Clear action, and maps to the `ready` and `status` URL params. The View dropdown holds checkable Highlight critical path, Show all dependencies (Gantt only) and Size by risk (only when risk data exists), plus Expand all and Collapse all (Gantt only); a badge counts the toggles that are on. Scope narrows to one epic (outside prerequisites show as collapsed external nodes).
+Toolbar: the view toggle (Gantt | Graph), a View dropdown and a Filter dropdown on the left, then the Scope dropdown and search on the right. Scope is a styled dropdown, not the browser's native select. The Filter dropdown is a multiselect of Ready now and the statuses (Done, In review, In progress, Blocked, Ready for dev, Backlog); the selection shows as removable chips with a Clear action, and maps to the `ready` and `status` URL params. The View dropdown holds checkable Highlight critical path, Show all dependencies (Gantt only) and Size by risk (only when risk data exists), plus Expand all and Collapse all (Gantt only). Size by risk is a single-line item (its explanation is the tooltip and the Waves section above); a badge counts the toggles that are on. Scope narrows to one epic (outside prerequisites show as collapsed external nodes).
 
 ## URL parameters
 
