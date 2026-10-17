@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { GanttChart as GanttIcon, Network } from "lucide-react";
-import type { Layout, PanelImperativeHandle } from "react-resizable-panels";
+import type { Layout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { CHART_MIN, DETAILS_DEFAULT, DETAILS_MAX, DETAILS_MIN, readDetailsSize, writeDetailsSize } from "@/lib/pane-size";
 import { PillToggle, SearchField, StateMessage } from "@/components/shared/list-kit";
@@ -240,14 +240,13 @@ export function TimelineView({ data, base }: TimelineViewProps) {
   };
 
   const wide = useWide();
-  const detailsRef = useRef<PanelImperativeHandle | null>(null);
   const hasDetail = detail !== null;
-  // The panel mounts at the default size (same as the server); the remembered size is applied right after.
-  useEffect(() => {
-    if (!wide || !hasDetail) return;
-    const stored = readDetailsSize();
-    if (stored !== DETAILS_DEFAULT) detailsRef.current?.resize(`${stored}%`);
-  }, [wide, hasDetail]);
+  // The split only renders on a wide screen, which is known after hydration, so reading the remembered
+  // size while rendering cannot mismatch the server HTML. The panel mounts at that size from the start.
+  const detailsSize = useMemo(
+    () => (wide && hasDetail ? readDetailsSize() : DETAILS_DEFAULT),
+    [wide, hasDetail],
+  );
   const onLayoutChanged = useCallback((layout: Layout, meta: { isUserInteraction: boolean }) => {
     if (meta.isUserInteraction && typeof layout.details === "number") writeDetailsSize(layout.details);
   }, []);
@@ -395,7 +394,7 @@ export function TimelineView({ data, base }: TimelineViewProps) {
 
       {wide ? (
         <ResizablePanelGroup orientation="horizontal" className="min-w-0 !overflow-visible" onLayoutChanged={onLayoutChanged}>
-          <ResizablePanel id="chart" minSize={`${CHART_MIN}%`} defaultSize={showPanel ? `${100 - DETAILS_DEFAULT}%` : "100%"} className="min-w-0">
+          <ResizablePanel id="chart" minSize={`${CHART_MIN}%`} defaultSize={showPanel ? `${100 - detailsSize}%` : "100%"} className="min-w-0">
             {chart}
           </ResizablePanel>
           {details && (
@@ -403,10 +402,9 @@ export function TimelineView({ data, base }: TimelineViewProps) {
               <ResizableHandle aria-label="Resize chart and details panels" onDoubleClick={() => writeDetailsSize(DETAILS_DEFAULT)} />
               <ResizablePanel
                 id="details"
-                panelRef={detailsRef}
                 minSize={`${DETAILS_MIN}%`}
                 maxSize={`${DETAILS_MAX}%`}
-                defaultSize={`${DETAILS_DEFAULT}%`}
+                defaultSize={`${detailsSize}%`}
                 className="min-w-0"
               >
                 <div className="max-h-[72vh] overflow-y-auto rounded-lg">{details}</div>
