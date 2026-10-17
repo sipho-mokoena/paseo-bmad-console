@@ -4,7 +4,7 @@ import type {
   PluginWorkspacePanelProps,
 } from "@getpaseo/plugin/client";
 import { ConsoleView } from "./console-view";
-import { SettingsBlock } from "./settings-block";
+import { StandaloneSettings } from "./settings-view";
 
 export function MainScreen({ theme, layout, navigation, params }: PluginScreenProps) {
   return (
@@ -18,11 +18,12 @@ export function MainScreen({ theme, layout, navigation, params }: PluginScreenPr
   );
 }
 
+/** Same view in a compact form: status, actions and the main address. */
 export function WorkspacePanel({ theme, layout, navigation, workspaceId }: PluginWorkspacePanelProps) {
-  return <ConsoleView theme={theme} layout={layout} navigation={navigation} workspaceId={workspaceId} />;
+  return <ConsoleView theme={theme} layout={layout} navigation={navigation} workspaceId={workspaceId} compact />;
 }
 
-/** Same settings form, registered under Settings > Plugins. */
+/** Registered under Settings > Plugins. */
 export function SettingsScreen({ theme, layout }: PluginSurfaceProps) {
-  return <SettingsBlock theme={theme} layout={layout} />;
+  return <StandaloneSettings theme={theme} layout={layout} />;
 }

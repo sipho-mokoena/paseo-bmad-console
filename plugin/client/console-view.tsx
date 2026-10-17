@@ -1,218 +1,278 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { usePaseo, type PluginScreenProps } from "@getpaseo/plugin/client";
-import { copyText, useToast } from "@getpaseo/plugin/client/react-native";
-import { ExternalLink } from "@getpaseo/plugin/client/ui";
+import { Pressable, Text, View } from "react-native";
+import { usePaseo, useSettings, type PluginScreenProps } from "@getpaseo/plugin/client";
+import { Icon, ScrollView, copyText, useToast } from "@getpaseo/plugin/client/react-native";
+import { SettingsCard, SettingsInput, SettingsSelect } from "@getpaseo/plugin/client/ui";
 import { useQuery } from "@tanstack/react-query";
-import { formatUptime, type ConsoleStatus, type UrlCandidate } from "../shared/console";
+import { consoleSettings, type ConsoleStatus } from "../shared/console";
 import { useConsoleActions, useConsoleLogs, useConsoleStatus } from "./hooks";
-import { Button, Card, Dot, type ThemeProps } from "./parts";
-import { SettingsBlock } from "./settings-block";
-import { STATE_LABEL, stateColor, useStyles } from "./theme";
+import {
+  ACTION_LABEL,
+  isRunningState,
+  pickWorkspace,
+  statusNote,
+  statusPill,
+  statusSubtitle,
+  validateFolder,
+  visibleActions,
+  type SettingsGroupId,
+  type WorkspaceEntry,
+} from "./logic";
+import { SettingsView } from "./settings-view";
+import { useStyles } from "./theme";
+import { Banner, Button, IconButton, IconLink, LinkButton, NavRow, Section, StatusPill, type ThemeProps } from "./ui";
 
 type Navigation = PluginScreenProps["navigation"];
 
 export interface ConsoleViewProps extends ThemeProps {
   navigation: Navigation;
-  /** Workspace to open the Paseo browser tab in. Without one, a picker is shown. */
+  /** Workspace to open the Paseo browser tab in; falls back to the last used one. */
   workspaceId: string | null;
   /** Open the Paseo browser tab as soon as the console answers (set by the Command Center item). */
   autoOpen?: boolean;
+  /** Workspace panel: status, actions and the main address only. */
+  compact?: boolean;
 }
 
-function WorkspacePicker({
+function useCopy() {
+  const toast = useToast();
+  return async (text: string, done = "Copied") => {
+    try {
+      await copyText(text);
+      toast.show(done, { variant: "success" });
+    } catch {
+      toast.error("Could not copy. Select the text and copy it by hand.");
+    }
+  };
+}
+
+function Header({ theme, layout, status }: ThemeProps & { status: ConsoleStatus | undefined }) {
+  const styles = useStyles(theme, layout);
+  const pill = statusPill(status?.state ?? "not_configured");
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerRow}>
+        <Icon name="ListChecks" size={20} color={theme.colors.foreground} />
+        <Text accessibilityRole="header" style={styles.title}>
+          BMAD Console
+        </Text>
+        {status ? <StatusPill theme={theme} layout={layout} label={pill.label} tone={pill.tone} /> : null}
+      </View>
+      {status ? <Text style={styles.subtitle}>{statusSubtitle(status)}</Text> : null}
+    </View>
+  );
+}
+
+function Onboarding({
   theme,
   layout,
-  value,
-  onChange,
-}: ThemeProps & { value: string | null; onChange: (id: string) => void }) {
+  settings,
+  onStart,
+}: ThemeProps & { settings: ReturnType<typeof useSettings<typeof consoleSettings.schema>>; onStart: () => void }) {
   const styles = useStyles(theme, layout);
-  const paseo = usePaseo();
-  const workspaces = useQuery({
-    queryKey: ["bmad-console", "workspaces"],
-    queryFn: async () => (await paseo.workspaces.list()).entries,
-  });
-  const entries = useMemo(() => workspaces.data ?? [], [workspaces.data]);
-  useEffect(() => {
-    if (value === null && entries.length > 0) onChange(entries[0].id);
-  }, [entries, value, onChange]);
-  if (entries.length === 0) return null;
+  const toast = useToast();
+  const [folder, setFolder] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const error = validateFolder(folder, submitted);
+  const ready = settings.status === "ready";
+  const canSubmit = ready && validateFolder(folder, true) === null;
+
+  async function submit() {
+    setSubmitted(true);
+    if (settings.status !== "ready" || validateFolder(folder, true) !== null) return;
+    const saved = await settings.save({ ...settings.values, consoleDirectory: folder.trim() }, settings.revision);
+    if (saved) onStart();
+    else toast.error(settings.saveError ?? "Could not save the folder.");
+  }
+
   return (
-    <View style={{ gap: 6 }}>
-      <Text style={styles.muted}>Paseo browser workspace</Text>
+    <View style={{ gap: 12 }}>
+      <Text accessibilityRole="header" style={styles.textStrong}>
+        Set up BMAD Console
+      </Text>
+      <Text style={styles.muted}>
+        Paseo starts the BMAD Console web app from a local checkout. Point it at that folder to begin.
+      </Text>
+      <Text style={styles.small}>Step 1 of 1</Text>
+      <SettingsCard>
+        <SettingsInput
+          label="Choose the console folder"
+          hint="The folder that contains paseo-bmad-console's package.json."
+          placeholder="/path/to/paseo-bmad-console"
+          initialValue=""
+          error={error}
+          disabled={!ready || settings.saving}
+          onChangeText={setFolder}
+        />
+      </SettingsCard>
+      {settings.status !== "ready" && settings.status !== "loading" ? (
+        <Banner theme={theme} layout={layout} tone="danger" text={settings.error} />
+      ) : null}
+      {settings.status === "ready" && settings.saveError ? (
+        <Banner theme={theme} layout={layout} tone="danger" text={settings.saveError} />
+      ) : null}
       <View style={styles.wrapRow}>
-        {entries.slice(0, 8).map((workspace) => (
-          <Button
-            key={workspace.id}
-            theme={theme}
-            layout={layout}
-            label={workspace.name}
-            primary={workspace.id === value}
-            onPress={() => onChange(workspace.id)}
-          />
-        ))}
+        <Button
+          theme={theme}
+          layout={layout}
+          variant="primary"
+          label="Save and start"
+          pending={settings.saving}
+          disabled={!canSubmit}
+          onPress={() => void submit()}
+        />
       </View>
     </View>
   );
 }
 
-function StatusCard({ theme, layout, status }: ThemeProps & { status: ConsoleStatus }) {
-  const styles = useStyles(theme, layout);
-  return (
-    <Card theme={theme} layout={layout}>
-      <View style={styles.row}>
-        <Dot color={stateColor(theme, status.state)} />
-        <Text style={styles.title}>{STATE_LABEL[status.state]}</Text>
-      </View>
-      <Text style={styles.muted}>
-        Port {status.port} | Mode {status.mode}
-        {status.uptimeSeconds !== null ? ` | Up ${formatUptime(status.uptimeSeconds)}` : ""}
-        {status.pid !== null ? ` | PID ${status.pid}` : ""}
-      </Text>
-      {status.noLoginActive ? (
-        <Text style={styles.warning}>Login is disabled for this run (no-login mode).</Text>
-      ) : null}
-      {status.state === "starting" ? (
-        <Text style={styles.muted}>Waiting for the console to answer. The first start can take a while.</Text>
-      ) : null}
-      {status.state === "external" ? (
-        <Text style={styles.muted}>
-          This console was not started by the plugin, so the plugin will not stop it.
-        </Text>
-      ) : null}
-      {status.state === "not_configured" ? (
-        <Text style={styles.muted}>Set the console directory under Settings below to get started.</Text>
-      ) : null}
-      {status.configError && status.state !== "running" && status.state !== "external" ? (
-        <Text style={styles.danger}>{status.configError}</Text>
-      ) : null}
-      {status.settingsError ? <Text style={styles.danger}>{status.settingsError}</Text> : null}
-      {status.state === "crashed" ? (
-        <View style={{ gap: 4 }}>
-          <Text style={styles.danger}>
-            The console exited (code {status.lastExit?.code ?? "none"}, signal{" "}
-            {status.lastExit?.signal ?? "none"}). It is not restarted automatically.
-          </Text>
-          {status.crashLines.map((line, index) => (
-            <Text key={`${index}-${line}`} style={styles.mono} selectable>
-              {line}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-    </Card>
-  );
-}
-
-function UrlList({
+function AddressRows({
   theme,
   layout,
   status,
-  canOpenBrowser,
-}: ThemeProps & { status: ConsoleStatus; canOpenBrowser: boolean }) {
+  compact,
+  onAddPublic,
+}: ThemeProps & { status: ConsoleStatus; compact: boolean; onAddPublic: () => void }) {
   const styles = useStyles(theme, layout);
-  const toast = useToast();
-  async function copy(url: string) {
-    try {
-      await copyText(url);
-      toast.show("Copied", { variant: "success" });
-    } catch {
-      toast.error("Could not copy. Select the URL and use Copy.");
-    }
-  }
-  const ordered: UrlCandidate[] = canOpenBrowser
-    ? status.urls.all
-    : [...status.urls.all].sort((a, b) => Number(b.kind === "public") - Number(a.kind === "public"));
-  const needsHint = !status.urls.public && !canOpenBrowser;
+  const copy = useCopy();
+  const all = compact ? status.urls.all.filter((c) => c.url === status.urls.preferred) : status.urls.all;
   return (
-    <Card theme={theme} layout={layout}>
-      <Text style={styles.sectionTitle}>Addresses</Text>
-      {ordered.map((candidate) => (
-        <View key={candidate.kind} style={styles.urlRow}>
-          <Text style={styles.muted}>{candidate.label}</Text>
-          <View style={styles.wrapRow}>
-            <ExternalLink href={candidate.url}>
-              <Text style={styles.link}>{candidate.url}</Text>
-            </ExternalLink>
-            <Button
+    <View>
+      {all.map((candidate, index) => (
+        <View key={candidate.kind}>
+          {index > 0 ? <View style={styles.separator} /> : null}
+          <View style={styles.row}>
+            <View style={styles.rowFill}>
+              <Text style={styles.small}>
+                {candidate.label}
+                {candidate.url === status.urls.preferred ? " · Preferred" : ""}
+              </Text>
+              <Text style={styles.text} selectable numberOfLines={1}>
+                {candidate.url}
+              </Text>
+            </View>
+            <IconLink theme={theme} layout={layout} icon="ExternalLink" label={`Open ${candidate.label} address in browser`} href={candidate.url} />
+            <IconButton
               theme={theme}
               layout={layout}
-              label="Copy"
+              icon="Copy"
+              label={`Copy ${candidate.label} address`}
               onPress={() => void copy(candidate.url)}
             />
           </View>
         </View>
       ))}
-      {needsHint ? (
-        <Text style={styles.muted}>
-          A phone or another computer needs the Tailscale or LAN address of this machine. Set it as
-          the public URL in Settings, and set the bind host to an address that device can reach.
-          {status.bindHost === "127.0.0.1" || status.bindHost === "localhost"
-            ? " The bind host is currently 127.0.0.1, which is not reachable from a phone."
-            : ""}
-        </Text>
+      {!status.urls.public ? (
+        <>
+          <View style={styles.separator} />
+          <NavRow
+            theme={theme}
+            layout={layout}
+            icon="Smartphone"
+            label="Add your Tailscale address to open this from your phone"
+            onPress={onAddPublic}
+          />
+        </>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
-function LogsSection({ theme, layout }: ThemeProps) {
+function LogsSection({ theme, layout, status }: ThemeProps & { status: ConsoleStatus }) {
   const styles = useStyles(theme, layout);
-  const [open, setOpen] = useState(false);
+  const copy = useCopy();
+  const crashed = status.state === "crashed";
+  const [open, setOpen] = useState(crashed);
   const logs = useConsoleLogs(open);
+  const wasCrashed = useRef(crashed);
+  useEffect(() => {
+    if (crashed && !wasCrashed.current) setOpen(true);
+    wasCrashed.current = crashed;
+  }, [crashed]);
+
+  const lines = logs.data?.lines.length ? logs.data.lines : status.crashLines;
+  const total = logs.data?.total ?? lines.length;
+  const countLabel = `${total} ${total === 1 ? "line" : "lines"}`;
   return (
-    <Card theme={theme} layout={layout}>
-      <View style={[styles.row, { justifyContent: "space-between" }]}>
-        <Text style={styles.sectionTitle}>Logs</Text>
-        <View style={styles.row}>
-          {open ? (
+    <Section theme={theme} layout={layout} title="Logs">
+      <NavRow
+        theme={theme}
+        layout={layout}
+        icon="Terminal"
+        label={open ? "Hide logs" : "Show logs"}
+        value={countLabel}
+        chevron={open ? "ChevronDown" : "ChevronRight"}
+        onPress={() => setOpen((value) => !value)}
+      />
+      {open ? (
+        <View style={{ gap: 8, paddingTop: 4 }}>
+          <View style={styles.wrapRow}>
             <Button
               theme={theme}
               layout={layout}
+              icon="RefreshCw"
               label="Refresh"
               pending={logs.isFetching}
               onPress={() => void logs.refetch()}
             />
-          ) : null}
-          <Button
-            theme={theme}
-            layout={layout}
-            label={open ? "Hide" : "Show"}
-            onPress={() => setOpen((value) => !value)}
-          />
+            <Button
+              theme={theme}
+              layout={layout}
+              icon="Copy"
+              label="Copy"
+              disabled={lines.length === 0}
+              onPress={() => void copy(lines.join("\n"), "Logs copied")}
+            />
+          </View>
+          <ScrollView style={styles.logBox} nestedScrollEnabled>
+            {logs.isError ? (
+              <Text style={styles.danger}>Could not load logs.</Text>
+            ) : lines.length === 0 ? (
+              <Text style={styles.muted}>No output yet.</Text>
+            ) : (
+              lines.map((line, index) => (
+                <Text key={`${index}-${line.slice(0, 24)}`} style={styles.mono} selectable>
+                  {line}
+                </Text>
+              ))
+            )}
+          </ScrollView>
         </View>
-      </View>
-      {open ? (
-        <ScrollView style={styles.logBox} nestedScrollEnabled>
-          {logs.isError ? (
-            <Text style={styles.danger}>Could not load logs.</Text>
-          ) : (logs.data?.lines.length ?? 0) === 0 ? (
-            <Text style={styles.muted}>No output yet.</Text>
-          ) : (
-            logs.data?.lines.map((line, index) => (
-              <Text key={`${index}-${line.slice(0, 24)}`} style={styles.mono} selectable>
-                {line}
-              </Text>
-            ))
-          )}
-        </ScrollView>
       ) : null}
-    </Card>
+    </Section>
   );
 }
 
-export function ConsoleView({ theme, layout, navigation, workspaceId, autoOpen }: ConsoleViewProps) {
+export function ConsoleView({ theme, layout, navigation, workspaceId, autoOpen, compact = false }: ConsoleViewProps) {
   const styles = useStyles(theme, layout);
   const toast = useToast();
+  const paseo = usePaseo();
   const statusQuery = useConsoleStatus();
   const actions = useConsoleActions();
-  const [picked, setPicked] = useState<string | null>(workspaceId);
-  const targetWorkspace = workspaceId ?? picked;
+  const settings = useSettings(consoleSettings);
+  const [view, setView] = useState<"main" | "settings">("main");
+  const [focus, setFocus] = useState<SettingsGroupId | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
   const openBrowser = navigation?.openBrowser;
   const canOpenBrowser = openBrowser !== undefined;
   const status = statusQuery.data;
 
-  // Electron: the Paseo browser runs on the desktop, so its address is the local one.
+  const workspaces = useQuery({
+    queryKey: ["bmad-console", "workspaces"],
+    queryFn: async () => (await paseo.workspaces.list()).entries,
+    enabled: canOpenBrowser,
+  });
+  const entries: WorkspaceEntry[] = useMemo(
+    () => (workspaces.data ?? []).map((w) => ({ id: w.id, name: w.name })),
+    [workspaces.data],
+  );
+  const remembered = settings.status === "ready" ? (settings.values.lastWorkspaceId ?? "") : "";
+  const targetWorkspace = pickWorkspace({
+    requestedId: picked ?? workspaceId,
+    rememberedId: remembered,
+    entries,
+  });
+
   const browserUrl = status ? status.urls.local : null;
   const reachable = Boolean(status?.reachable);
 
@@ -222,6 +282,13 @@ export function ConsoleView({ theme, layout, navigation, workspaceId, autoOpen }
       openBrowser({ url: browserUrl, workspaceId: targetWorkspace });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function chooseWorkspace(id: string) {
+    setPicked(id);
+    if (settings.status === "ready" && settings.values.lastWorkspaceId !== id) {
+      void settings.save({ ...settings.values, lastWorkspaceId: id }, settings.revision);
     }
   }
 
@@ -236,93 +303,131 @@ export function ConsoleView({ theme, layout, navigation, workspaceId, autoOpen }
     }
   }, [autoOpen, reachable, openBrowser, targetWorkspace, browserUrl, toast]);
 
-  async function copyPrimary() {
-    if (!status) return;
-    const url = canOpenBrowser ? status.urls.local : status.urls.preferred;
-    try {
-      await copyText(url);
-      toast.show("Copied", { variant: "success" });
-    } catch {
-      toast.error("Could not copy. Select the URL and use Copy.");
-    }
+  function showSettings(group: SettingsGroupId | null) {
+    setFocus(group);
+    setView("settings");
+  }
+
+  if (view === "settings") {
+    return (
+      <SettingsView
+        theme={theme}
+        layout={layout}
+        settings={settings}
+        focus={focus}
+        onBack={() => setView("main")}
+      />
+    );
   }
 
   const busy = actions.start.isPending || actions.stop.isPending || actions.restart.isPending;
-  const owned = status?.pid !== null && status?.pid !== undefined;
-  const ready = Boolean(status?.configured) && !status?.configError;
-  const transitional = status?.state === "starting" || status?.state === "stopping";
+  const note = status ? statusNote(status) : null;
+  const running = status ? isRunningState(status.state) : false;
+  const preferredUrl = status ? (canOpenBrowser ? status.urls.local : status.urls.preferred) : "";
+
+  function renderAction(id: ReturnType<typeof visibleActions>[number]) {
+    if (!status) return null;
+    const label = ACTION_LABEL[id.id];
+    const variant = id.primary ? "primary" : "secondary";
+    switch (id.id) {
+      case "open":
+        if (openBrowser && targetWorkspace) {
+          return (
+            <Button key="open" theme={theme} layout={layout} variant={variant} icon="ExternalLink" label={label} disabled={!reachable} onPress={openInPaseo} />
+          );
+        }
+        return <LinkButton key="open" theme={theme} layout={layout} variant={variant} icon="ExternalLink" label={canOpenBrowser ? label : "Open in browser"} href={preferredUrl} />;
+      case "start":
+        return (
+          <Button key="start" theme={theme} layout={layout} variant={variant} icon="Play" label={label} pending={actions.start.isPending} disabled={busy || id.disabled} onPress={() => actions.start.mutate()} />
+        );
+      case "restart":
+        return (
+          <Button key="restart" theme={theme} layout={layout} variant={variant} icon="RotateCw" label={label} pending={actions.restart.isPending} disabled={busy || id.disabled} onPress={() => actions.restart.mutate()} />
+        );
+      case "stop":
+        return (
+          <Button key="stop" theme={theme} layout={layout} variant={variant} icon="Square" label={label} pending={actions.stop.isPending} disabled={busy} onPress={() => actions.stop.mutate()} />
+        );
+      default:
+        return (
+          <Button key={id.id} theme={theme} layout={layout} variant={variant} label={`${label}...`} pending disabled onPress={() => {}} />
+        );
+    }
+  }
+
+  const showOnboarding = status?.state === "not_configured" && !status.settingsError;
+  const showWorkspacePicker = canOpenBrowser && running && entries.length > 1 && targetWorkspace !== null;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>BMAD Console</Text>
-      {statusQuery.isError ? (
-        <Card theme={theme} layout={layout}>
-          <Text style={styles.danger}>
-            Could not reach the plugin on the daemon. Check that the plugin is running.
-          </Text>
-          <Button theme={theme} layout={layout} label="Retry" onPress={() => void statusQuery.refetch()} />
-        </Card>
-      ) : null}
-      {status ? <StatusCard theme={theme} layout={layout} status={status} /> : null}
-      {!status && !statusQuery.isError ? <Text style={styles.muted}>Loading...</Text> : null}
+      <View style={styles.column}>
+        <Header theme={theme} layout={layout} status={status} />
 
-      {status ? (
-        <Card theme={theme} layout={layout}>
-          <View style={styles.wrapRow}>
-            <Button
-              theme={theme}
-              layout={layout}
-              primary
-              label="Start"
-              pending={actions.start.isPending}
-              disabled={busy || !ready || owned || status.state === "external"}
-              onPress={() => actions.start.mutate()}
-            />
-            <Button
-              theme={theme}
-              layout={layout}
-              label="Stop"
-              pending={actions.stop.isPending}
-              disabled={busy || !owned}
-              onPress={() => actions.stop.mutate()}
-            />
-            <Button
-              theme={theme}
-              layout={layout}
-              label="Restart"
-              pending={actions.restart.isPending}
-              disabled={busy || !ready || !owned || transitional}
-              onPress={() => actions.restart.mutate()}
-            />
+        {statusQuery.isError ? (
+          <View style={{ gap: 8 }}>
+            <Banner theme={theme} layout={layout} tone="danger" text="Could not reach the plugin on the Paseo daemon. Check that the plugin is running." />
+            <View style={styles.wrapRow}>
+              <Button theme={theme} layout={layout} label="Retry" icon="RefreshCw" onPress={() => void statusQuery.refetch()} />
+            </View>
           </View>
-          <View style={styles.wrapRow}>
-            {canOpenBrowser && targetWorkspace ? (
-              <Button
+        ) : null}
+        {!status && !statusQuery.isError ? <Text style={styles.muted}>Loading...</Text> : null}
+
+        {status && showOnboarding ? (
+          <Onboarding theme={theme} layout={layout} settings={settings} onStart={() => actions.start.mutate()} />
+        ) : null}
+
+        {status && !showOnboarding ? (
+          <>
+            {note ? (
+              note.tone === "muted" ? (
+                <Text style={[styles.muted, { paddingBottom: 12 }]}>{note.text}</Text>
+              ) : (
+                <View style={{ paddingBottom: 12 }}>
+                  <Banner theme={theme} layout={layout} tone={note.tone} text={note.text} />
+                </View>
+              )
+            ) : null}
+            <View style={styles.wrapRow}>
+              {visibleActions(status).map(renderAction)}
+              {status.state === "crashed" ? (
+                <Text style={styles.small}>Logs are below.</Text>
+              ) : null}
+            </View>
+            {showWorkspacePicker ? (
+              <View style={{ paddingTop: 12 }}>
+                <SettingsCard>
+                  <SettingsSelect
+                    label="Open in workspace"
+                    value={targetWorkspace}
+                    options={entries.map((e) => ({ label: e.name, value: e.id }))}
+                    onValueChange={chooseWorkspace}
+                  />
+                </SettingsCard>
+              </View>
+            ) : null}
+
+            <Section theme={theme} layout={layout} title="Addresses">
+              <AddressRows
                 theme={theme}
                 layout={layout}
-                label="Open in Paseo browser"
-                disabled={!reachable}
-                onPress={openInPaseo}
+                status={status}
+                compact={compact}
+                onAddPublic={() => showSettings("network")}
               />
-            ) : null}
-            {reachable ? (
-              <ExternalLink href={canOpenBrowser ? status.urls.local : status.urls.preferred}>
-                <Text style={styles.link}>Open in browser</Text>
-              </ExternalLink>
-            ) : (
-              <Text style={styles.muted}>Open in browser (available once running)</Text>
-            )}
-            <Button theme={theme} layout={layout} label="Copy URL" onPress={() => void copyPrimary()} />
-          </View>
-          {canOpenBrowser && workspaceId === null ? (
-            <WorkspacePicker theme={theme} layout={layout} value={picked} onChange={setPicked} />
-          ) : null}
-        </Card>
-      ) : null}
+            </Section>
 
-      {status ? <UrlList theme={theme} layout={layout} status={status} canOpenBrowser={canOpenBrowser} /> : null}
-      <LogsSection theme={theme} layout={layout} />
-      <SettingsBlock theme={theme} layout={layout} />
+            {compact ? null : <LogsSection theme={theme} layout={layout} status={status} />}
+          </>
+        ) : null}
+
+        {status ? (
+          <Section theme={theme} layout={layout}>
+            <NavRow theme={theme} layout={layout} icon="Settings" label="Settings" onPress={() => showSettings(null)} />
+          </Section>
+        ) : null}
+      </View>
     </ScrollView>
   );
 }

@@ -23,13 +23,13 @@ export function useConsoleStatus() {
   });
 }
 
-export function useConsoleLogs(enabled: boolean) {
+/** Always loaded once (for the line count); polls only while the logs are open. */
+export function useConsoleLogs(open: boolean) {
   const logs = useRpc(logsRpc);
   return useQuery({
     queryKey: LOGS_KEY,
     queryFn: () => logs({ lines: 300 }),
-    enabled,
-    refetchInterval: enabled ? 3000 : false,
+    refetchInterval: open ? 3000 : false,
   });
 }
 
