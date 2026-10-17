@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { DocumentPane } from "./document-pane";
-import { docIcon, groupIcon } from "./doc-icons";
+import { groupIcon } from "./doc-icons";
 import { GroupLabel } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
 import { flattenDocs, type DocGroup } from "@/lib/doc-groups";
@@ -85,7 +85,6 @@ export function DocumentTabBrowser({
               <ul>
                 {group.docs.map((doc) => {
                   const active = doc.path === selectedPath;
-                  const DocIcon = docIcon(group.id, doc.name);
                   return (
                     <li key={doc.path}>
                       <Link
@@ -95,11 +94,10 @@ export function DocumentTabBrowser({
                         aria-current={active ? "page" : undefined}
                         onClick={() => setListOpen(false)}
                         className={cn(
-                          "flex min-h-10 w-full min-w-0 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:min-h-[30px]",
+                          "flex min-h-10 w-full min-w-0 items-center rounded-md px-2 text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:min-h-[30px]",
                           active && "bg-accent font-medium text-foreground",
                         )}
                       >
-                        <DocIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
                         <span className="min-w-0 truncate">{doc.name}</span>
                       </Link>
                     </li>
