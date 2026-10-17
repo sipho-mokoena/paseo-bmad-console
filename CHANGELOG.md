@@ -6,6 +6,7 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Changed
 
+- Epic page: the View on timeline link moved into the title row as a compact Timeline button (icon only on phones), and the story page's timeline link is now a compact ghost link with an icon.
 - Timeline: a tidier details panel (definition list, Prerequisites and Blocks rows with status dots, no "Blocked by 0"), no description line under Size by risk, and more space above the graph's wave labels.
 - Timeline: removed the List view (old `view=list` links open the Gantt) and the graph zoom, the wheel now only scrolls charts sideways, the Stories | Epics toggle moved above the graph, and Scope is a styled dropdown instead of the native select.
 - Timeline toolbar: status chips are now a Filter multiselect with removable chips, the chart options are a View dropdown with a count badge, scope and search sit on the right, and the derived-schedule note is gone.
@@ -14,6 +15,8 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Added
 
+- Header: a Refresh data button on project pages, with the same result dialog as the sidebar project menu.
+- Library, Specs and Design: a Copy path button next to the Preview | Source toggle that copies the open file's repo-relative path (with a plain-http fallback). The code block and diagram copy buttons share the same helper.
 - Library: a Filter files field above the tree that narrows it to files whose path contains every typed word, with highlighted matches, a result count and an empty state.
 - Timeline with a dependency-driven Gantt chart, a dependency graph and a list view, and parsing of epic and story dependencies for every supported layout.
 

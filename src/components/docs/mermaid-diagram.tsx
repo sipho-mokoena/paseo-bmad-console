@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { Check, Copy, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { copyText } from "@/lib/copy-text";
 import {
   Dialog,
   DialogContent,
@@ -99,14 +100,10 @@ export function MermaidDiagram({ source }: { source: string }) {
   );
 
   const copySource = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(source);
-      setCopied(true);
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-      copyTimer.current = setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable: nothing to do */
-    }
+    if (!(await copyText(source))) return;
+    setCopied(true);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(false), 2000);
   }, [source]);
 
   if (state.status === "error") {

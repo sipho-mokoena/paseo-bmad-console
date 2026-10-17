@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Copy, Check, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { copyText } from "@/lib/copy-text";
 
 export function extractTextFromChildren(children: React.ReactNode): string {
   if (typeof children === "string") return children;
@@ -42,12 +43,7 @@ export function CodeBlockWithCopy(props: React.ComponentProps<"pre">) {
 
   const handleCopy = useCallback(async () => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    try {
-      await navigator.clipboard.writeText(codeText);
-      setCopyState("copied");
-    } catch {
-      setCopyState("error");
-    }
+    setCopyState((await copyText(codeText)) ? "copied" : "error");
     timerRef.current = setTimeout(() => setCopyState("idle"), 2000);
   }, [codeText]);
 

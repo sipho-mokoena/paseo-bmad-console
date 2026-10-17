@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { MarkdownRenderer, type MarkdownLinkResolver } from "./markdown-renderer";
 import { TableOfContents } from "./table-of-contents";
 import { FileMetadataBar } from "./file-metadata-bar";
 import { PillToggle, StateMessage } from "@/components/shared/list-kit";
 import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
 import { Pill } from "@/components/shared/pill";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Check, Copy } from "lucide-react";
+import { copyText } from "@/lib/copy-text";
 import { fetchParsedFileContent } from "@/actions/repo-actions";
 import hljs from "highlight.js/lib/core";
 import yamlLang from "highlight.js/lib/languages/yaml";
@@ -64,6 +65,53 @@ function frontmatterRows(fm: Record<string, unknown>): DefinitionRow[] {
 }
 
 type ViewMode = "preview" | "source";
+
+type CopyState = "idle" | "copied" | "error";
+
+/** Ghost button that copies the repo-relative path of the open document. */
+export function CopyPathButton({ path }: { path: string }) {
+  const [state, setState] = useState<CopyState>("idle");
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  async function copy() {
+    const ok = await copyText(path);
+    setState(ok ? "copied" : "error");
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setState("idle"), 1500);
+  }
+
+  const label = state === "copied" ? "Copied" : state === "error" ? "Could not copy" : "Copy path";
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        aria-label="Copy file path"
+        title={path}
+        className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-md text-xs text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8 md:w-auto md:px-2 [&_svg]:size-4"
+      >
+        {state === "copied" ? (
+          <Check aria-hidden="true" className="text-success" />
+        ) : state === "error" ? (
+          <AlertTriangle aria-hidden="true" className="text-destructive-foreground" />
+        ) : (
+          <Copy aria-hidden="true" />
+        )}
+        <span className="hidden md:inline">{label}</span>
+      </button>
+      <span role="status" aria-live="polite" className="sr-only">
+        {state === "copied" ? "File path copied" : state === "error" ? "Could not copy" : ""}
+      </span>
+    </>
+  );
+}
 
 /**
  * Header (size/lines + Preview|Source toggle) and the rendered document.
@@ -142,15 +190,18 @@ export function DocumentPane({
           {path && stats ? stats : ""}
         </span>
         {path && parsedFile && (
-          <PillToggle
-            label="File view"
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: "preview", label: "Preview" },
-              { value: "source", label: "Source" },
-            ]}
-          />
+          <div className="flex shrink-0 items-center gap-1">
+            <CopyPathButton path={path} />
+            <PillToggle
+              label="File view"
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: "preview", label: "Preview" },
+                { value: "source", label: "Source" },
+              ]}
+            />
+          </div>
         )}
       </div>
 
