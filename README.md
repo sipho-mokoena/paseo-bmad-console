@@ -23,6 +23,10 @@ Paseo BMAD Console is a web dashboard for [BMAD](https://github.com/bmad-code-or
 - Mobile-friendly UI in the style of the Paseo app, with light and dark themes.
 - An optional [Paseo plugin](./docs/plugin.md) that starts, stops and opens the console from Paseo.
 
+## Using it well
+
+The console shows what your project files contain, so some project practices give a much clearer view than others. [docs/best-practices.md](./docs/best-practices.md) explains which practices to follow and why, and [docs/workflow.md](./docs/workflow.md) is a step-by-step working session for building with BMAD and the console.
+
 ## Requirements
 
 - Node.js 22 or later (the local provider needs at least 20.12).
@@ -107,6 +111,8 @@ docs/                  guides and references
 The full index is in [docs/README.md](./docs/README.md).
 
 - [Getting started](./docs/GETTING_STARTED.md)
+- [Best practices for BMAD projects](./docs/best-practices.md)
+- [Workflow session: building with BMAD and the console](./docs/workflow.md)
 - [Configuration](./docs/configuration.md)
 - [BMAD layouts](./docs/layouts.md)
 - [Timeline](./docs/timeline.md)

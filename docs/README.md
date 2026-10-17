@@ -5,6 +5,8 @@ This folder holds the guides and references for Paseo BMAD Console. Start with t
 ## Guides
 
 - [Getting started](./GETTING_STARTED.md): step-by-step setup, adding a first project, what each tab shows and troubleshooting.
+- [Best practices](./best-practices.md): which project practices give the clearest view in the console, what each one changes on screen, a review checklist and common problems.
+- [Workflow session](./workflow.md): the ordered procedure for building with BMAD and the console, with commands, roles and a worked example.
 - [Local folder import](./LOCAL_FOLDER.md): how to add a project from a folder on the server, what is scanned, the limits and the security notes.
 - [Deployment](./deployment.md): build, standalone deployment folder, start script, systemd user service, updates, private network access and backups.
 - [Paseo plugin](./plugin.md): install and use the plugin that starts, stops and opens the console from Paseo.

@@ -15,6 +15,7 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Added
 
+- Documentation: a best practices guide for BMAD projects in the console (`docs/best-practices.md`) and a workflow session guide with a worked example (`docs/workflow.md`), linked from the README and the docs index.
 - Timeline: the chart and the details panel sit in a resizable split from the xl breakpoint. Drag the handle (or use the arrow keys on it) to resize, double-click it to reset; the size is remembered. Below xl the panel still stacks under the chart.
 - Header: a Refresh data button on project pages, with the same result dialog as the sidebar project menu.
 - Library, Specs and Design: a Copy path button next to the Preview | Source toggle that copies the open file's repo-relative path (with a plain-http fallback). The code block and diagram copy buttons share the same helper.
