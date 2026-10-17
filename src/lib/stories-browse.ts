@@ -1,4 +1,5 @@
 import type { Epic, StoryDetail } from "@/lib/bmad/types";
+import { storyDeps } from "@/lib/bmad/deps";
 
 export { epicLabel, epicName } from "@/lib/bmad/ids";
 
@@ -102,11 +103,11 @@ export function storiesRedirectTarget(base: string, epic?: string, story?: strin
   return epicsHref(base);
 }
 
-type Linked = Pick<StoryDetail, "id" | "ticket">;
+type Linked = Pick<StoryDetail, "id" | "ticket" | "dependsOn">;
 
 /** Stories that list `storyId` in their `after` (the ones it blocks), in input order. */
 export function storiesBlockedBy<T extends Linked>(stories: T[], storyId: string): T[] {
-  return stories.filter((s) => s.id !== storyId && s.ticket?.after.includes(storyId));
+  return stories.filter((s) => s.id !== storyId && storyDeps(s).includes(storyId));
 }
 
 /** Splits `after` refs into known stories (linkable) and unknown refs (plain chips). */

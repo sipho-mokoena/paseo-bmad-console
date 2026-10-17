@@ -1,5 +1,5 @@
 import matter from "gray-matter";
-import type { Epic, EpicStatus, StoryDetail, SprintStoryEntry } from "../types";
+import type { Epic, EpicDependency, EpicStatus, StoryDetail, SprintStoryEntry } from "../types";
 import { parseSprintStatus, sprintRawStatuses } from "../parse-sprint-status";
 import { parseStory } from "../parse-story";
 import { markdownToPlainText } from "@/lib/markdown-text";
@@ -15,6 +15,7 @@ import {
   parseStoryId,
   stripIdPrefix,
 } from "../ids";
+import { frontmatterEpicDependencies } from "../deps";
 import { mapLimit, READ_CONCURRENCY } from "../concurrency";
 import { emptyResult, hasRoot, inOutput, type LayoutAdapter, type LayoutContext, type LayoutResult } from "./types";
 
@@ -160,6 +161,7 @@ interface EpicSeed {
   body?: string;
   sourcePath?: string;
   folder?: string;
+  after?: EpicDependency[];
 }
 
 export const v6ProjectAdapter: LayoutAdapter = {
@@ -286,6 +288,8 @@ export const v6ProjectAdapter: LayoutAdapter = {
           if (r.key.startsWith("epic:") || !s.title) s.title = title ?? s.title;
           if (r.key.startsWith("epic:") || !s.description) s.description = plainSummary(summarizeSpec(body, 2000)) || s.description;
           if (r.key.startsWith("epic:") || !s.sourcePath) s.sourcePath = r.path;
+          const after = frontmatterEpicDependencies(fm, id);
+          if (after.length && (r.key.startsWith("epic:") || !s.after)) s.after = after;
           if (r.key.startsWith("epic:") || !s.body) s.body = capBody(stripLeadingTitle(body)) ?? s.body;
         } else {
           const filename = r.path.split("/").pop() ?? "";
@@ -383,6 +387,7 @@ export const v6ProjectAdapter: LayoutAdapter = {
         description: s.description ?? "",
         ...(s.body ? { body: s.body } : {}),
         ...(s.sourcePath ? { sourcePath: s.sourcePath } : {}),
+        ...(s.after ? { after: s.after } : {}),
         status: epicStatusById.get(s.id) ?? "not-started",
         stories: stories.filter((st) => st.epicId === s.id).map((st) => st.id),
         totalStories: 0,

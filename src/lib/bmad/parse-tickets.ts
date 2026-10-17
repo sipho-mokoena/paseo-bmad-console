@@ -1,7 +1,7 @@
 import { parse as parseToml } from "smol-toml";
 import type { ContentProvider } from "@/lib/content-provider";
 import matter from "gray-matter";
-import type { Epic, StoryDetail, StoryStatus } from "./types";
+import type { Epic, EpicDependency, StoryDetail, StoryStatus } from "./types";
 import { capBody, plainSummary } from "./body";
 
 export const INITIATIVE_TICKETS = /^(.*\/initiative-[^/]+)\/tickets\.toml$/;
@@ -10,6 +10,7 @@ interface TicketEpicRow {
   id?: number | string;
   slug?: string;
   title?: string;
+  after?: unknown;
 }
 
 interface TicketEntryRow {
@@ -73,6 +74,23 @@ async function readPlans(
     });
   }
   return { plans, files };
+}
+
+/** `after = [{ epic = 1, needs = "..." }]` (also bare ids and strings) -> epic dependencies. */
+export function epicAfter(raw: unknown, self?: string): EpicDependency[] {
+  const out: EpicDependency[] = [];
+  for (const item of Array.isArray(raw) ? raw : raw === undefined ? [] : [raw]) {
+    const rec = item !== null && typeof item === "object" ? (item as Record<string, unknown>) : null;
+    const ref = rec ? (rec.epic ?? rec.id) : item;
+    const id = ref === undefined || ref === null ? "" : String(ref).trim();
+    if (!id || id === self) continue;
+    const needs = rec && typeof rec.needs === "string" && rec.needs.trim() ? rec.needs.trim() : undefined;
+    const have = out.find((d) => d.id === id);
+    if (have) {
+      if (needs && !have.needs?.includes(needs)) have.needs = have.needs ? `${have.needs}; ${needs}` : needs;
+    } else out.push({ id, ...(needs ? { needs } : {}) });
+  }
+  return out;
 }
 
 function epicDescription(md: string): string {
@@ -165,6 +183,7 @@ export async function parseTicketTree(
         });
       }
 
+      const after = epicAfter(row.after, epicId);
       epics.push({
         id: epicId,
         title: epicTitle,
@@ -176,6 +195,7 @@ export async function parseTicketTree(
         totalStories: storyIds.length,
         completedStories: 0,
         progressPercent: 0,
+        ...(after.length ? { after } : {}),
       });
     }
   }

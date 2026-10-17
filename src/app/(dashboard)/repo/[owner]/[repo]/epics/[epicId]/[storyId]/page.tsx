@@ -5,6 +5,7 @@ import { StatusPill } from "@/components/shared/pill";
 import { StoryDetailView } from "@/components/epics/story-detail-view";
 import { StoryPager } from "@/components/epics/story-pager";
 import { BreadcrumbTitle } from "@/contexts/breadcrumb-context";
+import { storyDeps } from "@/lib/bmad/deps";
 import { decodeParam, loadProject } from "@/lib/load-project";
 import {
   epicHref,
@@ -41,7 +42,7 @@ export default async function StoryPage({ params }: StoryPageProps) {
     href: storyHref(base, s.epicId, s.id),
   });
 
-  const after = resolveAfter(project.stories, story.ticket?.after ?? []).map((r) => ({
+  const after = resolveAfter(project.stories, storyDeps(story)).map((r) => ({
     ref: r.ref,
     epicId: r.story?.epicId ?? null,
   }));

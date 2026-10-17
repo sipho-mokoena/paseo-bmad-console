@@ -41,6 +41,13 @@ export interface Epic {
   totalStories: number;
   completedStories: number;
   progressPercent: number;
+  /** Epics that must be done first (ticket-tree `after`, v6 `depends_on`); `needs` is the author's reason. */
+  after?: EpicDependency[];
+}
+
+export interface EpicDependency {
+  id: string;
+  needs?: string;
 }
 
 export interface StoryDetail {
@@ -69,6 +76,11 @@ export interface StoryDetail {
   totalTasks: number;
   /** Ticket-tree metadata (bmad-ticket); absent for BMad v6 stories. */
   ticket?: StoryTicketMeta;
+  /**
+   * Prerequisites for layouts without ticket metadata (frontmatter `depends_on`): story ids,
+   * or epic ids for "that whole epic". Read through `storyDeps()`, which also covers `ticket.after`.
+   */
+  dependsOn?: string[];
 }
 
 export interface StoryTicketMeta {

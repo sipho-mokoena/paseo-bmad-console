@@ -1,6 +1,7 @@
 import { Epic, EpicStatus } from "./types";
 import matter from "gray-matter";
 import { capBody, plainSummary, stripLeadingTitle } from "./body";
+import { frontmatterEpicDependencies } from "./deps";
 import { frontmatterEpicId, frontmatterTitle, parseEpicId } from "./ids";
 
 /**
@@ -35,6 +36,7 @@ export function parseEpicFile(
     const description = plainSummary(body);
     const fullBody = capBody(stripLeadingTitle(body));
 
+    const after = frontmatterEpicDependencies(fm, id);
     return {
       id,
       title,
@@ -45,6 +47,7 @@ export function parseEpicFile(
       totalStories: storyIds.length,
       completedStories: 0,
       progressPercent: 0,
+      ...(after.length ? { after } : {}),
     };
   } catch {
     return null;

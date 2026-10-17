@@ -3,6 +3,7 @@ import { StoryDetail, StoryTask } from "./types";
 import { normalizeStoryStatus } from "./utils";
 import { MAX_STORY_BODY_CHARS, capBody, plainSummary, removeSection, stripLeadingTitle } from "./body";
 import { frontmatterStoryId, parseStoryId } from "./ids";
+import { frontmatterDependencies } from "./deps";
 
 export function parseStory(
   content: string,
@@ -41,10 +42,12 @@ export function parseStory(
     let frontmatterStatus: string | undefined;
     let frontmatterTitle: string | undefined;
     let frontmatterEpicId: string | undefined;
+    let dependsOn: string[] = [];
 
     if (hasFrontmatter) {
       const parsed = matter(content);
       body = parsed.content;
+      dependsOn = frontmatterDependencies(parsed.data);
       frontmatterStatus = parsed.data.status || parsed.data.state;
       frontmatterTitle = parsed.data.title;
       frontmatterEpicId = parsed.data.epic_id
@@ -112,6 +115,7 @@ export function parseStory(
       tasks,
       completedTasks: tasks.filter((t) => t.completed).length,
       totalTasks: tasks.length,
+      ...(dependsOn.length ? { dependsOn } : {}),
     };
   } catch (e) {
     console.error(`Failed to parse story ${filename}:`, e);
