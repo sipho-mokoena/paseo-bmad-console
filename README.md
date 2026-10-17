@@ -121,6 +121,15 @@ prisma/           schema and migrations
 scripts/          setup.sh, create-admin.ts
 ```
 
+## Production build
+
+`next.config.ts` builds a self-contained server (`output: "standalone"`). After `pnpm build`, copy
+`.next/standalone/*`, `.next/static` (to `.next/static`) and `public/` into a deployment folder and
+start it with `node server.js` (set `PORT` and `HOSTNAME`; load the env file first). The deployment folder
+holds build output only, no source. Do not set `DEV_BYPASS_AUTH` in production (the server refuses to start).
+Create the first admin with `pnpm db:create-admin`, and list every address people use to reach the app in
+`BETTER_AUTH_TRUSTED_ORIGINS`.
+
 ## Documentation
 
 - [Getting started and environment variables](./docs/GETTING_STARTED.md)

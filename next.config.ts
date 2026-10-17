@@ -12,6 +12,8 @@ const allowedDevOrigins = (process.env.ALLOWED_DEV_ORIGINS ?? "")
   .filter(Boolean);
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle (.next/standalone) so a deployment needs no source tree.
+  output: "standalone",
   allowedDevOrigins,
   images: {
     unoptimized: true,

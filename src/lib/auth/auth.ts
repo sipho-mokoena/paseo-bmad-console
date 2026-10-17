@@ -12,7 +12,18 @@ if (process.env.NEXT_PHASE !== "phase-production-build") {
 const hasGitHubCredentials =
   !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET;
 
+/**
+ * Extra origins allowed to sign in, comma-separated (BETTER_AUTH_TRUSTED_ORIGINS).
+ * BETTER_AUTH_URL is always trusted; add the other addresses people use to reach the
+ * app, for example a Tailscale or LAN address.
+ */
+const trustedOrigins = (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 export const auth = betterAuth({
+  trustedOrigins,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
