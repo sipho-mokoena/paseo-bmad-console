@@ -1,6 +1,6 @@
 # Timeline
 
-The Timeline tab draws the dependencies between epics and stories. It sits between Epics and Specs and appears only when the project has dependency data.
+The Timeline draws the dependencies between epics and stories. It is a section of the project Overview page, below the stats, and replaces the Overview's epics list when the project has dependency data. Projects without dependency data keep the searchable epics list, and the Epics tab always lists every epic.
 
 ## Where the dependencies come from
 
@@ -27,8 +27,8 @@ Options: Ready now, status filters, search, scope to one epic (outside prerequis
 
 ## URL parameters
 
-`view` (gantt, graph, list), `scope`, `status` (comma list), `q`, `critical=1`, `all=1`, `focus`, `ready=1`, `risk=1`, `level` (stories, epics). Story and epic pages link to the timeline ("View on timeline").
+The parameters live on the Overview URL: `view` (gantt, graph, list), `scope`, `status` (comma list), `q`, `critical=1`, `all=1`, `focus`, `ready=1`, `risk=1`, `level` (stories, epics). Story and epic pages link to the Overview with `#timeline` ("View on timeline"), which scrolls the section into view. The old `/repo/<owner>/<repo>/timeline` URL redirects to the Overview and keeps its query.
 
 ## Code
 
-`src/lib/bmad/deps.ts` (parsing), `src/lib/dependency-graph.ts` (graph, waves, critical path, scoping), `src/lib/timeline-params.ts`, `src/lib/timeline-data.ts`, `src/lib/timeline-layout.ts`, and the components in `src/components/timeline/`.
+`src/lib/bmad/deps.ts` (parsing), `src/lib/dependency-graph.ts` (graph, waves, critical path, scoping), `src/lib/timeline-params.ts` (including the redirect target and the Overview decision), `src/lib/timeline-data.ts`, `src/lib/timeline-layout.ts`, and the components in `src/components/timeline/`.

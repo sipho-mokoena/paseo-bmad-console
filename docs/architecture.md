@@ -99,6 +99,7 @@ The repo-asset route (`src/app/api/repo-asset/route.ts`) serves images of local 
 | `/repo/[owner]/[repo]/design` | Design documents (`?file=`), shows the not-found page when the project has none |
 | `/repo/[owner]/[repo]/docs` | Library (`?file=`) |
 | `/repo/[owner]/[repo]/stories` | Permanent redirect to `/epics` (also `?epic=` and `?story=` links) |
+| `/repo/[owner]/[repo]/timeline` | Permanent redirect to the Overview (query kept); the Timeline is a section of the Overview |
 | `/api/health` | Health check |
 | `/api/search` | Search as JSON |
 | `/api/repo-asset` | Images of local projects |

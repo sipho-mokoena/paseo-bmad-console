@@ -136,7 +136,7 @@ Stories and epics can declare what must be done first. The story page shows thes
 - **Ticket tree**: the `after` list of a ticket in `tickets.toml`. A bare number is a sibling in the same epic, and `4.1` is a full story reference.
 - **Epics**: the same frontmatter keys in an epic file (`epic.md`, `epics/epic-1.md`, `E1-name.md`) give the epic's `after` list. A story id there becomes a dependency on that story's epic, with the story id kept as the reason. In the ticket tree, an epic row can carry `after = [{ epic = 1, needs = "reason" }]`, or bare ids.
 
-`src/lib/bmad/deps.ts` holds the parsing (`parseDependencyRefs`, `frontmatterDependencies`, `storyDeps`). `src/lib/dependency-graph.ts` builds a graph from these declarations and computes waves (an abstract schedule, since BMAD data has no dates), the critical path through unfinished items, cycle reporting and scoping to the neighbourhood of one item. The Timeline tab uses it, see [timeline.md](./timeline.md).
+`src/lib/bmad/deps.ts` holds the parsing (`parseDependencyRefs`, `frontmatterDependencies`, `storyDeps`). `src/lib/dependency-graph.ts` builds a graph from these declarations and computes waves (an abstract schedule, since BMAD data has no dates), the critical path through unfinished items, cycle reporting and scoping to the neighbourhood of one item. The Timeline section of the Overview uses it, see [timeline.md](./timeline.md).
 
 ## How statuses map
 

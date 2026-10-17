@@ -6,11 +6,12 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Changed
 
+- The Timeline moved from its own tab into the project Overview, where it replaces the epics list when the project has dependency data. `/timeline` URLs redirect to the Overview with their query kept, and "View on timeline" links point there.
 - Rewrote the documentation from the code: README, getting started, local folder import, API, Paseo UI reference, contributing, security and agent guidance.
 
 ### Added
 
-- Timeline tab with a dependency-driven Gantt chart, a dependency graph and a list view, and parsing of epic and story dependencies for every supported layout.
+- Timeline with a dependency-driven Gantt chart, a dependency graph and a list view, and parsing of epic and story dependencies for every supported layout.
 
 - Dependencies between stories and epics are parsed for every layout (`depends_on`, `dependsOn`, `depends-on` and `after` frontmatter, ticket-tree `after`), so the story page shows "after" and "blocks" links for the v6 and v4 layouts too.
 - A dependency graph module (`src/lib/dependency-graph.ts`) with waves, critical path, cycle handling and scoping. No page uses it yet.
