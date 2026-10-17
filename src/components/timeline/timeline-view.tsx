@@ -294,7 +294,7 @@ export function TimelineView({ data, base }: TimelineViewProps) {
             )}
           </div>
         </div>
-        <div role="group" aria-label="Scope and search" className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+        <div role="group" aria-label="Scope and search" className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>Scope</span>
             <select
