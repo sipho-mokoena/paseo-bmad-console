@@ -17,7 +17,7 @@ Paseo BMAD Console is a web dashboard for [BMAD](https://github.com/bmad-code-or
 - Epic page with its description and stories, and story page with rendered Markdown, "after" and "blocks" links and previous/next navigation.
 - Timeline on the Overview page with a dependency-driven Gantt chart and a dependency graph (shown in place of the epics list when the project has dependency data). See [docs/timeline.md](./docs/timeline.md).
 - Specs and Design tabs that group the planning documents (shown only when the project has such documents).
-- Library with a file tree, Preview and Source views, syntax highlighting and Mermaid diagrams.
+- Library with a filterable file tree, Preview and Source views, syntax highlighting and Mermaid diagrams.
 - Global search over epics, stories and documents of all projects, opened with `Ctrl+K` (`Cmd+K` on macOS) or `/`.
 - Several BMAD layouts, detected automatically: v6 default, v6 project layout, ticket tree and v4. See [docs/layouts.md](./docs/layouts.md).
 - Mobile-friendly UI in the style of the Paseo app, with light and dark themes.

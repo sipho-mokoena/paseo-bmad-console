@@ -14,6 +14,7 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Added
 
+- Library: a Filter files field above the tree that narrows it to files whose path contains every typed word, with highlighted matches, a result count and an empty state.
 - Timeline with a dependency-driven Gantt chart, a dependency graph and a list view, and parsing of epic and story dependencies for every supported layout.
 
 - Dependencies between stories and epics are parsed for every layout (`depends_on`, `dependsOn`, `depends-on` and `after` frontmatter, ticket-tree `after`), so the story page shows "after" and "blocks" links for the v6 and v4 layouts too.
