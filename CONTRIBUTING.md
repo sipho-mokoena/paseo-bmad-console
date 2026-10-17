@@ -1,169 +1,109 @@
 # Contributing to Paseo BMAD Console
 
-Thank you for your interest in contributing! This document explains how to get started.
+This guide explains how to set up a development environment, which checks to run before you commit, how the code is organised, how to add support for a new BMAD layout and what a pull request should contain. Participation is covered by the [Code of Conduct](./CODE_OF_CONDUCT.md), and contributions are licensed under the project's MIT license.
 
----
+## Reporting bugs and requesting features
 
-## Table of Contents
+Open an issue on the repository. For a bug, include the steps to reproduce, what you expected, what happened, the layout shown in the layout pill and your environment (Node.js version, local folder or GitHub project). Do not post secrets, and report security problems privately (see [SECURITY.md](./SECURITY.md)).
 
-- [Code of Conduct](#code-of-conduct)
-- [How to Report a Bug](#how-to-report-a-bug)
-- [How to Request a Feature](#how-to-request-a-feature)
-- [Development Setup](#development-setup)
-- [Submitting a Pull Request](#submitting-a-pull-request)
-- [Coding Conventions](#coding-conventions)
-- [Commit Messages](#commit-messages)
+## Development setup
 
----
-
-## Code of Conduct
-
-This project follows a [Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you agree to uphold it.
-
----
-
-## How to Report a Bug
-
-1. Check the [existing issues](../../issues) to avoid duplicates
-2. Open a new issue using the **Bug Report** template
-3. Include: steps to reproduce, expected behavior, actual behavior, environment details
-
----
-
-## How to Request a Feature
-
-1. Check if it has been requested already
-2. Open an issue using the **Feature Request** template
-3. Describe the use case and why it would be valuable
-
----
-
-## Development Setup
-
-### Requirements
-
-- Node.js 20+
-- pnpm 9+
-- PostgreSQL 15+ (or Docker)
-
-### Steps
+Requirements: Node.js 22 or later, pnpm 10 or later, and PostgreSQL 15 or later (or Docker).
 
 ```bash
-# 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/paseo-bmad-console.git
+git clone https://github.com/<you>/paseo-bmad-console.git
 cd paseo-bmad-console
-
-# 2. Install dependencies
 pnpm install
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env with your values
-
-# 4. Start database (if using Docker; PostgreSQL on 127.0.0.1:7433)
-docker compose up -d postgres
-
-# 5. Run migrations
-pnpm db:migrate
-
-# 6. Start dev server (http://127.0.0.1:7002, no login)
-pnpm dev
+cp .env.example .env              # edit DATABASE_URL, see docs/configuration.md
+docker compose up -d              # PostgreSQL on 127.0.0.1:7433
+pnpm exec prisma migrate deploy   # apply the committed migrations
+pnpm dev                          # http://127.0.0.1:7002
 ```
 
----
+The app has no authentication and no seed data. Add a project from the UI (see [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md)). Ports in this project are in the 7xxx range: 7002 for the app and 7433 for the development database.
 
-## Submitting a Pull Request
+When you change `prisma/schema.prisma`, create a migration with `pnpm db:migrate` (`prisma migrate dev`), commit the generated folder under `prisma/migrations`, and run `pnpm db:generate` if the client does not regenerate. Use `migrate deploy`, never `migrate dev`, on a database you care about.
 
-1. **Fork** the repository and create a branch from `main`:
-   ```bash
-   git checkout -b feat/your-feature-name
-   ```
+## Checks
 
-2. **Make your changes** — keep them focused on a single concern
+**There is no CI workflow in this repository.** Nothing runs automatically, so run the checks yourself before you commit:
 
-3. **Run checks** before submitting:
-   ```bash
-   pnpm lint
-   pnpm test
-   pnpm build
-   ```
-
-4. **Write a clear commit message** (see below)
-
-5. **Open a Pull Request** against `main` with:
-   - A clear title and description
-   - Reference to any related issue (`Closes #123`)
-   - Screenshots if the change affects the UI
-
-### PR Guidelines
-
-- Keep PRs small and focused — one feature or fix per PR
-- Add tests for new functionality where applicable
-- Do not change unrelated code in the same PR
-- Update documentation if your change affects behavior
-
----
-
-## Coding Conventions
-
-### TypeScript
-
-- Use TypeScript strictly — no `any` unless absolutely necessary
-- Prefer explicit types over inference for function signatures
-
-### Tailwind CSS
-
-This project uses **Tailwind CSS v4** with `@theme inline` in `src/app/globals.css`.
-
-- **Never use arbitrary bracket values** when a canonical Tailwind class exists:
-  - Spacing: `160px` → `w-40`, `15px` → `mt-3.75`
-  - Ring width: `ring-3` not `ring-[3px]`
-  - Percentages: `top-1/2` not `top-[50%]`
-- Arbitrary values are OK for: `calc()` expressions, CSS variable references, non-standard values
-- Repeated hex colors should be added as theme tokens in `globals.css`
-
-### React / Next.js
-
-- Use Server Components by default — add `"use client"` only when needed
-- Use Server Actions for mutations (see `src/actions/`)
-- Keep components small and focused
-
-### File Organization
-
-```
-src/
-├── app/           # Pages and API routes only
-├── components/    # Reusable UI components
-├── lib/           # Business logic, utilities, external integrations
-└── actions/       # Next.js Server Actions
+```bash
+pnpm exec tsc --noEmit       # type check
+pnpm lint                    # ESLint
+pnpm test                    # Vitest, runs once
+pnpm build                   # optional: a production build compiles and type checks the app
 ```
 
----
+Use `pnpm test:watch` while you work. The plugin has its own checks (see below).
 
-## Commit Messages
+Tests live next to the code in `__tests__` folders: `src/lib/bmad/__tests__` (parsers and layouts), `src/lib/content-provider/__tests__` (providers and path guards), `src/lib/github/__tests__`, `src/lib/db/__tests__`, `src/lib/docs/__tests__`, `src/lib/__tests__` (search, epic list, doc groups, type scale and the no-auth guard), `src/actions/__tests__` and `src/components/docs/` (Markdown and Mermaid). Add tests for new behaviour, and prefer pure functions that are easy to test. Use neutral names such as `acme` in fixtures.
+
+### Plugin checks
+
+`plugin/` is a separate npm project, excluded from the root TypeScript, ESLint and Vitest runs:
+
+```bash
+cd plugin
+npm install
+npm run typecheck
+npm test
+```
+
+After editing the plugin, apply the change in a running Paseo daemon with `paseo plugin reload bmad-console`. See [docs/plugin.md](./docs/plugin.md).
+
+## Code layout
+
+```
+src/app/          pages and API routes only
+src/actions/      server actions
+src/components/   UI components
+src/lib/          parsing, providers, search, database and other logic
+```
+
+See the tree in the [README](./README.md#project-structure) and [docs/architecture.md](./docs/architecture.md).
+
+## Conventions
+
+- TypeScript strict mode. Avoid `any`, and give function signatures explicit types.
+- Server components by default. Add `"use client"` only where you need state or effects.
+- Mutations are server actions in `src/actions/`. They validate input with Zod, return `ActionResult<T>` and pass errors through `sanitizeError` (see [CLAUDE.md](./CLAUDE.md)).
+- Tailwind CSS 4 with theme tokens in `src/app/globals.css`. Do not use arbitrary bracket values when a canonical class exists (`w-40`, not `w-[160px]`; `ring-3`, not `ring-[3px]`). Arbitrary values are fine for `calc()` expressions, CSS variables and non-standard values. Add repeated colours as theme tokens. Keep text at 12px or larger. See [docs/paseo-ui.md](./docs/paseo-ui.md).
+- Do not add authentication. The app is deliberately single-tenant and a test fails if an auth dependency returns.
+- Do not widen what the local provider can read without updating its tests (`src/lib/content-provider/__tests__`).
+- Use ports in the 7xxx range in code, docs and examples.
+
+## Adding a layout adapter
+
+A layout adapter teaches the app a new way of storing epics, stories and status. Implement `LayoutAdapter` in `src/lib/bmad/layouts/<id>.ts`, add its id to `LayoutId` in `src/lib/bmad/types.ts`, register it in `src/lib/bmad/layouts/index.ts`, and test it in `src/lib/bmad/__tests__/layouts.test.ts` with a fake provider built from a `path: content` object. The detailed steps, scores and rules are in [docs/layouts.md](./docs/layouts.md#adding-a-new-layout-adapter).
+
+## Commit messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 type(scope): short description
 
-Body (optional): explain WHY not WHAT
-
-Closes #issue
+Optional body that explains why, not what.
 ```
 
-**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`. Scopes seen in the history are `web` for the app and `plugin` for the Paseo plugin. Keep commits small and focused on one concern.
 
-**Examples:**
 ```
-feat(epics): add timeline view with drag-to-collapse
-fix(github): handle 403 on private repo access
-docs: update the setup guide
-chore(deps): upgrade Next.js to 16.2
+feat(web): epics list opens on the board view
+fix(plugin): probe /api/health instead of the home page
+docs: describe the standalone deployment
 ```
 
----
+Commit with your own configured git identity.
 
-## License
+## Pull request checklist
 
-By contributing, you agree that your contributions will be licensed under the project's **MIT** license.
+- [ ] The change is focused on one concern and unrelated code is untouched.
+- [ ] `pnpm exec tsc --noEmit`, `pnpm lint` and `pnpm test` pass locally. (There is no CI to do it for you.)
+- [ ] Plugin changes: `npm run typecheck` and `npm test` pass in `plugin/`.
+- [ ] New behaviour has tests.
+- [ ] A new migration is committed when the schema changed.
+- [ ] Documentation is updated when behaviour, configuration, routes or layouts changed: [docs/](./docs/README.md), `.env.example`, [CHANGELOG.md](./CHANGELOG.md).
+- [ ] No secrets, `.env` files or personal paths are committed.
+- [ ] UI changes were checked on a phone-sized viewport and in light and dark themes.
