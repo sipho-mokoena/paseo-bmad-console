@@ -1,5 +1,6 @@
 "use client";
 
+import { COL_W, barBox, connectorPath } from "@/lib/gantt-geometry";
 import { useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,6 @@ import type { DepGraph } from "@/lib/dependency-graph";
 import type { GanttModel, GanttRow } from "@/lib/timeline-layout";
 import { statusLabel, statusStyle, waveLabel } from "./timeline-style";
 
-export const COL_W = 104;
 const HEADER_H = 36;
 
 interface GanttChartProps {
@@ -88,14 +88,11 @@ export function GanttChart({
     const na = graph.byKey.get(e.from);
     const nb = graph.byKey.get(e.to);
     if (a === undefined || b === undefined || !na || !nb) continue;
-    const x1 = na.end * COL_W - 3;
-    const x2 = nb.start * COL_W + 3;
     const y1 = a * rowH + rowH / 2;
     const y2 = b * rowH + rowH / 2;
-    const xm = Math.max(x1 + 6, Math.min(x2 - 6, (x1 + x2) / 2));
     lines.push({
       id: `${e.from}->${e.to}`,
-      d: `M${x1} ${y1} H${xm} V${y2} H${x2 - 1}`,
+      d: connectorPath(na.end, nb.start, y1, y2),
       tone: direct ? "active" : onCritical ? "critical" : "all",
     });
   }
@@ -292,8 +289,7 @@ function Bar({
   const isStoryEpic = row.type === "epic" && !n;
   const start = row.span ? row.span.start : n!.start;
   const end = row.span ? row.span.end : n!.end;
-  const left = start * COL_W + 3;
-  const width = Math.max((end - start) * COL_W - 6, 12);
+  const { left, width } = barBox(start, end);
   const h = isStoryEpic ? 20 : rowH - 12;
   const style = { top: top + (rowH - h) / 2, left, width, height: h };
 
