@@ -61,7 +61,7 @@ export function buildGanttModel(input: GanttInput): GanttModel {
       if (!node || !nodePasses(node, filter)) continue;
       rows.push({
         type: "epic",
-        key: id,
+        key: `epic:${id}`,
         epicId: id,
         node,
         span: { start: node.start, end: node.end, total: 1, done: node.done ? 1 : 0 },

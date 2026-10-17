@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Eye, FileText, Map, PenTool, ScrollText } from "lucide-react";
+import { ChartGantt, Eye, FileText, Map, PenTool, ScrollText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { label: "Overview", segment: "", icon: Eye },
   { label: "Epics", segment: "epics", icon: Map },
+  { label: "Timeline", segment: "timeline", icon: ChartGantt },
   { label: "Specs", segment: "specs", icon: ScrollText },
   { label: "Design", segment: "design", icon: PenTool },
   { label: "Library", segment: "docs", icon: FileText },
@@ -18,12 +19,14 @@ interface ProjectTabsProps {
   /** Tabs without documents are hidden. */
   hasSpecs?: boolean;
   hasDesign?: boolean;
+  /** Hidden when the project has no dependency data at all. */
+  hasTimeline?: boolean;
 }
 
-export function ProjectTabs({ basePath, hasSpecs = false, hasDesign = false }: ProjectTabsProps) {
+export function ProjectTabs({ basePath, hasSpecs = false, hasDesign = false, hasTimeline = false }: ProjectTabsProps) {
   const pathname = usePathname();
   const visible = tabs.filter(
-    (t) => (t.segment !== "specs" || hasSpecs) && (t.segment !== "design" || hasDesign),
+    (t) => (t.segment !== "specs" || hasSpecs) && (t.segment !== "design" || hasDesign) && (t.segment !== "timeline" || hasTimeline),
   );
 
   return (

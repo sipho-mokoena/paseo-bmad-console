@@ -8,6 +8,7 @@ import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { riskTone } from "./story-ticket-meta";
 import { cn } from "@/lib/utils";
 import { storyHref } from "@/lib/stories-browse";
+import { timelineHref } from "@/lib/timeline-params";
 import type { StoryDetail } from "@/lib/bmad/types";
 
 export interface StoryRef {
@@ -114,6 +115,19 @@ function detailRows(story: StoryDetail, base: string, after: StoryRef[], blocks:
   }
   if (after.length > 0) rows.push({ label: "after", value: <RefChips refs={after} base={base} /> });
   if (blocks.length > 0) rows.push({ label: "blocks", value: <RefChips refs={blocks} base={base} /> });
+  if (after.length > 0 || blocks.length > 0) {
+    rows.push({
+      label: "dependencies",
+      value: (
+        <Link
+          href={timelineHref(base, { focus: story.id })}
+          className="inline-flex min-h-10 items-center rounded-md underline underline-offset-2 outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
+        >
+          View on timeline
+        </Link>
+      ),
+    });
+  }
   return rows;
 }
 

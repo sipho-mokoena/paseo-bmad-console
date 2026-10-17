@@ -95,7 +95,7 @@ describe("gantt model", () => {
   it("falls back to epic bars without story-level dependencies", () => {
     const m = buildGanttModel({ ...base(), storyLevel: false, expanded: new Set() });
     expect(m.epicOnly).toBe(true);
-    expect(m.rows.map((r) => [r.key, r.span!.start, r.expandable])).toEqual([["1", 0, false], ["2", 1, false]]);
+    expect(m.rows.map((r) => [r.key, r.span!.start, r.expandable])).toEqual([["epic:1", 0, false], ["epic:2", 1, false]]);
   });
 });
 
