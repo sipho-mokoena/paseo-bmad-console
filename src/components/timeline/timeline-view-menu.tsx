@@ -12,10 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { viewToggleCount, viewToggleKeys, type TimelineState, type TimelineViewId, type ViewToggleKey } from "@/lib/timeline-params";
 
-export const VIEW_TOGGLE_LABELS: Record<ViewToggleKey, { label: string; hint?: string }> = {
+export const VIEW_TOGGLE_LABELS: Record<ViewToggleKey, { label: string; title?: string }> = {
   critical: { label: "Highlight critical path" },
   all: { label: "Show all dependencies" },
-  risk: { label: "Size by risk", hint: "Bars last 1, 2 or 3 waves for low, medium and high risk" },
+  risk: { label: "Size by risk", title: "Bars last 1, 2 or 3 waves for low, medium and high risk" },
 };
 
 const VIEW_BTN =
@@ -53,12 +53,10 @@ export function TimelineViewMenu({ state, view, hasRisk, canExpand, onToggle, on
             checked={state[k]}
             onCheckedChange={(on) => onToggle({ [k]: on })}
             onSelect={(e) => e.preventDefault()}
+            title={VIEW_TOGGLE_LABELS[k].title}
             className="min-h-10 md:min-h-8"
           >
-            <span className="flex flex-col">
-              <span>{VIEW_TOGGLE_LABELS[k].label}</span>
-              {VIEW_TOGGLE_LABELS[k].hint && <span className="text-xs text-muted-foreground">{VIEW_TOGGLE_LABELS[k].hint}</span>}
-            </span>
+            {VIEW_TOGGLE_LABELS[k].label}
           </DropdownMenuCheckboxItem>
         ))}
         {canExpand && (
