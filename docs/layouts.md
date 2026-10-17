@@ -161,7 +161,7 @@ Which source wins:
 
 ## What is excluded
 
-Stories whose status is `retired`, `superseded`, `dropped` or `deferred` are removed from every count and progress figure. Ticket-tree tickets with plan status `dropped` are removed too. The v6 project and v4 adapters list the excluded ids in the layout notes. Retrospective entries (keys containing `retrospective`) in `sprint-status.yaml` are ignored.
+In the v6 project and v4 layouts, stories whose status is `retired`, `superseded`, `dropped` or `deferred` are removed from every count and progress figure, and the layout notes list the excluded ids. In the ticket-tree layout only tickets with plan status `dropped` are removed, with no note. The v6 default layout does not exclude any status: a `retired` story counts as backlog there. Retrospective entries (keys containing `retrospective`) in `sprint-status.yaml` are ignored.
 
 ## Layout pill, notices and Details
 
