@@ -148,6 +148,8 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
                   onBlur={() => onHover("")}
                 >
                   <title>{`${n.id} ${n.title}`}</title>
+                  {/* Solid base: the status tint below is translucent, and edges must not show through the card. */}
+                  <rect width={NODE_W} height={NODE_H} rx={8} className="fill-background" data-node-base="" />
                   <rect
                     width={NODE_W}
                     height={NODE_H}
