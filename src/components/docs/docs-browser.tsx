@@ -85,19 +85,37 @@ function FilePanel({
   );
   // Phone: the tree is a collapsible section that closes once a file is picked.
   const [treeOpen, setTreeOpen] = useState(!initialSelectedFile);
+  const [filter, setFilter] = useState("");
+  const treeRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = useCallback((path: string) => {
     setSelectedPath(path);
     setTreeOpen(false);
   }, []);
 
-  const hasSecondary = secondaryTree && secondaryTree.length > 0;
+  const hasSecondary = !!secondaryTree && secondaryTree.length > 0;
   const initialInSecondary =
     hasSecondary && initialSelectedFile
       ? treeContainsPath(secondaryTree, initialSelectedFile)
       : false;
   const hasExtra = extraTrees.length > 0;
   const isEmpty = fileTree.length === 0 && !hasSecondary && !hasExtra;
+
+  // Filter state is local: it never touches the URL, so typing never re-renders the page server-side.
+  const terms = useMemo(() => parseFilterTerms(filter), [filter]);
+  const filtering = terms.length > 0;
+  const main = useMemo(() => filterFileTree(fileTree, terms), [fileTree, terms]);
+  const secondary = useMemo(
+    () => filterFileTree(secondaryTree ?? [], terms),
+    [secondaryTree, terms],
+  );
+  const extras = useMemo(
+    () => extraTrees.map((e) => filterFileTree(e.tree, terms)),
+    [extraTrees, terms],
+  );
+  const matched =
+    main.matched + secondary.matched + extras.reduce((n, e) => n + e.matched, 0);
+  const total = main.total + secondary.total + extras.reduce((n, e) => n + e.total, 0);
 
   if (isEmpty) {
     return (
@@ -110,56 +128,68 @@ function FilePanel({
     );
   }
 
-  const tree = hasSecondary || hasExtra ? (
+  const nodesFor = (t: { nodes: FileTreeNode[] }) => t.nodes;
+  const renderTree = (nodes: FileTreeNode[]) => (
+    <FileTree
+      nodes={nodes}
+      selectedPath={selectedPath || undefined}
+      onSelect={handleSelect}
+      terms={terms}
+    />
+  );
+
+  const multi = hasSecondary || hasExtra;
+  const tree = filtering && matched === 0 ? (
+    <div className="flex flex-col items-center gap-2 px-2 py-8 text-center text-sm text-muted-foreground">
+      <span className="break-all">No files match &ldquo;{filter.trim()}&rdquo;</span>
+      <button
+        type="button"
+        onClick={() => setFilter("")}
+        className="rounded-md border px-2.5 py-1 text-xs text-foreground outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Clear filter
+      </button>
+    </div>
+  ) : multi ? (
     <div className="space-y-2">
-      <CollapsibleSection title="Project artifacts" icon={FileOutput} defaultOpen>
-        <FileTree
-          nodes={fileTree}
-          selectedPath={selectedPath || undefined}
-          onSelect={handleSelect}
-        />
-      </CollapsibleSection>
-      {hasSecondary && (
+      {(!filtering || main.matched > 0) && (
+        <CollapsibleSection title="Project artifacts" icon={FileOutput} defaultOpen forceOpen={filtering}>
+          {renderTree(nodesFor(main))}
+        </CollapsibleSection>
+      )}
+      {hasSecondary && (!filtering || secondary.matched > 0) && (
         <>
           <div className="border-t" />
           <CollapsibleSection
             title="BMAD configuration"
             icon={Settings}
             defaultOpen={initialInSecondary}
+            forceOpen={filtering}
           >
-            <FileTree
-              nodes={secondaryTree}
-              selectedPath={selectedPath || undefined}
-              onSelect={handleSelect}
-            />
+            {renderTree(nodesFor(secondary))}
           </CollapsibleSection>
         </>
       )}
-      {extraTrees.map((extra) => (
-        <div key={extra.root} className="space-y-2">
-          <div className="border-t" />
-          <CollapsibleSection
-            title={extra.root}
-            icon={FolderOpen}
-            defaultOpen={
-              !!initialSelectedFile && treeContainsPath(extra.tree, initialSelectedFile)
-            }
-          >
-            <FileTree
-              nodes={extra.tree}
-              selectedPath={selectedPath || undefined}
-              onSelect={handleSelect}
-            />
-          </CollapsibleSection>
-        </div>
-      ))}
+      {extraTrees.map((extra, i) =>
+        !filtering || extras[i].matched > 0 ? (
+          <div key={extra.root} className="space-y-2">
+            <div className="border-t" />
+            <CollapsibleSection
+              title={extra.root}
+              icon={FolderOpen}
+              defaultOpen={
+                !!initialSelectedFile && treeContainsPath(extra.tree, initialSelectedFile)
+              }
+              forceOpen={filtering}
+            >
+              {renderTree(nodesFor(extras[i]))}
+            </CollapsibleSection>
+          </div>
+        ) : null,
+      )}
     </div>
   ) : (
-    <FileTree
-      nodes={fileTree}
-      selectedPath={selectedPath || undefined}
-      onSelect={handleSelect}
-    />
+    renderTree(nodesFor(main))
   );
 
   return (
@@ -229,7 +259,31 @@ function FilePanel({
               />
             </div>
           )}
-          {tree}
+          <div
+            className="mb-1.5"
+            onKeyDown={(e) => {
+              if (e.key !== "ArrowDown") return;
+              const first = treeRef.current?.querySelector<HTMLElement>("[data-tree-file]");
+              if (first) {
+                e.preventDefault();
+                first.focus();
+              }
+            }}
+          >
+            <SearchField
+              value={filter}
+              onChange={setFilter}
+              placeholder="Filter files"
+              ariaLabel="Filter files"
+              clearable
+            />
+          </div>
+          {filtering && (
+            <p className="mb-1.5 px-1 text-xs text-muted-foreground" aria-live="polite">
+              {matched} of {total} files
+            </p>
+          )}
+          <div ref={treeRef}>{tree}</div>
         </div>
       </aside>
     </div>
