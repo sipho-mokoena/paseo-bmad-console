@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, MoreHorizontal } from "lucide-react";
+import { ChevronRight, MoreHorizontal, RefreshCw } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { epicName } from "@/lib/bmad/ids";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
@@ -12,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRefreshRepo } from "@/components/shared/refresh-repo-button";
+import { projectFromPathname } from "@/lib/project-route";
 import type { RepoConfig } from "@/lib/types";
 
 const routeLabels: Record<string, string> = {
@@ -36,10 +38,32 @@ function safeDecode(value: string): string {
 const iconButton =
   "inline-flex size-10 md:size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden [&_svg]:size-4";
 
+/** Same action as "Refresh data" in the sidebar project menu, reusing its hook and result dialog. */
+function HeaderRefreshButton({ owner, name }: { owner: string; name: string }) {
+  const { refreshing, refresh, dialog } = useRefreshRepo({ owner, name });
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Refresh data"
+        title="Refresh data"
+        aria-busy={refreshing || undefined}
+        disabled={refreshing}
+        onClick={() => void refresh()}
+        className={`${iconButton} disabled:pointer-events-none disabled:opacity-60`}
+      >
+        <RefreshCw className={refreshing ? "animate-spin" : undefined} aria-hidden="true" />
+      </button>
+      {dialog}
+    </>
+  );
+}
+
 export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
   const pathname = usePathname();
   const { title: pageTitle } = useBreadcrumb();
   const segments = pathname.split("/").filter(Boolean);
+  const project = projectFromPathname(pathname);
 
   let parents: { label: string; href: string }[] = [];
   let title = "Projects";
@@ -111,6 +135,7 @@ export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
           </DropdownMenu>
         )}
       </nav>
+      {project && <HeaderRefreshButton owner={project.owner} name={project.name} />}
     </header>
   );
 }
