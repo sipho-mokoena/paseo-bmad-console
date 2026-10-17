@@ -10,8 +10,10 @@ import {
   serializeTimelineState,
   timelineHref,
   timelineRedirectTarget,
+  VIEWS,
   shouldShowTimelineOnOverview,
 } from "../timeline-params";
+import { wheelScrollDelta } from "../wheel";
 import { toTimelineData } from "../timeline-data";
 import { buildGanttModel, countCrossings, edgePath, layoutLayers, neighbourKey, NODE_H, NODE_W } from "../timeline-layout";
 
@@ -27,6 +29,12 @@ describe("timeline params", () => {
       status: ["done"],
       critical: false,
     });
+  });
+  it("falls back to the Gantt for the retired view=list", () => {
+    expect(parseTimelineState(q("view=list")).view).toBe("gantt");
+    expect(parseTimelineState(q("view=list&scope=2")).scope).toBe("2");
+    expect(parseTimelineState(q("view=graph")).view).toBe("graph");
+    expect(VIEWS).toEqual(["gantt", "graph"]);
   });
   it("reads every param", () => {
     expect(parseTimelineState(q("view=graph&scope=E2&status=blocked,review&q=wal&critical=1&all=true&focus=E2-S1&ready=1&risk=1&level=epics"))).toEqual({
@@ -44,7 +52,7 @@ describe("timeline params", () => {
   });
   it("round-trips, omits defaults and keeps unrelated params", () => {
     expect(serializeTimelineState("", DEFAULT_TIMELINE_STATE).toString()).toBe("");
-    const state = { ...DEFAULT_TIMELINE_STATE, view: "list" as const, scope: "1", status: ["done"], q: "a b", focus: "1.2", ready: true };
+    const state = { ...DEFAULT_TIMELINE_STATE, view: "graph" as const, scope: "1", status: ["done"], q: "a b", focus: "1.2", ready: true };
     const out = serializeTimelineState("foo=1&view=graph", state);
     expect(out.get("foo")).toBe("1");
     expect(parseTimelineState(out)).toEqual(state);
@@ -69,12 +77,11 @@ describe("timeline toolbar mapping", () => {
     expect(viewToggleKeys("gantt", true)).toEqual(["critical", "all", "risk"]);
     expect(viewToggleKeys("gantt", false)).toEqual(["critical", "all"]);
     expect(viewToggleKeys("graph", true)).toEqual(["critical", "risk"]);
-    expect(viewToggleKeys("list", false)).toEqual(["critical"]);
   });
   it("counts only the toggles on offer", () => {
     const on = { critical: true, all: true, risk: true };
     expect(viewToggleCount(on, "gantt", true)).toBe(3);
-    expect(viewToggleCount(on, "list", false)).toBe(1);
+    expect(viewToggleCount(on, "graph", false)).toBe(1);
     expect(viewToggleCount({ critical: false, all: false, risk: false }, "gantt", true)).toBe(0);
   });
 });
@@ -193,5 +200,34 @@ describe("layered layout", () => {
     const p = edgePath({ key: "a", layer: 0, index: 0, x: 0, y: 0 }, { key: "b", layer: 1, index: 0, x: 300, y: 100 });
     expect(p.startsWith(`M${NODE_W} ${NODE_H / 2} C`)).toBe(true);
     expect(p.endsWith("299 126")).toBe(true);
+  });
+});
+
+describe("wheelScrollDelta", () => {
+  const box = { scrollLeft: 100, scrollWidth: 1000, clientWidth: 400 };
+  const w = (deltaX: number, deltaY: number, extra = {}) => ({ deltaX, deltaY, ...extra });
+  it("turns a vertical gesture into sideways scrolling", () => {
+    expect(wheelScrollDelta(w(0, 80), box)).toBe(80);
+    expect(wheelScrollDelta(w(0, -80), box)).toBe(-80);
+  });
+  it("passes horizontal gestures and shift+wheel through", () => {
+    expect(wheelScrollDelta(w(60, 5), box)).toBe(60);
+    expect(wheelScrollDelta(w(0, 40, { shiftKey: true }), box)).toBe(40);
+  });
+  it("scales lines and pages", () => {
+    expect(wheelScrollDelta(w(0, 3, { deltaMode: 1 }), box)).toBe(48);
+    expect(wheelScrollDelta(w(0, 1, { deltaMode: 2 }), box)).toBe(400);
+  });
+  it("lets the page scroll at the edges and when nothing scrolls sideways", () => {
+    expect(wheelScrollDelta(w(0, -50), { ...box, scrollLeft: 0 })).toBeNull();
+    expect(wheelScrollDelta(w(0, 50), { ...box, scrollLeft: 600 })).toBeNull();
+    expect(wheelScrollDelta(w(0, 50), { scrollLeft: 0, scrollWidth: 400, clientWidth: 400 })).toBeNull();
+    expect(wheelScrollDelta(w(0, 0), box)).toBeNull();
+    // still scrolls back from the far edge
+    expect(wheelScrollDelta(w(0, -50), { ...box, scrollLeft: 600 })).toBe(-50);
+  });
+  it("swallows ctrl+wheel and pinch without scrolling", () => {
+    expect(wheelScrollDelta(w(0, 80, { ctrlKey: true }), box)).toBe(0);
+    expect(wheelScrollDelta(w(0, 80, { ctrlKey: true }), { scrollLeft: 0, scrollWidth: 300, clientWidth: 400 })).toBe(0);
   });
 });
