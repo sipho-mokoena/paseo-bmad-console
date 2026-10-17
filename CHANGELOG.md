@@ -24,6 +24,10 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 - A dependency graph module (`src/lib/dependency-graph.ts`) with waves, critical path, cycle handling and scoping. No page uses it yet.
 - Documentation: configuration reference, BMAD layouts guide, architecture overview, deployment guide, Paseo plugin guide and a docs index.
 
+### Removed
+
+- Overview: the Key files list. The planning documents are in the Specs, Design and Library tabs.
+
 ## [0.1.0] - 2026-10-17
 
 First standalone release. The history before 2026-10-16 belongs to the upstream projects (see below).

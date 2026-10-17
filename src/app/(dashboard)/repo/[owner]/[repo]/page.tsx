@@ -10,23 +10,12 @@ import { TIMELINE_ANCHOR, shouldShowTimelineOnOverview } from "@/lib/timeline-pa
 import { EpicsList } from "@/components/dashboard/epics-list";
 import { VelocityMetrics } from "@/components/dashboard/velocity-metrics";
 import { LayoutDetails, LayoutNotice, LayoutPill } from "@/components/dashboard/layout-info";
-import { KeyArtifactsCard } from "@/components/dashboard/key-artifacts-card";
 import { GitBranch, Clock, FolderOpen } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
 import { getRepoConfig } from "@/lib/db/helpers";
-import type { FileTreeNode } from "@/lib/bmad/types";
 
 interface RepoPageProps {
   params: Promise<{ owner: string; repo: string }>;
-}
-
-function extractPlanningArtifacts(fileTree: FileTreeNode[]): FileTreeNode[] {
-  const planningDir = fileTree.find(
-    (node) =>
-      node.type === "directory" &&
-      node.name.toLowerCase().includes("planning-artifacts"),
-  );
-  return planningDir?.children ?? [];
 }
 
 export default async function RepoOverviewPage({ params }: RepoPageProps) {
@@ -40,7 +29,6 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
 
   const showTimeline = shouldShowTimelineOnOverview(project);
   const timelineItems = project.stories.length > 0 ? project.stories.length : project.epics.length;
-  const planningArtifacts = extractPlanningArtifacts(project.fileTree);
 
   return (
     <div className="space-y-4">
@@ -99,12 +87,6 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
       ) : (
         <EpicsList epics={epicsForList(project.epics)} owner={owner} repo={repoName} lookedFor={project.layout.lookedFor} />
       )}
-
-      <KeyArtifactsCard
-        planningArtifacts={planningArtifacts}
-        owner={owner}
-        repo={repoName}
-      />
     </div>
   );
 }

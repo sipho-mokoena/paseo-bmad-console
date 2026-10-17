@@ -91,7 +91,7 @@ The repo-asset route (`src/app/api/repo-asset/route.ts`) serves images of local 
 | --- | --- |
 | `/` | Home: global stats and the grid of registered projects |
 | `/search` | Global search (`?q=`) |
-| `/repo/[owner]/[repo]` | Overview: layout pill and notices, sprint strip, stats, epic list, key artifacts |
+| `/repo/[owner]/[repo]` | Overview: layout pill and notices, sprint strip, stats, epic list or Timeline |
 | `/repo/[owner]/[repo]/epics` | Epics browser with Board and List views |
 | `/repo/[owner]/[repo]/epics/[epicId]` | Epic page with its stories |
 | `/repo/[owner]/[repo]/epics/[epicId]/[storyId]` | Story page |

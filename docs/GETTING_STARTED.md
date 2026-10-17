@@ -101,7 +101,7 @@ Each project in the sidebar has a row menu with **Refresh data**, **Settings** (
 
 A project has up to five tabs. **Specs** and **Design** appear only when the project has matching documents.
 
-- **Overview**: where the project comes from, the detected layout (a small pill; its tooltip lists notes and the places searched), the sprint strip, project stats (epics, stories, completed, in progress, progress), a collapsible **Details** line with layout notes and files that failed to parse, the epic list and the **Key files** list from the planning artifacts. With six or more epics the list gets a search box, status filter, sort menu and pagination (15 per page). The state is kept in the URL.
+- **Overview**: where the project comes from, the detected layout (a small pill; its tooltip lists notes and the places searched), the sprint strip, project stats (epics, stories, completed, in progress, progress), a collapsible **Details** line with layout notes and files that failed to parse and the epic list (or the Timeline). The planning documents are in the Specs, Design and Library tabs. With six or more epics the list gets a search box, status filter, sort menu and pagination (15 per page). The state is kept in the URL.
 - **Epics**: all epics as a **Board** (default) or a **List**. Open an epic to see its description, progress and stories. Open a story to see its rendered Markdown, status, ticket details (type, risk, covers) when the layout has them, the stories it comes after and the stories it blocks, and previous and next buttons.
 - **Specs**: briefs, PRDs, specs and architecture documents, grouped, with a rail to switch between them.
 - **Design**: UX and design documents, wireframes and reviews, grouped the same way.
