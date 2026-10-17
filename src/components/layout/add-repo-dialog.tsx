@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -12,170 +12,74 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Plus,
-  Search,
-  Lock,
-  Globe,
-  FolderGit2,
-  FolderOpen,
-  Loader2,
-  Github,
-} from "lucide-react";
-import {
-  listUserRepos,
-  detectBmadRepos,
-  importRepo,
-  importLocalFolder,
-} from "@/actions/repo-actions";
-import type { GitHubRepo } from "@/lib/github/types";
+import { Plus, FolderOpen, Loader2, Github } from "lucide-react";
+import { addGitHubRepo, importLocalFolder } from "@/actions/repo-actions";
 
 interface AddRepoDialogProps {
   trigger?: React.ReactNode;
-  importedRepos?: { owner: string; name: string }[];
   localFsEnabled?: boolean;
-  githubEnabled?: boolean;
 }
 
 export function AddRepoDialog({
   trigger,
-  importedRepos = [],
   localFsEnabled = false,
-  githubEnabled = true,
 }: AddRepoDialogProps) {
-  const importedSet = useMemo(
-    () => new Set(importedRepos.map((r) => `${r.owner}/${r.name}`)),
-    [importedRepos]
-  );
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [repos, setRepos] = useState<GitHubRepo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [detecting, setDetecting] = useState(false);
-  const [error, setError] = useState("");
-  const [detectWarning, setDetectWarning] = useState("");
-  const [unknownDetectCount, setUnknownDetectCount] = useState(0);
-  const [search, setSearch] = useState("");
-  const [importing, setImporting] = useState<string | null>(null);
-  const [importError, setImportError] = useState("");
+
+  // GitHub state
+  const [ghRepo, setGhRepo] = useState("");
+  const [ghBranch, setGhBranch] = useState("");
+  const [ghImporting, setGhImporting] = useState(false);
+  const [ghError, setGhError] = useState("");
 
   // Local folder state
   const [localPath, setLocalPath] = useState("");
   const [localImporting, setLocalImporting] = useState(false);
   const [localError, setLocalError] = useState("");
 
-  const defaultTab = githubEnabled ? "github" : "local";
-
-  const fetchRepos = useCallback(async () => {
-    if (!githubEnabled) return;
-    setLoading(true);
-    setError("");
-    setDetectWarning("");
-    setUnknownDetectCount(0);
-    setRepos([]);
-    setSearch("");
-    setDetecting(false);
-
-    const result = await listUserRepos();
-    if (!result.success) {
-      setError(result.error);
-      setLoading(false);
-      return;
-    }
-
-    setRepos(result.data);
-    setLoading(false);
-
-    if (result.data.length > 0) {
-      setDetecting(true);
-      const ids = result.data.map((r) => ({
-        fullName: r.fullName,
-        owner: r.owner,
-        name: r.name,
-      }));
-
-      const bmadResult = await detectBmadRepos(ids);
-      if (bmadResult.success) {
-        // Per-repo null = detection failed for that batch. Surface the
-        // count so users see "X repos couldn't be scanned" rather than
-        // silently being told "no BMAD" for repos we never confirmed.
-        const unknownCount = Object.values(bmadResult.data).filter(
-          (v) => v === null,
-        ).length;
-        setUnknownDetectCount(unknownCount);
-
-        setRepos((prev) => {
-          const updated = prev.map((r) => ({
-            ...r,
-            hasBmad: bmadResult.data[r.fullName] ?? false,
-          }));
-          updated.sort((a, b) => {
-            if (a.hasBmad !== b.hasBmad) return a.hasBmad ? -1 : 1;
-            return (
-              new Date(b.updatedAt).getTime() -
-              new Date(a.updatedAt).getTime()
-            );
-          });
-          return updated;
-        });
-      } else {
-        // Detection failed (rate limit, too many repos, transient GraphQL
-        // error). The list is still usable — show a non-blocking warning
-        // so the user understands BMAD badges may be missing.
-        setDetectWarning(
-          bmadResult.code === "LIMIT_EXCEEDED"
-            ? "Too many repositories to scan for BMAD — badges may be missing."
-            : "Could not detect BMAD repositories — badges may be missing."
-        );
-      }
-      setDetecting(false);
-    }
-  }, [githubEnabled]);
-
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
-    if (nextOpen && githubEnabled) {
-      fetchRepos();
-    }
     if (!nextOpen) {
+      setGhRepo("");
+      setGhBranch("");
+      setGhError("");
+      setGhImporting(false);
       setLocalPath("");
       setLocalError("");
       setLocalImporting(false);
     }
   }
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return repos;
-    const q = search.toLowerCase();
-    return repos.filter(
-      (r) =>
-        r.fullName.toLowerCase().includes(q) ||
-        r.description?.toLowerCase().includes(q)
-    );
-  }, [repos, search]);
+  async function handleAddGitHub(e: React.FormEvent) {
+    e.preventDefault();
+    const parts = ghRepo
+      .trim()
+      .replace(/^https?:\/\/github\.com\//i, "")
+      .replace(/\.git$/i, "")
+      .replace(/\/+$/, "")
+      .split("/");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      setGhError("Enter the repository as owner/name.");
+      return;
+    }
 
-  async function handleSelectRepo(repo: GitHubRepo) {
-    setImporting(repo.fullName);
-    setImportError("");
+    setGhImporting(true);
+    setGhError("");
 
-    const result = await importRepo({
-      owner: repo.owner,
-      name: repo.name,
-      description: repo.description,
-      defaultBranch: repo.defaultBranch,
-      fullName: repo.fullName,
+    const result = await addGitHubRepo({
+      owner: parts[0],
+      name: parts[1],
+      branch: ghBranch.trim() || undefined,
     });
 
     if (result.success) {
       setOpen(false);
       router.refresh();
     } else {
-      setImportError(result.error);
+      setGhError(result.error);
     }
-    setImporting(null);
+    setGhImporting(false);
   }
 
   async function handleImportLocal(e: React.FormEvent) {
@@ -196,7 +100,17 @@ export function AddRepoDialog({
     setLocalImporting(false);
   }
 
-  const showTabs = githubEnabled && localFsEnabled;
+  const githubForm = (
+    <GitHubRepoForm
+      repo={ghRepo}
+      setRepo={setGhRepo}
+      branch={ghBranch}
+      setBranch={setGhBranch}
+      importing={ghImporting}
+      error={ghError}
+      onSubmit={handleAddGitHub}
+    />
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -212,34 +126,18 @@ export function AddRepoDialog({
           <DialogTitle>Add a project</DialogTitle>
         </DialogHeader>
 
-        {showTabs ? (
-          <Tabs defaultValue={defaultTab}>
+        {localFsEnabled ? (
+          <Tabs defaultValue="local">
             <TabsList className="w-full">
-              <TabsTrigger value="github" className="flex-1">
-                <Github className="mr-1.5 h-4 w-4" />
-                GitHub
-              </TabsTrigger>
               <TabsTrigger value="local" className="flex-1">
                 <FolderOpen className="mr-1.5 h-4 w-4" />
                 Local Folder
               </TabsTrigger>
+              <TabsTrigger value="github" className="flex-1">
+                <Github className="mr-1.5 h-4 w-4" />
+                GitHub
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="github">
-              <GitHubRepoList
-                search={search}
-                setSearch={setSearch}
-                loading={loading}
-                detecting={detecting}
-                error={error}
-                detectWarning={detectWarning}
-                unknownDetectCount={unknownDetectCount}
-                importError={importError}
-                filtered={filtered}
-                importing={importing}
-                importedSet={importedSet}
-                onSelect={handleSelectRepo}
-              />
-            </TabsContent>
             <TabsContent value="local">
               <LocalFolderForm
                 localPath={localPath}
@@ -249,30 +147,10 @@ export function AddRepoDialog({
                 onSubmit={handleImportLocal}
               />
             </TabsContent>
+            <TabsContent value="github">{githubForm}</TabsContent>
           </Tabs>
-        ) : localFsEnabled ? (
-          <LocalFolderForm
-            localPath={localPath}
-            setLocalPath={setLocalPath}
-            localImporting={localImporting}
-            localError={localError}
-            onSubmit={handleImportLocal}
-          />
         ) : (
-          <GitHubRepoList
-            search={search}
-            setSearch={setSearch}
-            loading={loading}
-            detecting={detecting}
-            error={error}
-            detectWarning={detectWarning}
-            unknownDetectCount={unknownDetectCount}
-            importError={importError}
-            filtered={filtered}
-            importing={importing}
-            importedSet={importedSet}
-            onSelect={handleSelectRepo}
-          />
+          githubForm
         )}
       </DialogContent>
     </Dialog>
@@ -283,143 +161,60 @@ export function AddRepoDialog({
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function GitHubRepoList({
-  search,
-  setSearch,
-  loading,
-  detecting,
-  error,
-  detectWarning,
-  unknownDetectCount,
-  importError,
-  filtered,
+function GitHubRepoForm({
+  repo,
+  setRepo,
+  branch,
+  setBranch,
   importing,
-  importedSet,
-  onSelect,
+  error,
+  onSubmit,
 }: {
-  search: string;
-  setSearch: (v: string) => void;
-  loading: boolean;
-  detecting: boolean;
+  repo: string;
+  setRepo: (v: string) => void;
+  branch: string;
+  setBranch: (v: string) => void;
+  importing: boolean;
   error: string;
-  detectWarning: string;
-  unknownDetectCount: number;
-  importError: string;
-  filtered: GitHubRepo[];
-  importing: string | null;
-  importedSet: Set<string>;
-  onSelect: (repo: GitHubRepo) => void;
+  onSubmit: (e: React.FormEvent) => void;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+    <form onSubmit={onSubmit} className="space-y-4 pt-2">
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Enter a GitHub repository as{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">owner/name</code>.
+          Private repositories need a{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">GITHUB_PAT</code>{" "}
+          configured on the server.
+        </p>
         <Input
-          placeholder="Search for a repository..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-          disabled={loading}
+          placeholder="owner/name"
+          value={repo}
+          onChange={(e) => setRepo(e.target.value)}
+          disabled={importing}
+          autoComplete="off"
+        />
+        <Input
+          placeholder="Branch (optional, defaults to the repository default)"
+          value={branch}
+          onChange={(e) => setBranch(e.target.value)}
+          disabled={importing}
+          autoComplete="off"
         />
       </div>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
-      {importError && <p className="text-destructive text-sm">{importError}</p>}
-      {detectWarning && (
-        <p className="text-warning text-xs">
-          {detectWarning}
-        </p>
-      )}
-      {unknownDetectCount > 0 && (
-        <p className="text-warning text-xs">
-          BMAD detection failed for {unknownDetectCount}{" "}
-          {unknownDetectCount === 1 ? "repository" : "repositories"} —
-          these may be mis-labelled as &ldquo;no BMAD&rdquo;.
-        </p>
-      )}
-      {detecting && (
-        <p className="text-muted-foreground text-xs animate-pulse">
-          Detecting BMAD files...
-        </p>
-      )}
 
-      <ScrollArea className="h-80">
-        {loading ? (
-          <div className="space-y-3 p-1">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-lg border p-3"
-              >
-                <Skeleton className="h-8 w-8 rounded" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </div>
-            ))}
-          </div>
+      <Button type="submit" className="w-full" disabled={importing || !repo.trim()}>
+        {importing ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
-          <div className="space-y-1 p-1">
-            {filtered.length === 0 && !error && (
-              <p className="text-muted-foreground py-8 text-center text-sm">
-                {search ? "No repository found" : "No repository available"}
-              </p>
-            )}
-            {filtered.map((repo) => {
-              const isImporting = importing === repo.fullName;
-              const isAlreadyImported = importedSet.has(
-                `${repo.owner}/${repo.name}`
-              );
-              const isDisabled = importing !== null || isAlreadyImported;
-
-              return (
-                <button
-                  key={repo.id}
-                  type="button"
-                  onClick={() => onSelect(repo)}
-                  disabled={isDisabled}
-                  className="hover:bg-accent flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors disabled:pointer-events-none disabled:opacity-50"
-                >
-                  {isImporting ? (
-                    <Loader2 className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0 animate-spin" />
-                  ) : (
-                    <FolderGit2 className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-sm font-medium">
-                        {repo.fullName}
-                      </span>
-                      {isAlreadyImported && (
-                        <Badge variant="secondary" className="shrink-0 text-xs">
-                          Imported
-                        </Badge>
-                      )}
-                      {repo.hasBmad && !isAlreadyImported && (
-                        <Badge variant="default" className="shrink-0 text-xs">
-                          BMAD
-                        </Badge>
-                      )}
-                      {repo.isPrivate ? (
-                        <Lock className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                      ) : (
-                        <Globe className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                      )}
-                    </div>
-                    {repo.description && (
-                      <p className="text-muted-foreground mt-0.5 truncate text-xs [text-wrap:auto]">
-                        {repo.description}
-                      </p>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          <Github className="mr-2 h-4 w-4" />
         )}
-      </ScrollArea>
-    </div>
+        Add repository
+      </Button>
+    </form>
   );
 }
 

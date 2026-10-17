@@ -1,10 +1,7 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { DocsBrowser } from "@/components/docs/docs-browser";
 import { fetchBmadFiles } from "@/actions/repo-actions";
-import {
-  getAuthenticatedUserId,
-  getAuthenticatedRepoConfig,
-} from "@/lib/db/helpers";
+import { getRepoConfig } from "@/lib/db/helpers";
 
 interface DocsPageProps {
   params: Promise<{ owner: string; repo: string }>;
@@ -17,10 +14,7 @@ export default async function DocsPage({
 }: DocsPageProps) {
   const { owner, repo: repoName } = await params;
   const { file: initialFile } = await searchParams;
-  const userId = await getAuthenticatedUserId();
-  if (!userId) redirect("/login");
-
-  const repoConfig = await getAuthenticatedRepoConfig(userId, owner, repoName);
+  const repoConfig = await getRepoConfig(owner, repoName);
   if (!repoConfig) return notFound();
 
   const result = await fetchBmadFiles({ owner, name: repoName });

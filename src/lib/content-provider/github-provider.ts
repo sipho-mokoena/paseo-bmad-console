@@ -1,23 +1,21 @@
 import type { ContentProvider, ContentProviderTree } from "./types";
-import type { UserOctokit } from "@/lib/github/client";
+import type { GitHubOctokit } from "@/lib/github/client";
 import {
-  getCachedUserRepoTree,
-  getCachedUserRawContent,
+  getCachedRepoTree,
+  getCachedRawContent,
 } from "@/lib/github/client";
 
 export class GitHubProvider implements ContentProvider {
   constructor(
-    private octokit: UserOctokit,
-    private userId: string,
+    private octokit: GitHubOctokit,
     private owner: string,
     private repo: string,
     private branch: string,
   ) {}
 
   async getTree(): Promise<ContentProviderTree> {
-    const tree = await getCachedUserRepoTree(
+    const tree = await getCachedRepoTree(
       this.octokit,
-      this.userId,
       this.owner,
       this.repo,
       this.branch,
@@ -38,9 +36,8 @@ export class GitHubProvider implements ContentProvider {
   }
 
   async getFileContent(filePath: string): Promise<string> {
-    return getCachedUserRawContent(
+    return getCachedRawContent(
       this.octokit,
-      this.userId,
       this.owner,
       this.repo,
       this.branch,

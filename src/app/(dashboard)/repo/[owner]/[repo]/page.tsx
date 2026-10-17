@@ -1,7 +1,6 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { epicsForList } from "@/lib/bmad/list-view";
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
-import { getGitHubToken } from "@/lib/github/client";
 import { ProjectStatsGrid } from "@/components/dashboard/project-stats-grid";
 import { EpicsList } from "@/components/dashboard/epics-list";
 import { VelocityMetrics } from "@/components/dashboard/velocity-metrics";
@@ -9,10 +8,7 @@ import { LayoutDetails, LayoutNotice, LayoutPill } from "@/components/dashboard/
 import { KeyArtifactsCard } from "@/components/dashboard/key-artifacts-card";
 import { GitBranch, Clock, FolderOpen } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
-import {
-  getAuthenticatedUserId,
-  getAuthenticatedRepoConfig,
-} from "@/lib/db/helpers";
+import { getRepoConfig } from "@/lib/db/helpers";
 import type { FileTreeNode } from "@/lib/bmad/types";
 
 interface RepoPageProps {
@@ -30,15 +26,11 @@ function extractPlanningArtifacts(fileTree: FileTreeNode[]): FileTreeNode[] {
 
 export default async function RepoOverviewPage({ params }: RepoPageProps) {
   const { owner, repo: repoName } = await params;
-  const userId = await getAuthenticatedUserId();
-  if (!userId) redirect("/login");
-
-  const repoConfig = await getAuthenticatedRepoConfig(userId, owner, repoName);
+  const repoConfig = await getRepoConfig(owner, repoName);
   if (!repoConfig) return notFound();
 
   const isLocal = repoConfig.sourceType === "local";
-  const token = isLocal ? undefined : (await getGitHubToken(userId)) ?? undefined;
-  const project = await getCachedBmadProject(repoConfig, token, userId);
+  const project = await getCachedBmadProject(repoConfig);
   if (!project) return notFound();
 
   const planningArtifacts = extractPlanningArtifacts(project.fileTree);

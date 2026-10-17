@@ -4,11 +4,10 @@ import path from "node:path";
 import os from "node:os";
 
 vi.mock("@/lib/db/helpers", () => ({
-  getAuthenticatedSession: vi.fn(),
-  getAuthenticatedRepoConfig: vi.fn(),
+  getRepoConfig: vi.fn(),
 }));
 
-import { getAuthenticatedSession, getAuthenticatedRepoConfig } from "@/lib/db/helpers";
+import { getRepoConfig } from "@/lib/db/helpers";
 import { GET } from "@/app/api/repo-asset/route";
 
 const OWNER = "local";
@@ -42,12 +41,7 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
-  vi.mocked(getAuthenticatedSession).mockResolvedValue({
-    userId: "user-1",
-    role: "user",
-    email: "u@example.com",
-  });
-  vi.mocked(getAuthenticatedRepoConfig).mockImplementation(async (_userId, owner, name) =>
+  vi.mocked(getRepoConfig).mockImplementation(async (owner, name) =>
     owner === OWNER && name === REPO
       ? ({ owner, name, sourceType: "local", localPath: repoRoot } as never)
       : null,
@@ -58,19 +52,13 @@ function request(params: Record<string, string | undefined>, raw = ""): Request 
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined) qs.set(k, v);
   const query = raw || qs.toString();
-  return new Request(`http://localhost:3002/api/repo-asset?${query}`);
+  return new Request(`http://localhost:7002/api/repo-asset?${query}`);
 }
 
 const SVG_PATH =
   "_bmad-output/initiative-acme/ux-acme/wireframes/svg/00a-console-preflight-failed.svg";
 
 describe("GET /api/repo-asset", () => {
-  it("returns 401 without a session", async () => {
-    vi.mocked(getAuthenticatedSession).mockResolvedValueOnce(null);
-    const res = await GET(request({ owner: OWNER, repo: REPO, path: SVG_PATH }));
-    expect(res.status).toBe(401);
-  });
-
   it("serves a valid svg with the expected headers", async () => {
     const res = await GET(request({ owner: OWNER, repo: REPO, path: SVG_PATH }));
     expect(res.status).toBe(200);
@@ -152,7 +140,7 @@ describe("GET /api/repo-asset", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 404 for a repo the user does not own", async () => {
+  it("returns 404 for a repo that is not registered", async () => {
     const res = await GET(request({ owner: "someone", repo: REPO, path: SVG_PATH }));
     expect(res.status).toBe(404);
   });

@@ -16,12 +16,10 @@ import {
 import type { RepoConfig } from "@/lib/types";
 
 const routeLabels: Record<string, string> = {
-  profile: "Profile",
   overview: "Overview",
   epics: "Epics",
   docs: "Library",
   search: "Search",
-  admin: "Admin",
 };
 
 function getRouteLabel(segment: string): string {

@@ -2,7 +2,6 @@ import { Octokit } from "@octokit/rest";
 import { throttling } from "@octokit/plugin-throttling";
 import { retry } from "@octokit/plugin-retry";
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/db/client";
 import { GitHubTreeResponse } from "./types";
 import { repoTag, fileTag } from "./cache-tags";
 
@@ -10,11 +9,22 @@ import { repoTag, fileTag } from "./cache-tags";
 const OctokitWithPlugins = Octokit.plugin(throttling, retry);
 
 /**
- * Create an Octokit instance authenticated with a user's OAuth token.
+ * Read the optional personal access token from the environment.
+ * Returns undefined when GITHUB_PAT is unset or blank (unauthenticated access).
  */
-export function createUserOctokit(accessToken: string) {
+export function getGitHubPat(): string | undefined {
+  const pat = process.env.GITHUB_PAT?.trim();
+  return pat ? pat : undefined;
+}
+
+/**
+ * Create an Octokit instance. Uses GITHUB_PAT when set; otherwise requests are
+ * unauthenticated (public repositories only, 60 requests per hour).
+ */
+export function createOctokit() {
+  const pat = getGitHubPat();
   return new OctokitWithPlugins({
-    auth: accessToken,
+    ...(pat ? { auth: pat } : {}),
     throttle: {
       onRateLimit: (retryAfter, options, octokit, retryCount) => {
         octokit.log.warn(
@@ -37,31 +47,32 @@ export function createUserOctokit(accessToken: string) {
 }
 
 /**
- * Retrieve the GitHub OAuth access token for a user from the accounts table.
- * Returns null if no token is found (user needs to re-authenticate).
+ * Message shown when GitHub answers 403/429. Says how to lift the limit.
  */
-export async function getGitHubToken(
-  userId: string
-): Promise<string | null> {
-  const account = await prisma.account.findFirst({
-    where: { userId, providerId: "github" },
-    select: { accessToken: true },
-  });
+export function rateLimitMessage(): string {
+  return getGitHubPat()
+    ? "GitHub rate limit reached. Try again in a few minutes."
+    : "GitHub rate limit reached (60 requests per hour without a token). Set GITHUB_PAT in the server environment to raise it to 5,000 per hour, then restart.";
+}
 
-  return account?.accessToken ?? null;
+/** True when the error is an Octokit-style HTTP error with a rate-limit or forbidden status. */
+export function isRateLimitError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("status" in error)) return false;
+  const status = (error as { status: number }).status;
+  return status === 403 || status === 429;
 }
 
 // ---------------------------------------------------------------------------
-// Authenticated Octokit helpers (user OAuth token)
+// Octokit helpers
 // ---------------------------------------------------------------------------
 
-export type UserOctokit = ReturnType<typeof createUserOctokit>;
+export type GitHubOctokit = ReturnType<typeof createOctokit>;
 
 /**
- * Fetch the full recursive tree of a repo using the user's authenticated Octokit.
+ * Fetch the full recursive tree of a repo using the given Octokit.
  */
-export async function getUserRepoTree(
-  octokit: UserOctokit,
+export async function getRepoTree(
+  octokit: GitHubOctokit,
   owner: string,
   repo: string,
   branch: string,
@@ -82,11 +93,11 @@ export async function getUserRepoTree(
 }
 
 /**
- * Fetch raw file content from a repo using the user's authenticated Octokit.
+ * Fetch raw file content from a repo using the given Octokit.
  * Decodes base64 content returned by the GitHub Contents API.
  */
-export async function getUserRawContent(
-  octokit: UserOctokit,
+export async function getRawContent(
+  octokit: GitHubOctokit,
   owner: string,
   repo: string,
   branch: string,
@@ -118,40 +129,36 @@ export async function getUserRawContent(
 const CACHE_TTL = 300; // 5 minutes
 
 /**
- * Cached version of getUserRepoTree. Uses Next.js unstable_cache with
+ * Cached version of getRepoTree. Uses Next.js unstable_cache with
  * repo-level tags for invalidation via revalidateTag().
- * userId is included in the cache key to prevent data leakage between users.
  */
-export function getCachedUserRepoTree(
-  octokit: UserOctokit,
-  userId: string,
+export function getCachedRepoTree(
+  octokit: GitHubOctokit,
   owner: string,
   repo: string,
   branch: string,
 ) {
   return unstable_cache(
-    () => getUserRepoTree(octokit, owner, repo, branch),
-    [`repo-tree`, userId, owner, repo, branch],
+    () => getRepoTree(octokit, owner, repo, branch),
+    [`repo-tree`, owner, repo, branch],
     { revalidate: CACHE_TTL, tags: [repoTag(owner, repo)] },
   )();
 }
 
 /**
- * Cached version of getUserRawContent. Uses Next.js unstable_cache with
+ * Cached version of getRawContent. Uses Next.js unstable_cache with
  * file-level tags for granular invalidation.
- * userId is included in the cache key to prevent data leakage between users.
  */
-export function getCachedUserRawContent(
-  octokit: UserOctokit,
-  userId: string,
+export function getCachedRawContent(
+  octokit: GitHubOctokit,
   owner: string,
   repo: string,
   branch: string,
   path: string,
 ) {
   return unstable_cache(
-    () => getUserRawContent(octokit, owner, repo, branch, path),
-    [`file-content`, userId, owner, repo, branch, path],
+    () => getRawContent(octokit, owner, repo, branch, path),
+    [`file-content`, owner, repo, branch, path],
     { revalidate: CACHE_TTL, tags: [repoTag(owner, repo), fileTag(owner, repo, path)] },
   )();
 }

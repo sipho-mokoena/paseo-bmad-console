@@ -7,14 +7,12 @@ import { cn } from "@/lib/utils";
 
 interface AddRepoCardProps {
   localFsEnabled?: boolean;
-  githubEnabled?: boolean;
 }
 
-export function AddRepoCard({ localFsEnabled, githubEnabled }: AddRepoCardProps) {
+export function AddRepoCard({ localFsEnabled }: AddRepoCardProps) {
   return (
     <AddRepoDialog
       localFsEnabled={localFsEnabled}
-      githubEnabled={githubEnabled}
       trigger={
         <button type="button" className={cn(ROW_CLASS, "text-muted-foreground hover:text-foreground")}>
           <Plus className="size-4 shrink-0" />

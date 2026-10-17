@@ -1,34 +1,26 @@
-import { redirect } from "next/navigation";
 import { getBmadProject } from "@/lib/bmad/parser";
-import { createUserOctokit, getGitHubToken } from "@/lib/github/client";
+import { createOctokit } from "@/lib/github/client";
 import { createContentProvider } from "@/lib/content-provider";
 import { ReposGrid } from "@/components/dashboard/repos-grid";
 import { GlobalStatsBar } from "@/components/dashboard/global-stats-bar";
-import {
-  getAuthenticatedUserId,
-  getAuthenticatedRepos,
-} from "@/lib/db/helpers";
+import { getRepos } from "@/lib/db/helpers";
 import { AlertBanner } from "@/components/shared/alert-banner";
 import type { BmadProject } from "@/lib/bmad/types";
 
 const localFsEnabled = process.env.ENABLE_LOCAL_FS === "true";
 
 export default async function DashboardPage() {
-  const userId = await getAuthenticatedUserId();
-  if (!userId) redirect("/login");
+  const repos = await getRepos();
 
-  const repos = await getAuthenticatedRepos(userId);
-
-  // Only fetch GitHub token if at least one repo is GitHub-sourced (F34)
+  // Only build an Octokit if at least one repo is GitHub-sourced (F34)
   const hasGithubRepos = repos.some((r) => r.sourceType === "github");
-  const token = hasGithubRepos ? await getGitHubToken(userId) : null;
-  const octokit = token ? createUserOctokit(token) : undefined;
+  const octokit = hasGithubRepos ? createOctokit() : undefined;
 
   const projects: BmadProject[] = [];
   const errors: string[] = [];
   const results = await Promise.allSettled(
     repos.map((repo) => {
-      const provider = createContentProvider(repo, octokit, userId);
+      const provider = createContentProvider(repo, octokit);
       return getBmadProject(repo, provider);
     })
   );
@@ -69,7 +61,7 @@ export default async function DashboardPage() {
             </ul>
             {hasGithubErrors && errors.some((e) => /\b(404|Not Found)\b/i.test(e)) && (
               <p className="mt-2 text-xs text-muted-foreground">
-                If the repo is private, try reconnecting via GitHub to renew your OAuth authorization.
+                If the repository is private, set GITHUB_PAT in the server environment to a token with access to it, then restart the server.
               </p>
             )}
             {hasLocalErrors && (
@@ -84,7 +76,6 @@ export default async function DashboardPage() {
           projects={projects}
           repos={repos}
           localFsEnabled={localFsEnabled}
-          githubEnabled={!!token}
         />
     </div>
   );

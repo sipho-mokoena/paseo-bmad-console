@@ -1,8 +1,4 @@
 import type { NextConfig } from "next";
-import { assertNoDevAuthBypassInProduction } from "./src/lib/auth/dev-bypass";
-
-// `next build` / `next start` refuse to run with the dev-only login bypass configured.
-assertNoDevAuthBypassInProduction();
 
 // Extra hostnames allowed to reach the dev server (e.g. a Tailscale name or LAN IP).
 // Comma-separated; empty by default.
@@ -17,12 +13,6 @@ const nextConfig: NextConfig = {
   allowedDevOrigins,
   images: {
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "avatars.githubusercontent.com",
-      },
-    ],
   },
   async redirects() {
     // The Stories tab was merged into Epics.

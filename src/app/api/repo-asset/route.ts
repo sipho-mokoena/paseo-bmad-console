@@ -1,4 +1,4 @@
-import { getAuthenticatedSession, getAuthenticatedRepoConfig } from "@/lib/db/helpers";
+import { getRepoConfig } from "@/lib/db/helpers";
 import { LocalProvider, LocalFileError } from "@/lib/content-provider/local-provider";
 import { DEFAULT_OUTPUT_DIR, isPathOutsideNestedOutput } from "@/lib/bmad/parse-config";
 import { openProject } from "@/lib/bmad/scope";
@@ -25,13 +25,10 @@ function errorResponse(status: number, error: string): Response {
 /**
  * GET /api/repo-asset?owner=&repo=&path=
  *
- * Serves an image that lives inside a BMAD directory of one of the caller's
+ * Serves an image that lives inside a BMAD directory of one of the registered
  * local repos, so markdown documents can reference it with a relative URL.
  */
 export async function GET(request: Request): Promise<Response> {
-  const session = await getAuthenticatedSession();
-  if (!session) return errorResponse(401, "Unauthorized");
-
   const url = new URL(request.url);
   const owner = url.searchParams.get("owner");
   const repo = url.searchParams.get("repo");
@@ -47,8 +44,8 @@ export async function GET(request: Request): Promise<Response> {
   const validation = validateAssetPath(url.searchParams.get("path"));
   if (!validation.ok) return errorResponse(validation.status, validation.error);
 
-  // Per-user lookup: a user can only resolve repos they own.
-  const config = await getAuthenticatedRepoConfig(session.userId, owner, repo);
+  // Only registered local repos resolve; the path never comes from the request.
+  const config = await getRepoConfig(owner, repo);
   if (!config || config.sourceType !== "local" || !config.localPath) {
     return errorResponse(404, "Not found");
   }

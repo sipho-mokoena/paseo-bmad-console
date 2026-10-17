@@ -3,17 +3,17 @@ import { GitHubProvider } from "../github-provider";
 
 // Mock the GitHub client cached helpers
 vi.mock("@/lib/github/client", () => ({
-  getCachedUserRepoTree: vi.fn(),
-  getCachedUserRawContent: vi.fn(),
+  getCachedRepoTree: vi.fn(),
+  getCachedRawContent: vi.fn(),
 }));
 
 import {
-  getCachedUserRepoTree,
-  getCachedUserRawContent,
+  getCachedRepoTree,
+  getCachedRawContent,
 } from "@/lib/github/client";
 
-const mockTree = getCachedUserRepoTree as ReturnType<typeof vi.fn>;
-const mockContent = getCachedUserRawContent as ReturnType<typeof vi.fn>;
+const mockTree = getCachedRepoTree as ReturnType<typeof vi.fn>;
+const mockContent = getCachedRawContent as ReturnType<typeof vi.fn>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fakeOctokit = {} as any;
@@ -38,7 +38,7 @@ describe("GitHubProvider", () => {
         ],
       });
 
-      const provider = new GitHubProvider(fakeOctokit, "user1", "owner", "repo", "main");
+      const provider = new GitHubProvider(fakeOctokit, "owner", "repo", "main");
       const tree = await provider.getTree();
 
       expect(tree.paths).toEqual(["_bmad/config.yaml", "src/index.ts"]);
@@ -52,13 +52,12 @@ describe("GitHubProvider", () => {
     it("returns content from cached helper", async () => {
       mockContent.mockResolvedValue("file content here");
 
-      const provider = new GitHubProvider(fakeOctokit, "user1", "owner", "repo", "main");
+      const provider = new GitHubProvider(fakeOctokit, "owner", "repo", "main");
       const content = await provider.getFileContent("path/to/file.md");
 
       expect(content).toBe("file content here");
       expect(mockContent).toHaveBeenCalledWith(
         fakeOctokit,
-        "user1",
         "owner",
         "repo",
         "main",
@@ -71,7 +70,7 @@ describe("GitHubProvider", () => {
         Object.assign(new Error("Not Found"), { status: 404 })
       );
 
-      const provider = new GitHubProvider(fakeOctokit, "user1", "owner", "repo", "main");
+      const provider = new GitHubProvider(fakeOctokit, "owner", "repo", "main");
       await expect(provider.getFileContent("missing.md")).rejects.toThrow(
         "Not Found"
       );
@@ -80,7 +79,7 @@ describe("GitHubProvider", () => {
 
   describe("validateRoot()", () => {
     it("is a no-op", async () => {
-      const provider = new GitHubProvider(fakeOctokit, "user1", "owner", "repo", "main");
+      const provider = new GitHubProvider(fakeOctokit, "owner", "repo", "main");
       await expect(provider.validateRoot()).resolves.toBeUndefined();
     });
   });

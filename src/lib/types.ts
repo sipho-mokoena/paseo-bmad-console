@@ -2,9 +2,6 @@ export type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; code?: string };
 
-/** User roles managed by Better Auth as plain strings in Prisma. */
-export type UserRole = "user" | "admin";
-
 /** Source type for a repo: GitHub remote or local filesystem. */
 export type SourceType = "github" | "local";
 

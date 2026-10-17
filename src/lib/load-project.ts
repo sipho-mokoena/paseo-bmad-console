@@ -1,19 +1,13 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
-import { getGitHubToken } from "@/lib/github/client";
-import { getAuthenticatedUserId, getAuthenticatedRepoConfig } from "@/lib/db/helpers";
+import { getRepoConfig } from "@/lib/db/helpers";
 
-/** Loads the BMad project of a repo route on the server; redirects to login or 404s. */
+/** Loads the BMad project of a repo route on the server; 404s when unknown. */
 export async function loadProject(owner: string, repoName: string) {
-  const userId = await getAuthenticatedUserId();
-  if (!userId) redirect("/login");
-
-  const repoConfig = await getAuthenticatedRepoConfig(userId, owner, repoName);
+  const repoConfig = await getRepoConfig(owner, repoName);
   if (!repoConfig) notFound();
 
-  const isLocal = repoConfig.sourceType === "local";
-  const token = isLocal ? undefined : ((await getGitHubToken(userId)) ?? undefined);
-  const project = await getCachedBmadProject(repoConfig, token, userId);
+  const project = await getCachedBmadProject(repoConfig);
   if (!project) notFound();
   return project;
 }

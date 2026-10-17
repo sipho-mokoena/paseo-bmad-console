@@ -3,10 +3,11 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { repoTag } from "@/lib/github/cache-tags";
 import {
-  createUserOctokit,
-  getGitHubToken,
-  getCachedUserRepoTree,
-  getCachedUserRawContent,
+  createOctokit,
+  getCachedRepoTree,
+  getCachedRawContent,
+  isRateLimitError,
+  rateLimitMessage,
 } from "@/lib/github/client";
 import { LocalProvider } from "@/lib/content-provider/local-provider";
 import { buildFileTree } from "@/lib/bmad/utils";
@@ -19,225 +20,48 @@ import {
   DEFAULT_OUTPUT_DIR,
 } from "@/lib/bmad/parse-config";
 import { prisma } from "@/lib/db/client";
-import { getAuthenticatedSession } from "@/lib/db/helpers";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import path from "node:path";
-import type { GitHubRepo } from "@/lib/github/types";
 import type { FileTreeNode, ParsedBmadFile } from "@/lib/bmad/types";
 import type { ActionResult } from "@/lib/types";
 import { sanitizeError } from "@/lib/errors";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-// GraphQL can handle ~30 repos per query safely (GitHub complexity limits)
-const GRAPHQL_BATCH_SIZE = 30;
-
-// Upper bound on the number of repos a single detectBmadRepos call may
-// process. Each batch above this issues an additional sequential GraphQL
-// request, draining the user's GitHub rate quota and blocking the event
-// loop. 2000 covers virtually every realistic GitHub account (orgs
-// included) while still preventing accidental or hostile amplification.
-// Callers that need to detect against larger lists should chunk
-// client-side and aggregate the results.
-const MAX_DETECT_REPOS = 2000;
-
 const BMAD_CORE = "_bmad";
-
-// ---------------------------------------------------------------------------
-// Auth helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Validate session and retrieve an authenticated Octokit instance.
- * For GitHub-only actions.
- */
-async function getAuthenticatedOctokit(): Promise<
-  ActionResult<{ octokit: ReturnType<typeof createUserOctokit>; userId: string }>
-> {
-  const session = await getAuthenticatedSession();
-  if (!session) {
-    return { success: false, error: "Not authenticated", code: "UNAUTHORIZED" };
-  }
-
-  const token = await getGitHubToken(session.userId);
-  if (!token) {
-    return {
-      success: false,
-      error: "GitHub OAuth token not found. Please reconnect.",
-      code: "TOKEN_MISSING",
-    };
-  }
-
-  return {
-    success: true,
-    data: { octokit: createUserOctokit(token), userId: session.userId },
-  };
-}
-
-/**
- * Get authenticated user ID only (no GitHub token required).
- * For actions that work with both GitHub and local repos.
- */
-async function requireAuthenticated(): Promise<ActionResult<{ userId: string }>> {
-  const session = await getAuthenticatedSession();
-  if (!session) {
-    return { success: false, error: "Not authenticated", code: "UNAUTHORIZED" };
-  }
-  return { success: true, data: { userId: session.userId } };
-}
 
 // ---------------------------------------------------------------------------
 // GitHub-only actions
 // ---------------------------------------------------------------------------
 
-/**
- * Phase 1: List repos (fast — no BMAD detection).
- */
-export async function listUserRepos(): Promise<ActionResult<GitHubRepo[]>> {
-  const authResult = await getAuthenticatedOctokit();
-  if (!authResult.success) return authResult;
+// GitHub owner/repo names: letters, digits, ".", "_" and "-".
+const GITHUB_NAME = /^[A-Za-z0-9._-]+$/;
 
-  const { octokit, userId } = authResult.data;
-
-  if (!checkRateLimit(`list:${userId}`, 30, 60000)) {
-    return { success: false, error: "Trop de requêtes", code: "RATE_LIMIT" };
-  }
-
-  try {
-    const repos = await octokit.paginate(
-      octokit.rest.repos.listForAuthenticatedUser,
-      { per_page: 100, sort: "updated" }
-    );
-
-    const mapped: GitHubRepo[] = repos.map((r) => ({
-      id: r.id,
-      fullName: r.full_name,
-      name: r.name,
-      owner: r.owner.login,
-      description: r.description ?? null,
-      isPrivate: r.private,
-      updatedAt: r.updated_at ?? "",
-      defaultBranch: r.default_branch ?? "main",
-      hasBmad: false,
-    }));
-
-    return { success: true, data: mapped };
-  } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "status" in error &&
-      (error as { status: number }).status === 403
-    ) {
-      return {
-        success: false,
-        error: "GitHub rate limit reached. Try again in a few minutes.",
-        code: "RATE_LIMITED",
-      };
-    }
-    return { success: false, error: sanitizeError(error, "GITHUB_ERROR"), code: "GITHUB_ERROR" };
-  }
-}
-
-/**
- * Phase 2: Detect BMAD via GraphQL (batch — ~30 repos per query).
- *
- * The result map distinguishes three states per repo:
- *   - true  : BMAD content confirmed
- *   - false : confirmed absence of BMAD content
- *   - null  : detection failed for this repo (e.g. transient GraphQL
- *             batch error). Letting the UI distinguish unknown from
- *             confirmed-absent prevents silent "no BMAD" labels when
- *             we actually have no information.
- */
-export async function detectBmadRepos(
-  repoIds: { fullName: string; owner: string; name: string }[]
-): Promise<ActionResult<Record<string, boolean | null>>> {
-  const authResult = await getAuthenticatedOctokit();
-  if (!authResult.success) return authResult;
-
-  if (repoIds.length > MAX_DETECT_REPOS) {
-    return {
-      success: false,
-      error: `Too many repositories (max ${MAX_DETECT_REPOS})`,
-      code: "LIMIT_EXCEEDED",
-    };
-  }
-
-  const { octokit } = authResult.data;
-  const results: Record<string, boolean | null> = {};
-
-  for (let i = 0; i < repoIds.length; i += GRAPHQL_BATCH_SIZE) {
-    const chunk = repoIds.slice(i, i + GRAPHQL_BATCH_SIZE);
-
-    const variables: Record<string, string> = {};
-    const repoFragments = chunk.map((repo, idx) => {
-      const alias = `repo_${idx}`;
-      const ownerVar = `$owner_${idx}`;
-      const nameVar = `$name_${idx}`;
-      variables[`owner_${idx}`] = repo.owner;
-      variables[`name_${idx}`] = repo.name;
-      return `${alias}: repository(owner: ${ownerVar}, name: ${nameVar}) {
-      bmad: object(expression: "HEAD:_bmad") { __typename }
-      bmadOutput: object(expression: "HEAD:_bmad-output") { __typename }
-    }`;
-    });
-
-    const variableDeclarations = chunk
-      .map((_, idx) => `$owner_${idx}: String!, $name_${idx}: String!`)
-      .join(", ");
-
-    const query = `query BmadDetect(${variableDeclarations}) { ${repoFragments.join("\n")} }`;
-
-    try {
-      const response: Record<
-        string,
-        { bmad: { __typename: string } | null; bmadOutput: { __typename: string } | null } | null
-      > = await octokit.graphql(query, variables);
-
-      chunk.forEach((repo, idx) => {
-        const data = response[`repo_${idx}`];
-        results[repo.fullName] = !!(data?.bmad || data?.bmadOutput);
-      });
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.warn(
-        `[detectBmadRepos] GraphQL batch ${i / GRAPHQL_BATCH_SIZE + 1} failed: ${msg}`
-      );
-      // Mark this batch as unknown rather than confirmed-absent so the
-      // UI can surface the detection gap. Coercing to false here would
-      // silently hide real BMAD repos behind a transient API hiccup.
-      for (const repo of chunk) {
-        results[repo.fullName] = null;
-      }
-    }
-  }
-
-  return { success: true, data: results };
-}
-
-const importRepoSchema = z.object({
-  owner: z.string().min(1).max(255).trim(),
-  name: z.string().min(1).max(255).trim(),
-  description: z.string().max(1000).nullable(),
-  defaultBranch: z.string().min(1).max(255).trim(),
-  fullName: z.string().min(1).max(512).trim(),
+const addGitHubRepoSchema = z.object({
+  owner: z.string().min(1).max(100).trim().regex(GITHUB_NAME, "Invalid owner"),
+  name: z.string().min(1).max(100).trim().regex(GITHUB_NAME, "Invalid repository name"),
+  branch: z
+    .string()
+    .max(255)
+    .trim()
+    .optional()
+    .transform((b) => (b ? b : undefined)),
 });
 
 /**
- * Import a GitHub BMAD repo into the user's dashboard.
+ * Register a GitHub repository by owner/name (and optionally a branch).
+ * The repository is checked against the GitHub API first, using GITHUB_PAT when
+ * set. Without a token only public repositories can be added.
  */
-export async function importRepo(input: {
+export async function addGitHubRepo(input: {
   owner: string;
   name: string;
-  description: string | null;
-  defaultBranch: string;
-  fullName: string;
+  branch?: string;
 }): Promise<
   ActionResult<{ id: string; owner: string; name: string; displayName: string }>
 > {
-  const parsed = importRepoSchema.safeParse(input);
+  const parsed = addGitHubRepoSchema.safeParse(input);
   if (!parsed.success) {
     return {
       success: false,
@@ -247,13 +71,46 @@ export async function importRepo(input: {
   }
   const data = parsed.data;
 
-  const authResult = await getAuthenticatedOctokit();
-  if (!authResult.success) return authResult;
+  if (!checkRateLimit("add-github", 10, 60000)) {
+    return { success: false, error: "Too many requests", code: "RATE_LIMIT" };
+  }
 
-  const { userId } = authResult.data;
-
-  if (!checkRateLimit(`import:${userId}`, 10, 60000)) {
-    return { success: false, error: "Trop de requêtes", code: "RATE_LIMIT" };
+  let description: string | null;
+  let branch: string;
+  try {
+    const octokit = createOctokit();
+    const { data: repoInfo } = await octokit.rest.repos.get({
+      owner: data.owner,
+      repo: data.name,
+    });
+    description = repoInfo.description ?? null;
+    branch = data.branch ?? repoInfo.default_branch ?? "main";
+    if (data.branch) {
+      await octokit.rest.repos.getBranch({
+        owner: data.owner,
+        repo: data.name,
+        branch: data.branch,
+      });
+    }
+  } catch (error: unknown) {
+    if (isRateLimitError(error)) {
+      return { success: false, error: rateLimitMessage(), code: "RATE_LIMITED" };
+    }
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "status" in error &&
+      (error as { status: number }).status === 404
+    ) {
+      return {
+        success: false,
+        error: data.branch
+          ? "Repository or branch not found. Private repositories need GITHUB_PAT on the server."
+          : "Repository not found. Private repositories need GITHUB_PAT on the server.",
+        code: "NOT_FOUND",
+      };
+    }
+    return { success: false, error: sanitizeError(error, "GITHUB_ERROR"), code: "GITHUB_ERROR" };
   }
 
   try {
@@ -261,12 +118,11 @@ export async function importRepo(input: {
       data: {
         owner: data.owner,
         name: data.name,
-        branch: data.defaultBranch,
+        branch,
         displayName: data.name,
-        description: data.description,
+        description,
         sourceType: "github",
         lastSyncedAt: new Date(),
-        userId,
       },
       select: { id: true, owner: true, name: true, displayName: true },
     });
@@ -280,7 +136,7 @@ export async function importRepo(input: {
     ) {
       return {
         success: false,
-        error: "This repository is already imported.",
+        error: "This repository is already added.",
         code: "DUPLICATE",
       };
     }
@@ -298,7 +154,7 @@ const deleteRepoSchema = z.object({
 });
 
 /**
- * Delete an imported repo from the user's dashboard (GitHub or local).
+ * Delete a registered repo (GitHub or local).
  */
 export async function deleteRepo(input: {
   owner: string;
@@ -309,15 +165,9 @@ export async function deleteRepo(input: {
     return { success: false, error: "Invalid data", code: "VALIDATION_ERROR" };
   }
 
-  // F15: Use session auth (no GitHub token required)
-  const authResult = await requireAuthenticated();
-  if (!authResult.success) return authResult;
-  const { userId } = authResult.data;
-
   try {
-    // F5: Always scope by userId
     const deleted = await prisma.repo.deleteMany({
-      where: { userId, owner: parsed.data.owner, name: parsed.data.name },
+      where: { owner: parsed.data.owner, name: parsed.data.name },
     });
 
     if (deleted.count === 0) {
@@ -349,14 +199,9 @@ export async function refreshRepoData(input: {
     return { success: false, error: "Invalid data", code: "VALIDATION_ERROR" };
   }
 
-  const authResult = await requireAuthenticated();
-  if (!authResult.success) return authResult;
-  const { userId } = authResult.data;
-
   try {
-    // F5: Always scope by userId
     const repoConfig = await prisma.repo.findFirst({
-      where: { userId, owner: parsed.data.owner, name: parsed.data.name },
+      where: { owner: parsed.data.owner, name: parsed.data.name },
       select: { id: true, branch: true, sourceType: true, localPath: true },
     });
 
@@ -368,17 +213,12 @@ export async function refreshRepoData(input: {
       return refreshLocalRepo(repoConfig);
     }
 
-    return refreshGitHubRepo(parsed.data, repoConfig, userId);
+    return refreshGitHubRepo(parsed.data, repoConfig);
   } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "status" in error &&
-      (error as { status: number }).status === 403
-    ) {
+    if (isRateLimitError(error)) {
       return {
         success: false,
-        error: "GitHub rate limit reached. Cached data is displayed.",
+        error: rateLimitMessage() + " Cached data is displayed.",
         code: "RATE_LIMITED",
       };
     }
@@ -427,13 +267,8 @@ async function refreshLocalRepo(
 async function refreshGitHubRepo(
   input: { owner: string; name: string },
   repoConfig: { id: string; branch: string },
-  userId: string,
 ): Promise<ActionResult<{ totalFiles: number; lastSyncedAt: string }>> {
-  const token = await getGitHubToken(userId);
-  if (!token) {
-    return { success: false, error: "GitHub OAuth token not found.", code: "TOKEN_MISSING" };
-  }
-  const octokit = createUserOctokit(token);
+  const octokit = createOctokit();
 
   // Use the branch already configured for this repo — don't override it
   const syncBranch = repoConfig.branch;
@@ -454,9 +289,8 @@ async function refreshGitHubRepo(
       return { paths: allPaths, rootDirectories: [] };
     },
     async getFileContent(p: string) {
-      return getCachedUserRawContent(
+      return getCachedRawContent(
         octokit,
-        userId,
         input.owner,
         input.name,
         syncBranch,
@@ -515,13 +349,8 @@ export async function fetchBmadFiles(input: {
     return { success: false, error: "Invalid data", code: "VALIDATION_ERROR" };
   }
 
-  const authResult = await requireAuthenticated();
-  if (!authResult.success) return authResult;
-  const { userId } = authResult.data;
-
-  // F5: Always scope by userId
   const repoConfig = await prisma.repo.findFirst({
-    where: { userId, owner: parsed.data.owner, name: parsed.data.name },
+    where: { owner: parsed.data.owner, name: parsed.data.name },
     select: { branch: true, sourceType: true, localPath: true },
   });
   if (!repoConfig) {
@@ -535,21 +364,16 @@ export async function fetchBmadFiles(input: {
       }
       return fetchBmadFilesLocal(repoConfig.localPath);
     }
-    return fetchBmadFilesGitHub(parsed.data, repoConfig.branch, userId);
+    return fetchBmadFilesGitHub(parsed.data, repoConfig.branch);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "";
     if (msg === "PATH_NOT_FOUND" || msg === "LOCAL_DISABLED") {
       return { success: false, error: sanitizeError(error, "PATH_STALE"), code: "PATH_STALE" };
     }
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "status" in error &&
-      (error as { status: number }).status === 403
-    ) {
+    if (isRateLimitError(error)) {
       return {
         success: false,
-        error: "GitHub rate limit reached. Cached data is displayed.",
+        error: rateLimitMessage() + " Cached data is displayed.",
         code: "RATE_LIMITED",
       };
     }
@@ -600,17 +424,11 @@ async function fetchBmadFilesLocal(localPath: string) {
 async function fetchBmadFilesGitHub(
   input: { owner: string; name: string },
   branch: string,
-  userId: string,
 ) {
-  const token = await getGitHubToken(userId);
-  if (!token) {
-    return { success: false as const, error: "GitHub OAuth token not found.", code: "TOKEN_MISSING" };
-  }
-  const octokit = createUserOctokit(token);
+  const octokit = createOctokit();
 
-  const tree = await getCachedUserRepoTree(
+  const tree = await getCachedRepoTree(
     octokit,
-    userId,
     input.owner,
     input.name,
     branch,
@@ -625,9 +443,8 @@ async function fetchBmadFilesGitHub(
       return { paths: allPaths, rootDirectories: [] };
     },
     async getFileContent(p: string) {
-      return getCachedUserRawContent(
+      return getCachedRawContent(
         octokit,
-        userId,
         input.owner,
         input.name,
         branch,
@@ -696,13 +513,8 @@ export async function fetchFileContent(input: {
     };
   }
 
-  const authResult = await requireAuthenticated();
-  if (!authResult.success) return authResult;
-  const { userId } = authResult.data;
-
-  // F5: Always scope by userId
   const repoConfig = await prisma.repo.findFirst({
-    where: { userId, owner: parsed.data.owner, name: parsed.data.name },
+    where: { owner: parsed.data.owner, name: parsed.data.name },
     select: { branch: true, sourceType: true, localPath: true },
   });
   if (!repoConfig) {
@@ -745,14 +557,9 @@ export async function fetchFileContent(input: {
       }
       content = await provider.getFileContent(requestedPath);
     } else {
-      const token = await getGitHubToken(userId);
-      if (!token) {
-        return { success: false, error: "GitHub OAuth token not found.", code: "TOKEN_MISSING" };
-      }
-      const octokit = createUserOctokit(token);
-      content = await getCachedUserRawContent(
+      const octokit = createOctokit();
+      content = await getCachedRawContent(
         octokit,
-        userId,
         parsed.data.owner,
         parsed.data.name,
         repoConfig.branch,
@@ -772,8 +579,8 @@ export async function fetchFileContent(input: {
       "status" in error
     ) {
       const status = (error as { status: number }).status;
-      if (status === 403) {
-        return { success: false, error: "GitHub rate limit reached.", code: "RATE_LIMITED" };
+      if (status === 403 || status === 429) {
+        return { success: false, error: rateLimitMessage(), code: "RATE_LIMITED" };
       }
       if (status === 404) {
         return { success: false, error: "File not found.", code: "NOT_FOUND" };
@@ -848,13 +655,9 @@ export async function importLocalFolder(input: {
     };
   }
 
-  const authResult = await requireAuthenticated();
-  if (!authResult.success) return authResult;
-  const { userId } = authResult.data;
-
   // F3: Rate limit
-  if (!checkRateLimit(`import-local:${userId}`, 10, 60000)) {
-    return { success: false, error: "Trop de requêtes", code: "RATE_LIMIT" };
+  if (!checkRateLimit("import-local", 10, 60000)) {
+    return { success: false, error: "Too many requests", code: "RATE_LIMIT" };
   }
 
   try {
@@ -903,7 +706,6 @@ export async function importLocalFolder(input: {
         localPath: parsed.data.localPath,
         totalFiles: bmadOutputCount,
         lastSyncedAt: new Date(),
-        userId,
       },
       select: { id: true, owner: true, name: true, displayName: true },
     });
@@ -944,21 +746,16 @@ export async function listRepoBranches(input: {
   owner: string;
   name: string;
 }): Promise<ActionResult<string[]>> {
-  const authResult = await getAuthenticatedOctokit();
-  if (!authResult.success) return authResult;
-
-  const { octokit, userId } = authResult.data;
   const parsed = z.object({ owner: z.string(), name: z.string() }).safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "Invalid input", code: "VALIDATION" };
   }
 
-  // Scope guard: the repo must belong to the authenticated user before we
-  // proxy a GitHub call on their behalf. Without this, a null repoConfig
-  // (repo not registered for this user) silently falls through to the
-  // GitHub API using user-supplied owner/name.
+  // Scope guard: the repo must be registered before we proxy a GitHub call.
+  // Without this, a null repoConfig (repo not registered) would silently fall
+  // through to the GitHub API using caller-supplied owner/name.
   const repoConfig = await prisma.repo.findFirst({
-    where: { userId, owner: parsed.data.owner, name: parsed.data.name },
+    where: { owner: parsed.data.owner, name: parsed.data.name },
     select: { sourceType: true },
   });
   if (!repoConfig) {
@@ -970,6 +767,7 @@ export async function listRepoBranches(input: {
   }
 
   try {
+    const octokit = createOctokit();
     const branches = await octokit.paginate(
       octokit.rest.repos.listBranches,
       { owner: parsed.data.owner, repo: parsed.data.name, per_page: 100 },
@@ -989,10 +787,6 @@ export async function updateRepoBranch(input: {
   name: string;
   branch: string;
 }): Promise<ActionResult<{ branch: string }>> {
-  const authResult = await getAuthenticatedOctokit();
-  if (!authResult.success) return authResult;
-
-  const { userId } = authResult.data;
   const parsed = z
     .object({ owner: z.string(), name: z.string(), branch: z.string().min(1) })
     .safeParse(input);
@@ -1002,7 +796,7 @@ export async function updateRepoBranch(input: {
 
   // F21: Guard — local repos don't have branches
   const repoConfig = await prisma.repo.findFirst({
-    where: { userId, owner: parsed.data.owner, name: parsed.data.name },
+    where: { owner: parsed.data.owner, name: parsed.data.name },
     select: { id: true, sourceType: true },
   });
   if (!repoConfig) {

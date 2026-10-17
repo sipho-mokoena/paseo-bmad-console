@@ -4,21 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
-import { CircleHelp, Moon, Plus, Search, Shield, Sun } from "lucide-react";
+import { CircleHelp, Moon, Plus, Search, Sun } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import { AddRepoDialog } from "@/components/layout/add-repo-dialog";
 import { ProjectActionsMenu } from "@/components/layout/project-actions-menu";
-import { UserMenu } from "@/components/layout/user-menu";
 import { cn } from "@/lib/utils";
 import type { RepoConfig } from "@/lib/types";
 
-const SUPER_ADMIN_EMAIL = "dev@dahmani.fr";
-
 interface AppSidebarProps {
   repos: RepoConfig[];
-  userEmail?: string;
   localFsEnabled?: boolean;
-  githubEnabled?: boolean;
 }
 
 const AVATAR_COLORS = ["#5179b0", "#b05174", "#b08f3a", "#7a5aa8", "#3f8f7a", "#b0663a"];
@@ -55,7 +50,7 @@ function ThemeButton() {
   );
 }
 
-export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: AppSidebarProps) {
+export function AppSidebar({ repos, localFsEnabled }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   const closeOnMobile = () => {
@@ -74,9 +69,7 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
       <SidebarContent className="gap-0">
         <nav aria-label="Primary" className="flex flex-col gap-0.5 p-2">
           <AddRepoDialog
-            importedRepos={repos}
             localFsEnabled={localFsEnabled}
-            githubEnabled={githubEnabled}
             trigger={addTrigger}
           />
           <Link
@@ -88,17 +81,6 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
             <Search aria-hidden="true" />
             <span>Search</span>
           </Link>
-          {userEmail === SUPER_ADMIN_EMAIL && (
-            <Link
-              href="/admin"
-              onClick={closeOnMobile}
-              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-              className={cn(rowBase, pathname.startsWith("/admin") && "bg-sidebar-accent text-foreground")}
-            >
-              <Shield aria-hidden="true" />
-              <span>Admin</span>
-            </Link>
-          )}
         </nav>
         <div className="border-t border-sidebar-border" />
         <div className="flex h-10 md:h-10 items-center justify-between pr-2 pl-4">
@@ -111,9 +93,7 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
             Projects
           </Link>
           <AddRepoDialog
-            importedRepos={repos}
             localFsEnabled={localFsEnabled}
-            githubEnabled={githubEnabled}
             trigger={
               <button type="button" className={footerButton} aria-label="Add project">
                 <Plus />
@@ -167,7 +147,6 @@ export function AppSidebar({ repos, userEmail, localFsEnabled, githubEnabled }: 
       <SidebarFooter className="flex-row items-center justify-between gap-1 border-t border-sidebar-border px-2 py-1.5">
         <div className="flex items-center gap-0.5">
           <ThemeButton />
-          <UserMenu />
         </div>
         <a
           href="https://github.com/bmad-code-org/BMAD-METHOD"

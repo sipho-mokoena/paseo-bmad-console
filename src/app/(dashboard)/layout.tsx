@@ -3,40 +3,21 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { SearchShortcut } from "@/components/layout/search-shortcut";
 import { BreadcrumbProvider } from "@/contexts/breadcrumb-context";
-import { redirect } from "next/navigation";
-import {
-  getAuthenticatedSession,
-  getAuthenticatedRepos,
-} from "@/lib/db/helpers";
-import { getGitHubToken } from "@/lib/github/client";
+import { getRepos } from "@/lib/db/helpers";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getAuthenticatedSession();
-  if (!session) redirect("/login");
-
-  const repos = await getAuthenticatedRepos(session.userId);
-
+  const repos = await getRepos();
   const localFsEnabled = process.env.ENABLE_LOCAL_FS === "true";
-  const hasGitHubOAuth =
-    !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET;
-  const hasGitHubToken = hasGitHubOAuth
-    ? !!(await getGitHubToken(session.userId))
-    : false;
 
   return (
     <BreadcrumbProvider>
       <SidebarProvider>
         <SearchShortcut />
-        <AppSidebar
-          repos={repos}
-          userEmail={session.email}
-          localFsEnabled={localFsEnabled}
-          githubEnabled={hasGitHubToken}
-        />
+        <AppSidebar repos={repos} localFsEnabled={localFsEnabled} />
         <SidebarInset>
           <AppHeader repos={repos} />
           <div className="min-w-0 flex-1">{children}</div>

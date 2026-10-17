@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   // regardless of source IP. Legitimate build/deploy automation rarely
   // exceeds a handful of revalidations per minute, so the ceiling is
   // generous for honest callers.
-  if (!checkRateLimit("revalidate:authenticated", 30, 60000)) {
+  if (!checkRateLimit("revalidate:verified", 30, 60000)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 

@@ -14,15 +14,3 @@ export interface GitHubTreeResponse {
   truncated: boolean;
 }
 
-export interface GitHubRepo {
-  id: number;
-  fullName: string;
-  name: string;
-  owner: string;
-  description: string | null;
-  isPrivate: boolean;
-  updatedAt: string;
-  defaultBranch: string;
-  hasBmad: boolean;
-}
-

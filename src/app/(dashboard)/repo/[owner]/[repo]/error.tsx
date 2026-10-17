@@ -16,7 +16,7 @@ export default function RepoError({
   const isLocal = params?.owner === "local";
 
   const is404 = error.message?.includes("404");
-  const isAuthError = error.message?.includes("401") || error.message?.includes("403");
+  const isAccessError = error.message?.includes("401") || error.message?.includes("403");
   const isPathStale =
     error.message?.includes("PATH_STALE") ||
     error.message?.includes("PATH_NOT_FOUND");
@@ -30,17 +30,17 @@ export default function RepoError({
             ? "Local folder not found"
             : is404
               ? "Repository not found"
-              : isAuthError
-                ? "Authentication required"
+              : isAccessError
+                ? "GitHub refused the request"
                 : "Failed to load project"}
         </h2>
         <p className="mx-auto max-w-md text-sm text-muted-foreground">
           {isPathStale || isLocal
             ? "This local folder no longer exists or has been moved. You can remove it from your dashboard."
             : is404
-              ? "The repository does not exist or is private. Reconnect via GitHub to renew your OAuth authorization."
-              : isAuthError
-                ? "Your GitHub token is invalid or lacks the required permissions. Try reconnecting."
+              ? "The repository does not exist, or it is private and no GITHUB_PAT with access to it is configured on the server."
+              : isAccessError
+                ? "GitHub rate limit reached, or the repository is private. Set GITHUB_PAT in the server environment (a token with access to the repository) and restart the server."
                 : error.message || "An unexpected error occurred while loading the project data."}
         </p>
       </div>

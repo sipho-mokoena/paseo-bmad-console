@@ -8,7 +8,7 @@
  *     effectively (limit × N instances) and is trivially bypassable by
  *     load-balancer rotation.
  *   - Replace this with a shared store (Redis / Upstash / a sticky
- *     session backend) before horizontal scale-out. The public API
+ *     routing layer) before horizontal scale-out. The public API
  *     (`checkRateLimit(key, limit, windowMs)`) is intentionally simple
  *     so the swap is a one-file change.
  */

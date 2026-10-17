@@ -1,7 +1,7 @@
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
 import { openProject } from "@/lib/bmad/scope";
 import { createContentProvider } from "@/lib/content-provider";
-import { createUserOctokit, getGitHubToken } from "@/lib/github/client";
+import { createOctokit } from "@/lib/github/client";
 import type { FileTreeNode, Epic, StoryDetail } from "@/lib/bmad/types";
 import type { RepoConfig } from "@/lib/types";
 import { withoutEpicBody, withoutStoryBody } from "@/lib/bmad/list-view";
@@ -56,16 +56,11 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R
   return out;
 }
 
-async function loadSnapshot(
-  config: RepoConfig,
-  token: string | undefined,
-  userId: string,
-): Promise<RepoSnapshot> {
-  const project = await getCachedBmadProject(config, token, userId);
+async function loadSnapshot(config: RepoConfig): Promise<RepoSnapshot> {
+  const project = await getCachedBmadProject(config);
   if (!project) return { epics: [], stories: [], docs: [] };
-  const octokit =
-    config.sourceType === "github" && token ? createUserOctokit(token) : undefined;
-  const provider = createContentProvider(config, octokit, userId);
+  const octokit = config.sourceType === "github" ? createOctokit() : undefined;
+  const provider = createContentProvider(config, octokit);
   // A fresh local provider only knows the default roots; open the layout's (docs, .agentic).
   if (config.sourceType === "local") await openProject(provider).catch(() => undefined);
 
@@ -89,17 +84,13 @@ async function loadSnapshot(
   return { epics: project.epics, stories: project.stories, docs: read };
 }
 
-function getSnapshot(
-  config: RepoConfig,
-  token: string | undefined,
-  userId: string,
-): Promise<RepoSnapshot> {
-  const key = `${userId}:${config.owner}/${config.name}@${config.branch}:${config.lastSyncedAt?.getTime() ?? 0}`;
+function getSnapshot(config: RepoConfig): Promise<RepoSnapshot> {
+  const key = `${config.owner}/${config.name}@${config.branch}:${config.lastSyncedAt?.getTime() ?? 0}`;
   const now = Date.now();
   const hit = snapshotCache.get(key);
   if (hit && now - hit.at < CACHE_TTL_MS) return hit.value;
   snapshotCache.delete(key);
-  const value = loadSnapshot(config, token, userId);
+  const value = loadSnapshot(config);
   snapshotCache.set(key, { at: now, value });
   value.catch(() => snapshotCache.delete(key));
   // Bounded: drop expired, then the oldest, entries.
@@ -116,18 +107,14 @@ function getSnapshot(
   return value;
 }
 
-/** Searches every repo the user owns. Returns null when the query is too short. */
+/** Searches every registered repo. Returns null when the query is too short. */
 export async function searchAllRepos(
   rawQuery: string,
-  userId: string,
   repos: RepoConfig[],
 ): Promise<SearchResponse | null> {
   const query = normalizeQuery(rawQuery);
   if (!query) return null;
   const terms = queryTerms(query);
-
-  const needsToken = repos.some((r) => r.sourceType !== "local");
-  const token = needsToken ? ((await getGitHubToken(userId)) ?? undefined) : undefined;
 
   const epics: Scored<EpicHit>[] = [];
   const stories: Scored<StoryHit>[] = [];
@@ -135,7 +122,7 @@ export async function searchAllRepos(
   const notes: string[] = [];
 
   const snapshots = await Promise.allSettled(
-    repos.map((r) => getSnapshot(r, r.sourceType === "local" ? undefined : token, userId)),
+    repos.map((r) => getSnapshot(r)),
   );
 
   repos.forEach((repo, i) => {

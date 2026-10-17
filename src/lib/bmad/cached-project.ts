@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { getBmadProject } from "./parser";
 import { createContentProvider } from "@/lib/content-provider";
-import { createUserOctokit } from "@/lib/github/client";
+import { createOctokit } from "@/lib/github/client";
 import type { RepoConfig } from "@/lib/types";
 import type { BmadProject } from "./types";
 
@@ -11,22 +11,15 @@ import type { BmadProject } from "./types";
  * so Overview / Stories / Epics pages sharing a layout trigger only one
  * fetch per navigation.
  *
- * F38 CRITICAL: Arguments must remain primitives so React.cache() identity
- * comparison works across sibling pages. The ContentProvider is constructed
- * INSIDE the cached function, not passed as argument.
+ * F38 CRITICAL: The argument must keep a stable identity so React.cache()
+ * comparison works across sibling pages (the config comes from the cached
+ * getRepoConfig). The ContentProvider is constructed INSIDE the cached
+ * function, not passed as argument.
  */
 export const getCachedBmadProject = cache(
-  async (
-    config: RepoConfig,
-    accessToken: string | undefined,
-    userId: string | undefined,
-  ): Promise<BmadProject | null> => {
-    const octokit =
-      config.sourceType === "github" && accessToken
-        ? createUserOctokit(accessToken)
-        : undefined;
-
-    const provider = createContentProvider(config, octokit, userId);
+  async (config: RepoConfig): Promise<BmadProject | null> => {
+    const octokit = config.sourceType === "github" ? createOctokit() : undefined;
+    const provider = createContentProvider(config, octokit);
     return getBmadProject(config, provider);
   },
 );
