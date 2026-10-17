@@ -181,6 +181,37 @@
     * {
         @apply border-border outline-ring/50;
     }
+
+    /* Slim scrollbars that follow the theme: a rounded thumb tinted from the foreground colour on a
+       transparent track. Chromium and Safari use the webkit pseudo-elements (they allow a hover
+       state); Firefox uses the standard properties. Elements that hide their scrollbar with
+       `[scrollbar-width:none]` keep doing so (utilities beat this base layer). */
+    *::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    *::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+        background-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+        background-clip: content-box;
+        border: 3px solid transparent;
+        border-radius: 9999px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+        background-color: color-mix(in oklab, var(--foreground) 40%, transparent);
+    }
+    *::-webkit-scrollbar-thumb:active {
+        background-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+    }
+    @supports (-moz-appearance: none) {
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: color-mix(in oklab, var(--foreground) 28%, transparent) transparent;
+        }
+    }
     body {
         @apply bg-background text-foreground text-sm md:text-sm;
         background-image: repeating-linear-gradient(
