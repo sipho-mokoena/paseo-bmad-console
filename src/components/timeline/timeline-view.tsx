@@ -4,6 +4,9 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { GanttChart as GanttIcon, Network } from "lucide-react";
+import type { Layout, PanelImperativeHandle } from "react-resizable-panels";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { CHART_MIN, DETAILS_DEFAULT, DETAILS_MAX, DETAILS_MIN, readDetailsSize, writeDetailsSize } from "@/lib/pane-size";
 import { PillToggle, SearchField, StateMessage } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
 import { epicLabel } from "@/lib/bmad/ids";
@@ -54,6 +57,20 @@ const useDesktop = () =>
     subscribeDesktop,
     () => window.matchMedia("(min-width: 768px)").matches,
     () => true,
+  );
+
+// From xl the chart and the details sit in a resizable split; below it they stack. The server and the first
+// client render are stacked (false), and a wide screen upgrades after mount.
+const subscribeWide = (cb: () => void) => {
+  const mq = window.matchMedia("(min-width: 1280px)");
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+};
+const useWide = () =>
+  useSyncExternalStore(
+    subscribeWide,
+    () => window.matchMedia("(min-width: 1280px)").matches,
+    () => false,
   );
 
 const FILTER_OPTIONS = [
@@ -222,6 +239,19 @@ export function TimelineView({ data, base }: TimelineViewProps) {
     commit({ q: value });
   };
 
+  const wide = useWide();
+  const detailsRef = useRef<PanelImperativeHandle | null>(null);
+  const hasDetail = detail !== null;
+  // The panel mounts at the default size (same as the server); the remembered size is applied right after.
+  useEffect(() => {
+    if (!wide || !hasDetail) return;
+    const stored = readDetailsSize();
+    if (stored !== DETAILS_DEFAULT) detailsRef.current?.resize(`${stored}%`);
+  }, [wide, hasDetail]);
+  const onLayoutChanged = useCallback((layout: Layout, meta: { isUserInteraction: boolean }) => {
+    if (meta.isUserInteraction && typeof layout.details === "number") writeDetailsSize(layout.details);
+  }, []);
+
   if (epics.length === 0 || (!storyLevel && !epics.some((e) => (e.after?.length ?? 0) > 0))) {
     return <TimelineEmpty base={base} hasEpics={epics.length > 0} />;
   }
@@ -234,60 +264,8 @@ export function TimelineView({ data, base }: TimelineViewProps) {
   const cycles = viewGraph.cycles;
   const showPanel = detail !== null;
 
-  return (
-    <div className="min-w-0 space-y-3 pb-4" role="region" aria-label="Timeline">
-      <div role="toolbar" aria-label="Timeline controls" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <PillToggle<TimelineViewId>
-            label="Timeline view"
-            value={view}
-            onChange={(v) => commit({ view: v }, "push")}
-            options={[
-              { value: "gantt", label: "Gantt", icon: GanttIcon, ariaLabel: "Gantt view" },
-              { value: "graph", label: "Graph", icon: Network, ariaLabel: "Dependency graph view" },
-            ]}
-          />
-          <TimelineViewMenu
-            state={urlState}
-            view={view}
-            hasRisk={hasRisk}
-            canExpand={view === "gantt" && gantt.rows.some((r) => r.expandable)}
-            onToggle={(patch) => commit(patch)}
-            onExpandAll={setAllExpanded}
-          />
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Filters filters={filters} fields={filterFields} onChange={onFilters} allowMultiple={false} size="sm" />
-            {filters.length > 0 && (
-              <button type="button" onClick={clearFilters} className="inline-flex h-10 items-center rounded-lg px-2 text-sm text-muted-foreground underline underline-offset-2 outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-9">
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-        <div role="group" aria-label="Scope and search" className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
-          <ScopeSelect
-            value={scope}
-            epics={epics}
-            onChange={(next) => commit({ scope: next, focus: "" }, "push")}
-          />
-          <SearchField value={query} onChange={onQuery} placeholder="Search id or title" ariaLabel="Search id or title" clearable className="min-w-40 basis-full sm:basis-auto sm:max-w-72 sm:flex-1" />
-        </div>
-      </div>
-
-      <p className="sr-only" role="status" aria-live="polite">
-        {waves} {waves === 1 ? "wave" : "waves"}
-        {(view === "gantt" ? !gantt.epicOnly : graphLevel === "story") ? `, ${viewGraph.nodes.filter((n) => n.kind !== "external").length} items` : ""}
-        {gantt.epicOnly && view !== "graph" ? ". Story-level dependencies are not available for this project, so only epics are drawn." : ""}
-      </p>
-      {(cycles.length > 0 || unresolved.length > 0) && (
-        <p role="status" className="text-xs text-warning-foreground">
-          {cycles.length > 0 && `${cycles.length} dependency ${cycles.length === 1 ? "cycle was" : "cycles were"} found (${cycles.map((c) => c.join(" > ")).slice(0, 2).join("; ")}${cycles.length > 2 ? "; ..." : ""}); one link per cycle is ignored in the layout. `}
-          {unresolved.length > 0 && `${unresolved.length} dependency ${unresolved.length === 1 ? "reference points" : "references point"} to unknown items (${unresolved.map((u) => `${u.from} needs ${u.ref}`).slice(0, 3).join(", ")}${unresolved.length > 3 ? ", ..." : ""}).`}
-        </p>
-      )}
-
-      <div className={cn("grid min-w-0 gap-3", showPanel && "xl:grid-cols-[minmax(0,1fr)_20rem]")}>
-        <div className="min-w-0">
+  const chart = (
+    <div className="min-w-0">
           {view === "gantt" ? (
             gantt.rows.length === 0 ? (
               <StateMessage>No item matches the filters</StateMessage>
@@ -357,9 +335,91 @@ export function TimelineView({ data, base }: TimelineViewProps) {
               )}
             </div>
           )}
+    </div>
+  );
+  const details = detail ? (
+    <DetailsPanel item={detail} base={base} onSelect={select} onClose={() => commit({ focus: "" })} />
+  ) : null;
+
+  return (
+    <div className="min-w-0 space-y-3 pb-4" role="region" aria-label="Timeline">
+      <div role="toolbar" aria-label="Timeline controls" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <PillToggle<TimelineViewId>
+            label="Timeline view"
+            value={view}
+            onChange={(v) => commit({ view: v }, "push")}
+            options={[
+              { value: "gantt", label: "Gantt", icon: GanttIcon, ariaLabel: "Gantt view" },
+              { value: "graph", label: "Graph", icon: Network, ariaLabel: "Dependency graph view" },
+            ]}
+          />
+          <TimelineViewMenu
+            state={urlState}
+            view={view}
+            hasRisk={hasRisk}
+            canExpand={view === "gantt" && gantt.rows.some((r) => r.expandable)}
+            onToggle={(patch) => commit(patch)}
+            onExpandAll={setAllExpanded}
+          />
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Filters filters={filters} fields={filterFields} onChange={onFilters} allowMultiple={false} size="sm" />
+            {filters.length > 0 && (
+              <button type="button" onClick={clearFilters} className="inline-flex h-10 items-center rounded-lg px-2 text-sm text-muted-foreground underline underline-offset-2 outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-9">
+                Clear
+              </button>
+            )}
+          </div>
         </div>
-        {detail && <DetailsPanel item={detail} base={base} onSelect={select} onClose={() => commit({ focus: "" })} />}
+        <div role="group" aria-label="Scope and search" className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+          <ScopeSelect
+            value={scope}
+            epics={epics}
+            onChange={(next) => commit({ scope: next, focus: "" }, "push")}
+          />
+          <SearchField value={query} onChange={onQuery} placeholder="Search id or title" ariaLabel="Search id or title" clearable className="min-w-40 basis-full sm:basis-auto sm:max-w-72 sm:flex-1" />
+        </div>
       </div>
+
+      <p className="sr-only" role="status" aria-live="polite">
+        {waves} {waves === 1 ? "wave" : "waves"}
+        {(view === "gantt" ? !gantt.epicOnly : graphLevel === "story") ? `, ${viewGraph.nodes.filter((n) => n.kind !== "external").length} items` : ""}
+        {gantt.epicOnly && view !== "graph" ? ". Story-level dependencies are not available for this project, so only epics are drawn." : ""}
+      </p>
+      {(cycles.length > 0 || unresolved.length > 0) && (
+        <p role="status" className="text-xs text-warning-foreground">
+          {cycles.length > 0 && `${cycles.length} dependency ${cycles.length === 1 ? "cycle was" : "cycles were"} found (${cycles.map((c) => c.join(" > ")).slice(0, 2).join("; ")}${cycles.length > 2 ? "; ..." : ""}); one link per cycle is ignored in the layout. `}
+          {unresolved.length > 0 && `${unresolved.length} dependency ${unresolved.length === 1 ? "reference points" : "references point"} to unknown items (${unresolved.map((u) => `${u.from} needs ${u.ref}`).slice(0, 3).join(", ")}${unresolved.length > 3 ? ", ..." : ""}).`}
+        </p>
+      )}
+
+      {wide ? (
+        <ResizablePanelGroup orientation="horizontal" className="min-w-0 !overflow-visible" onLayoutChanged={onLayoutChanged}>
+          <ResizablePanel id="chart" minSize={`${CHART_MIN}%`} defaultSize={showPanel ? `${100 - DETAILS_DEFAULT}%` : "100%"} className="min-w-0">
+            {chart}
+          </ResizablePanel>
+          {details && (
+            <>
+              <ResizableHandle aria-label="Resize chart and details panels" onDoubleClick={() => writeDetailsSize(DETAILS_DEFAULT)} />
+              <ResizablePanel
+                id="details"
+                panelRef={detailsRef}
+                minSize={`${DETAILS_MIN}%`}
+                maxSize={`${DETAILS_MAX}%`}
+                defaultSize={`${DETAILS_DEFAULT}%`}
+                className="min-w-0"
+              >
+                <div className="max-h-[72vh] overflow-y-auto rounded-lg">{details}</div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      ) : (
+        <div className="grid min-w-0 gap-3">
+          {chart}
+          {details}
+        </div>
+      )}
     </div>
   );
 }
