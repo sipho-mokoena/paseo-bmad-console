@@ -23,7 +23,7 @@ BMAD data has no dates, so the chart is a schedule computed from the dependency 
 - Graph: a layered left-to-right graph with hover highlighting of upstream and downstream chains, zoom from 50 to 200 percent, and arrow-key navigation. With all epics and more than 150 nodes it asks you to pick an epic.
 - List: every item with its wave, prerequisites and dependents. It is the default under 640px and the text alternative for screen readers.
 
-Options: Ready now, status filters, search, scope to one epic (outside prerequisites show as collapsed external nodes), Highlight critical path, Show all dependencies and Size by risk (only when risk data exists).
+Toolbar: the view toggle, a View dropdown, a Filter dropdown, then the scope select and search on the right. The Filter dropdown is a multiselect of Ready now and the statuses (Done, In review, In progress, Blocked, Ready for dev, Backlog); the selection shows as removable chips with a Clear action, and maps to the `ready` and `status` URL params. The View dropdown holds checkable Highlight critical path, Show all dependencies (Gantt only) and Size by risk (only when risk data exists), plus Expand all and Collapse all (Gantt only); a badge counts the toggles that are on. Scope narrows to one epic (outside prerequisites show as collapsed external nodes).
 
 ## URL parameters
 

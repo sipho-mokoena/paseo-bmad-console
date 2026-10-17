@@ -17,7 +17,10 @@ import {
   type DepNode,
 } from "@/lib/dependency-graph";
 import {
+  filterPatchOf,
+  filterValuesOf,
   parseTimelineState,
+  READY_FILTER_VALUE,
   serializeTimelineState,
   type TimelineState,
   type TimelineViewId,
@@ -29,6 +32,8 @@ import { DependencyList } from "./dependency-list";
 import { DetailsPanel, type DetailItem, type DetailRef } from "./details-panel";
 import { TimelineEmpty } from "./timeline-empty";
 import { CHIP, CHIP_ON, FILTER_STATUS_OPTIONS } from "./timeline-style";
+import { TimelineViewMenu } from "./timeline-view-menu";
+import { Filters, type Filter, type FilterFieldConfig } from "@/components/reui/filters";
 
 const GraphChart = dynamic(() => import("./graph-chart").then((m) => m.GraphChart), {
   ssr: false,
@@ -62,6 +67,14 @@ const usePhone = () =>
     () => window.matchMedia("(max-width: 639px)").matches,
     () => false,
   );
+
+const FILTER_OPTIONS = [
+  { value: READY_FILTER_VALUE, label: "Ready now" },
+  ...FILTER_STATUS_OPTIONS,
+];
+const filtersOf = (values: string[]): Filter<string>[] =>
+  values.length ? [{ id: "timeline-status", field: "status", operator: "is_any_of", values }] : [];
+const filterPatchValues = (values: string[]) => filterValuesOf(filterPatchOf(values)).join(",");
 
 const EPIC = "epic:";
 const bare = (key: string) => (key.startsWith(EPIC) ? key.slice(EPIC.length) : key);
@@ -194,18 +207,34 @@ export function TimelineView({ data, base }: TimelineViewProps) {
   );
 
   const hasRisk = data.hasRisk;
-  const toggle = (patch: Partial<TimelineState>) => commit(patch);
+  const [filters, setFilters] = useState<Filter<string>[]>(() => filtersOf(filterValuesOf(urlState)));
+  const writtenFilters = useRef(filterValuesOf(urlState).join(","));
+  const urlFilterKey = filterValuesOf(urlState).join(",");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- adopting an external (history) change of the URL
+    if (urlFilterKey !== writtenFilters.current) setFilters(filtersOf(urlFilterKey ? urlFilterKey.split(",") : []));
+    writtenFilters.current = urlFilterKey;
+  }, [urlFilterKey]);
+  const onFilters = (next: Filter<string>[]) => {
+    const values = next.filter((f) => f.field === "status").flatMap((f) => f.values);
+    writtenFilters.current = filterPatchValues(values);
+    setFilters(next);
+    commit(filterPatchOf(values));
+  };
+  const clearFilters = () => onFilters([]);
+  const filterFields: FilterFieldConfig<string>[] = [
+    {
+      key: "status",
+      label: "Status",
+      type: "multiselect",
+      operators: [{ value: "is_any_of", label: "is any of", supportsMultiple: true }],
+      options: FILTER_OPTIONS,
+    },
+  ];
   const onQuery = (value: string) => {
     writtenQ.current = value;
     setQuery(value);
     commit({ q: value });
-  };
-  const statusOn = (s: string) => urlState.status.includes(s);
-  const filtered = urlState.status.length > 0 || urlState.ready || query.trim() !== "";
-  const resetFilters = () => {
-    writtenQ.current = "";
-    setQuery("");
-    commit({ status: [], ready: false, q: "" });
   };
 
   if (epics.length === 0 || (!storyLevel && !epics.some((e) => (e.after?.length ?? 0) > 0))) {
@@ -222,102 +251,74 @@ export function TimelineView({ data, base }: TimelineViewProps) {
 
   return (
     <div className="min-w-0 space-y-3 pb-4" role="region" aria-label="Timeline">
-      <div className="flex flex-wrap items-center gap-2">
-        <PillToggle<TimelineViewId>
-          label="Timeline view"
-          value={view}
-          onChange={(v) => {
-            setPickedView(true);
-            commit({ view: v }, "push");
-          }}
-          options={[
-            { value: "gantt", label: "Gantt", icon: GanttIcon, ariaLabel: "Gantt view" },
-            { value: "graph", label: "Graph", icon: Network, ariaLabel: "Dependency graph view" },
-            { value: "list", label: "List", icon: ListTree, ariaLabel: "Dependencies as a list" },
-          ]}
-        />
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="sr-only md:not-sr-only">Scope</span>
-          <select
-            aria-label="Scope"
-            value={scope}
-            onChange={(e) => commit({ scope: e.target.value, focus: "" }, "push")}
-            className="h-10 max-w-[12rem] rounded-lg border border-input bg-card px-2 text-sm text-foreground outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-9 md:max-w-[18rem]"
-          >
-            <option value="">All epics</option>
-            {epics.map((e) => (
-              <option key={e.id} value={e.id}>
-                {epicLabel(e.id)} {e.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <SearchField value={query} onChange={onQuery} placeholder="Search id or title" ariaLabel="Search id or title" clearable className="min-w-40 flex-1 sm:max-w-72" />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filters and options">
-        <button type="button" aria-pressed={urlState.ready} onClick={() => toggle({ ready: !urlState.ready })} className={cn(CHIP, urlState.ready && CHIP_ON)}>
-          Ready now
-        </button>
-        {FILTER_STATUS_OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            aria-pressed={statusOn(o.value)}
-            onClick={() => toggle({ status: statusOn(o.value) ? urlState.status.filter((s) => s !== o.value) : [...urlState.status, o.value] })}
-            className={cn(CHIP, statusOn(o.value) && CHIP_ON)}
-          >
-            {o.label}
-          </button>
-        ))}
-        {filtered && (
-          <button type="button" onClick={resetFilters} className={cn(CHIP, "border-transparent bg-transparent underline underline-offset-2")}>
-            Clear filters
-          </button>
-        )}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Chart options">
-        <button type="button" aria-pressed={urlState.critical} onClick={() => toggle({ critical: !urlState.critical })} className={cn(CHIP, urlState.critical && CHIP_ON)}>
-          Highlight critical path
-        </button>
-        {view === "gantt" && (
-          <button type="button" aria-pressed={urlState.all} onClick={() => toggle({ all: !urlState.all })} className={cn(CHIP, urlState.all && CHIP_ON)}>
-            Show all dependencies
-          </button>
-        )}
-        {hasRisk && (
-          <button type="button" aria-pressed={urlState.risk} onClick={() => toggle({ risk: !urlState.risk })} className={cn(CHIP, urlState.risk && CHIP_ON)} title="Bars last 1, 2 or 3 waves for low, medium and high risk">
-            Size by risk
-          </button>
-        )}
-        {view === "graph" && storyLevel && !scope && (
-          <PillToggle
-            label="Graph level"
-            value={urlState.level}
-            onChange={(level) => commit({ level }, "push")}
+      <div role="toolbar" aria-label="Timeline controls" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <PillToggle<TimelineViewId>
+            label="Timeline view"
+            value={view}
+            onChange={(v) => {
+              setPickedView(true);
+              commit({ view: v }, "push");
+            }}
             options={[
-              { value: "stories", label: "Stories" },
-              { value: "epics", label: "Epics" },
+              { value: "gantt", label: "Gantt", icon: GanttIcon, ariaLabel: "Gantt view" },
+              { value: "graph", label: "Graph", icon: Network, ariaLabel: "Dependency graph view" },
+              { value: "list", label: "List", icon: ListTree, ariaLabel: "Dependencies as a list" },
             ]}
           />
-        )}
-        {view === "gantt" && gantt.rows.some((r) => r.expandable) && (
-          <>
-            <button type="button" className={CHIP} onClick={() => setAllExpanded(true)}>
-              Expand all
-            </button>
-            <button type="button" className={CHIP} onClick={() => setAllExpanded(false)}>
-              Collapse all
-            </button>
-          </>
-        )}
+          <TimelineViewMenu
+            state={urlState}
+            view={view}
+            hasRisk={hasRisk}
+            canExpand={view === "gantt" && gantt.rows.some((r) => r.expandable)}
+            onToggle={(patch) => commit(patch)}
+            onExpandAll={setAllExpanded}
+          />
+          {view === "graph" && storyLevel && !scope && (
+            <PillToggle
+              label="Graph level"
+              value={urlState.level}
+              onChange={(level) => commit({ level }, "push")}
+              options={[
+                { value: "stories", label: "Stories" },
+                { value: "epics", label: "Epics" },
+              ]}
+            />
+          )}
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Filters filters={filters} fields={filterFields} onChange={onFilters} allowMultiple={false} size="sm" />
+            {filters.length > 0 && (
+              <button type="button" onClick={clearFilters} className="inline-flex h-10 items-center rounded-lg px-2 text-sm text-muted-foreground underline underline-offset-2 outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-9">
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+        <div role="group" aria-label="Scope and search" className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Scope</span>
+            <select
+              aria-label="Scope"
+              value={scope}
+              onChange={(e) => commit({ scope: e.target.value, focus: "" }, "push")}
+              className="h-10 max-w-[12rem] rounded-lg border border-input bg-card px-2 text-sm text-foreground outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-9 md:max-w-[18rem]"
+            >
+              <option value="">All epics</option>
+              {epics.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {epicLabel(e.id)} {e.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <SearchField value={query} onChange={onQuery} placeholder="Search id or title" ariaLabel="Search id or title" clearable className="min-w-40 basis-full sm:basis-auto sm:max-w-72 sm:flex-1" />
+        </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Schedule derived from dependencies, not dates: bars sit on Wave 1, Wave 2, and so on, each starting when its prerequisites end
-        {sizeByRisk ? " (sized by risk: low 1 wave, medium 2, high 3)" : ""}. {waves} {waves === 1 ? "wave" : "waves"}
-        {view === "list" || graphLevel === "story" ? `, ${viewGraph.nodes.filter((n) => n.kind !== "external").length} items` : ""}.
-        {gantt.epicOnly && view !== "graph" ? " Story-level dependencies are not available for this project, so only epics are drawn." : ""}
+      <p className="sr-only" role="status" aria-live="polite">
+        {waves} {waves === 1 ? "wave" : "waves"}
+        {view === "list" || graphLevel === "story" ? `, ${viewGraph.nodes.filter((n) => n.kind !== "external").length} items` : ""}
+        {gantt.epicOnly && view !== "graph" ? ". Story-level dependencies are not available for this project, so only epics are drawn." : ""}
       </p>
       {(cycles.length > 0 || unresolved.length > 0) && (
         <p role="status" className="text-xs text-warning-foreground">

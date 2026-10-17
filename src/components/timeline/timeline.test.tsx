@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildStoryGraph, type GraphStoryInput } from "@/lib/dependency-graph";
 import { DependencyList } from "./dependency-list";
 import { TimelineEmpty } from "./timeline-empty";
+import { TimelineViewMenu } from "./timeline-view-menu";
 
 const st = (id: string, epicId: string, deps: string[] = [], status = "backlog"): GraphStoryInput => ({ id, title: `Title ${id}`, status, epicId, deps });
 
@@ -40,5 +41,19 @@ describe("TimelineEmpty", () => {
   });
   it("explains missing epics", () => {
     expect(renderToStaticMarkup(<TimelineEmpty base="/repo/o/r" hasEpics={false} />)).toContain("No epics found");
+  });
+});
+
+describe("TimelineViewMenu", () => {
+  const base = { state: { critical: true, all: false, risk: true }, view: "gantt" as const, hasRisk: true, canExpand: true, onToggle: () => {}, onExpandAll: () => {} };
+  it("renders a View button with a count badge", () => {
+    const out = renderToStaticMarkup(<TimelineViewMenu {...base} />);
+    expect(out).toContain("View");
+    expect(out).toContain('aria-haspopup="menu"');
+    expect(out).toContain("View options, 2 on");
+  });
+  it("shows no badge when no toggle is on", () => {
+    const out = renderToStaticMarkup(<TimelineViewMenu {...base} state={{ critical: false, all: false, risk: false }} />);
+    expect(out).toContain('aria-label="View options"');
   });
 });
