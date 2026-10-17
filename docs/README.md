@@ -13,6 +13,7 @@ This folder holds the guides and references for Paseo BMAD Console. Start with t
 
 - [Configuration](./configuration.md): every environment variable, plus ports and bind address.
 - [BMAD layouts](./layouts.md): supported layouts, detection, status mapping and how to add an adapter.
+- [Timeline](./timeline.md): the dependency Gantt chart, graph and list views.
 - [HTTP API and server actions](./API.md): endpoints, parameters, responses and the server actions behind the UI.
 - [Architecture](./architecture.md): stack, data flow, content providers, search, Markdown, routes, caching and the database.
 - [Paseo UI reference](./paseo-ui.md): colour, type, sizes, mobile rules and the shared component kit.

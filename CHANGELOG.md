@@ -10,6 +10,8 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Added
 
+- Timeline tab with a dependency-driven Gantt chart, a dependency graph and a list view, and parsing of epic and story dependencies for every supported layout.
+
 - Dependencies between stories and epics are parsed for every layout (`depends_on`, `dependsOn`, `depends-on` and `after` frontmatter, ticket-tree `after`), so the story page shows "after" and "blocks" links for the v6 and v4 layouts too.
 - A dependency graph module (`src/lib/dependency-graph.ts`) with waves, critical path, cycle handling and scoping. No page uses it yet.
 - Documentation: configuration reference, BMAD layouts guide, architecture overview, deployment guide, Paseo plugin guide and a docs index.
