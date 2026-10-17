@@ -1,4 +1,7 @@
-/** URL state of the Timeline page: `view`, `scope`, `status`, `q`, `critical`, `all`, `focus`, `ready`, `risk`, `level`. */
+/** URL state of the Timeline section on the Overview page: `view`, `scope`, `status`, `q`, `critical`, `all`, `focus`, `ready`, `risk`, `level`. */
+import { storyDeps } from "@/lib/bmad/deps";
+import type { BmadProject } from "@/lib/bmad/types";
+import { hasDependencyData } from "@/lib/dependency-graph";
 
 export const VIEWS = ["gantt", "graph", "list"] as const;
 export type TimelineViewId = (typeof VIEWS)[number];
@@ -76,11 +79,33 @@ export function serializeTimelineState(base: URLSearchParams | string, s: Timeli
   return out;
 }
 
-/** `<base>/timeline` with optional `focus` / `scope` (entry points on story and epic pages). */
+/** The Timeline section lives on the Overview page under this element id. */
+export const TIMELINE_ANCHOR = "timeline";
+
+/** Overview URL with optional `focus` / `scope`, anchored to the Timeline section (entry points on story and epic pages). */
 export function timelineHref(base: string, opts: { focus?: string; scope?: string } = {}): string {
   const params = new URLSearchParams();
   if (opts.scope) params.set("scope", opts.scope);
   if (opts.focus) params.set("focus", opts.focus);
   const qs = params.toString();
-  return `${base}/timeline${qs ? `?${qs}` : ""}`;
+  return `${base}${qs ? `?${qs}` : ""}#${TIMELINE_ANCHOR}`;
+}
+
+/**
+ * Where the retired `<base>/timeline` route sends visitors: the Overview with every query param kept.
+ * The anchor is added when a Timeline param is present so the section scrolls into view.
+ */
+export function timelineRedirectTarget(base: string, search: Record<string, string | string[] | undefined> = {}): string {
+  const out = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    for (const v of Array.isArray(value) ? value : value === undefined ? [] : [value]) out.append(key, v);
+  }
+  const qs = out.toString();
+  const hasTimelineParam = ["focus", "scope", "view"].some((k) => out.has(k));
+  return `${base}${qs ? `?${qs}` : ""}${hasTimelineParam ? `#${TIMELINE_ANCHOR}` : ""}`;
+}
+
+/** The Overview shows the Timeline instead of the epics list when the project has dependency data. */
+export function shouldShowTimelineOnOverview(project: Pick<BmadProject, "epics" | "stories">): boolean {
+  return hasDependencyData(project.epics, project.stories.map((s) => ({ deps: storyDeps(s) })));
 }

@@ -5,6 +5,8 @@ import {
   parseTimelineState,
   serializeTimelineState,
   timelineHref,
+  timelineRedirectTarget,
+  shouldShowTimelineOnOverview,
 } from "../timeline-params";
 import { toTimelineData } from "../timeline-data";
 import { buildGanttModel, countCrossings, edgePath, layoutLayers, neighbourKey, NODE_H, NODE_W } from "../timeline-layout";
@@ -44,9 +46,35 @@ describe("timeline params", () => {
     expect(parseTimelineState(out)).toEqual(state);
   });
   it("builds entry point links", () => {
-    expect(timelineHref("/repo/o/r")).toBe("/repo/o/r/timeline");
-    expect(timelineHref("/repo/o/r", { focus: "E1-S1" })).toBe("/repo/o/r/timeline?focus=E1-S1");
-    expect(timelineHref("/repo/o/r", { scope: "2" })).toBe("/repo/o/r/timeline?scope=2");
+    expect(timelineHref("/repo/o/r")).toBe("/repo/o/r#timeline");
+    expect(timelineHref("/repo/o/r", { focus: "E1-S1" })).toBe("/repo/o/r?focus=E1-S1#timeline");
+    expect(timelineHref("/repo/o/r", { scope: "2" })).toBe("/repo/o/r?scope=2#timeline");
+  });
+});
+
+describe("old /timeline route redirect", () => {
+  it("goes to the Overview and keeps every query param", () => {
+    expect(timelineRedirectTarget("/repo/o/r")).toBe("/repo/o/r");
+    expect(timelineRedirectTarget("/repo/o/r", { q: "wal", status: "done,review" })).toBe("/repo/o/r?q=wal&status=done%2Creview");
+    expect(timelineRedirectTarget("/repo/o/r", { view: "graph", scope: "3", focus: "3.6", critical: "1", level: "epics" })).toBe(
+      "/repo/o/r?view=graph&scope=3&focus=3.6&critical=1&level=epics#timeline",
+    );
+  });
+  it("keeps repeated params and skips undefined ones", () => {
+    expect(timelineRedirectTarget("/repo/o/r", { focus: ["1.1", "1.2"], all: undefined })).toBe("/repo/o/r?focus=1.1&focus=1.2#timeline");
+  });
+});
+
+describe("shouldShowTimelineOnOverview", () => {
+  const story = (id: string, extra: Record<string, unknown> = {}) => ({ id, ...extra }) as never;
+  it("is true with epic or story dependencies", () => {
+    expect(shouldShowTimelineOnOverview({ epics: [{ after: ["1"] }] as never, stories: [] })).toBe(true);
+    expect(shouldShowTimelineOnOverview({ epics: [{}] as never, stories: [story("1.2", { dependsOn: ["1.1"] })] })).toBe(true);
+    expect(shouldShowTimelineOnOverview({ epics: [{}] as never, stories: [story("1.2", { ticket: { after: ["1.1"] } })] })).toBe(true);
+  });
+  it("is false without dependency data, so the epics list stays", () => {
+    expect(shouldShowTimelineOnOverview({ epics: [{}, { after: [] }] as never, stories: [story("1.1"), story("1.2", { dependsOn: [] })] })).toBe(false);
+    expect(shouldShowTimelineOnOverview({ epics: [], stories: [] })).toBe(false);
   });
 });
 

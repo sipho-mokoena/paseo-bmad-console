@@ -1,7 +1,12 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { epicsForList } from "@/lib/bmad/list-view";
 import { getCachedBmadProject } from "@/lib/bmad/cached-project";
 import { ProjectStatsGrid } from "@/components/dashboard/project-stats-grid";
+import { TimelineView } from "@/components/timeline/timeline-view";
+import { GroupLabel } from "@/components/shared/list-kit";
+import { toTimelineData } from "@/lib/timeline-data";
+import { TIMELINE_ANCHOR, shouldShowTimelineOnOverview } from "@/lib/timeline-params";
 import { EpicsList } from "@/components/dashboard/epics-list";
 import { VelocityMetrics } from "@/components/dashboard/velocity-metrics";
 import { LayoutDetails, LayoutNotice, LayoutPill } from "@/components/dashboard/layout-info";
@@ -33,6 +38,8 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
   const project = await getCachedBmadProject(repoConfig);
   if (!project) return notFound();
 
+  const showTimeline = shouldShowTimelineOnOverview(project);
+  const timelineItems = project.stories.length > 0 ? project.stories.length : project.epics.length;
   const planningArtifacts = extractPlanningArtifacts(project.fileTree);
 
   return (
@@ -80,7 +87,18 @@ export default async function RepoOverviewPage({ params }: RepoPageProps) {
 
       <LayoutDetails layout={project.layout} errors={project.parseHealth?.errors ?? []} />
 
-      <EpicsList epics={epicsForList(project.epics)} owner={owner} repo={repoName} lookedFor={project.layout.lookedFor} />
+      {showTimeline ? (
+        <section id={TIMELINE_ANCHOR} aria-labelledby="timeline-heading" className="scroll-mt-24">
+          <GroupLabel count={timelineItems}>
+            <span id="timeline-heading">Timeline</span>
+          </GroupLabel>
+          <Suspense fallback={null}>
+            <TimelineView data={toTimelineData(project)} base={`/repo/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}`} />
+          </Suspense>
+        </section>
+      ) : (
+        <EpicsList epics={epicsForList(project.epics)} owner={owner} repo={repoName} lookedFor={project.layout.lookedFor} />
+      )}
 
       <KeyArtifactsCard
         planningArtifacts={planningArtifacts}

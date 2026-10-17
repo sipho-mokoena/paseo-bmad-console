@@ -72,7 +72,7 @@ interface TimelineViewProps {
   base: string;
 }
 
-/** The Timeline page: Gantt, dependency graph and list over one dependency-driven schedule. */
+/** The Timeline section of the Overview page: Gantt, dependency graph and list over one dependency-driven schedule. */
 export function TimelineView({ data, base }: TimelineViewProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -319,7 +319,7 @@ export function TimelineView({ data, base }: TimelineViewProps) {
         </p>
       )}
 
-      <div className={cn("grid min-w-0 gap-3", showPanel && "lg:grid-cols-[minmax(0,1fr)_20rem]")}>
+      <div className={cn("grid min-w-0 gap-3", showPanel && "xl:grid-cols-[minmax(0,1fr)_20rem]")}>
         <div className="min-w-0">
           {view === "list" ? (
             <DependencyList graph={viewGraph} epicTitles={epicTitles} nodes={listNodes} selected={selected} onSelect={select} prefix={prefix} />
