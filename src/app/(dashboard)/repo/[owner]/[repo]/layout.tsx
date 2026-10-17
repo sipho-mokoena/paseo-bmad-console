@@ -1,7 +1,5 @@
 import { ProjectTabs } from "@/components/layout/project-tabs";
 import { classifyDocs } from "@/lib/doc-groups";
-import { hasDependencyData } from "@/lib/dependency-graph";
-import { storyDeps } from "@/lib/bmad/deps";
 import { loadProject } from "@/lib/load-project";
 
 interface RepoLayoutProps {
@@ -18,24 +16,22 @@ function isNextControlFlow(error: unknown): boolean {
 export default async function RepoLayout({ children, params }: RepoLayoutProps) {
   const { owner, repo } = await params;
 
-  // Specs / Design tabs only show when the project has such documents, Timeline when it has dependencies. The project
+  // Specs / Design tabs only show when the project has such documents. The project
   // load is deduplicated with the page's own; on other failures the page reports it.
   let hasSpecs = false;
   let hasDesign = false;
-  let hasTimeline = false;
   try {
     const project = await loadProject(owner, repo);
     const docs = classifyDocs(project.bmadFiles);
     hasSpecs = docs.specs.length > 0;
     hasDesign = docs.design.length > 0;
-    hasTimeline = hasDependencyData(project.epics, project.stories.map((s) => ({ deps: storyDeps(s) })));
   } catch (error) {
     if (isNextControlFlow(error)) throw error;
   }
 
   return (
     <>
-      <ProjectTabs basePath={`/repo/${owner}/${repo}`} hasSpecs={hasSpecs} hasDesign={hasDesign} hasTimeline={hasTimeline} />
+      <ProjectTabs basePath={`/repo/${owner}/${repo}`} hasSpecs={hasSpecs} hasDesign={hasDesign} />
       <div className="page-pad">{children}</div>
     </>
   );

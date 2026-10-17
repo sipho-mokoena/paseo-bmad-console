@@ -1,20 +1,13 @@
-import { Suspense } from "react";
-import { TimelineView } from "@/components/timeline/timeline-view";
-import { loadProject } from "@/lib/load-project";
-import { toTimelineData } from "@/lib/timeline-data";
+import { permanentRedirect } from "next/navigation";
+import { timelineRedirectTarget } from "@/lib/timeline-params";
 
-interface TimelinePageProps {
+interface TimelineRedirectProps {
   params: Promise<{ owner: string; repo: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function TimelinePage({ params }: TimelinePageProps) {
+/** The Timeline now lives on the Overview page; keep old links and bookmarks working, query included. */
+export default async function TimelineRedirect({ params, searchParams }: TimelineRedirectProps) {
   const { owner, repo } = await params;
-  const project = await loadProject(owner, repo);
-  const base = `/repo/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
-  // Only ids, titles, status, epic ids, dependencies and risk/type travel to the client.
-  return (
-    <Suspense fallback={null}>
-      <TimelineView data={toTimelineData(project)} base={base} />
-    </Suspense>
-  );
+  permanentRedirect(timelineRedirectTarget(`/repo/${owner}/${repo}`, await searchParams));
 }
