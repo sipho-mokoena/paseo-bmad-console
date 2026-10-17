@@ -1,0 +1,7 @@
+{
+  "id": "bmad-console",
+  "name": "BMAD Console",
+  "icon": "icon.png",
+  "description": "Starts, stops and opens the Paseo BMAD Console web app from Paseo.",
+  "requirements": { "paseo": ">=0.11.0" }
+}
