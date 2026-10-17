@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, GanttChart } from "lucide-react";
 import { Pill } from "@/components/shared/pill";
 import { DefinitionTable, type DefinitionRow } from "@/components/shared/definition-table";
 import { InlineMarkdown } from "@/components/docs/inline-markdown";
@@ -121,8 +121,9 @@ function detailRows(story: StoryDetail, base: string, after: StoryRef[], blocks:
       value: (
         <Link
           href={timelineHref(base, { focus: story.id })}
-          className="inline-flex min-h-10 items-center rounded-md underline underline-offset-2 outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
+          className="-ml-2 inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:min-h-7 [&_svg]:size-4"
         >
+          <GanttChart aria-hidden="true" />
           View on timeline
         </Link>
       ),

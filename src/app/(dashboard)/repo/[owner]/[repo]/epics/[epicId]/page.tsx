@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { GanttChart } from "lucide-react";
 import { StatusPill } from "@/components/shared/pill";
 import { ProgressBar } from "@/components/shared/segmented-progress-bar";
 import { EpicStoriesView } from "@/components/epics/epic-stories-view";
@@ -32,20 +33,23 @@ export default async function EpicPage({ params }: EpicPageProps) {
         <div className="flex items-center gap-3">
           <span className="font-mono text-xs text-muted-foreground">{epicLabel(epic.id)}</span>
           <h1 className="min-w-0 flex-1 truncate text-lg md:text-[1.375rem] leading-snug font-medium">{epic.title}</h1>
+          {showTimeline && (
+            <Link
+              href={timelineHref(base, { scope: epic.id })}
+              aria-label="View on timeline"
+              title="View on timeline"
+              className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-md text-sm text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8 md:w-auto md:px-2 [&_svg]:size-4"
+            >
+              <GanttChart aria-hidden="true" />
+              <span className="hidden md:inline">Timeline</span>
+            </Link>
+          )}
           <StatusPill status={epic.status} />
         </div>
         {epic.body ? (
           <EpicBody markdown={epic.body} owner={owner} repo={repo} docPath={epic.sourcePath} />
         ) : (
           epic.description && <p className="text-sm text-muted-foreground">{epic.description}</p>
-        )}
-        {showTimeline && (
-          <Link
-            href={timelineHref(base, { scope: epic.id })}
-            className="inline-flex h-10 items-center rounded-md border border-input px-3 text-sm outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:h-8"
-          >
-            View on timeline
-          </Link>
         )}
         <div className="flex items-center gap-3">
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
