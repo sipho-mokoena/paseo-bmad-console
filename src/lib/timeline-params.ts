@@ -3,7 +3,7 @@ import { storyDeps } from "@/lib/bmad/deps";
 import type { BmadProject } from "@/lib/bmad/types";
 import { hasDependencyData } from "@/lib/dependency-graph";
 
-export const VIEWS = ["gantt", "graph", "list"] as const;
+export const VIEWS = ["gantt", "graph"] as const;
 export type TimelineViewId = (typeof VIEWS)[number];
 export const LEVELS = ["stories", "epics"] as const;
 export type GraphLevel = (typeof LEVELS)[number];
@@ -41,6 +41,7 @@ export const DEFAULT_TIMELINE_STATE: TimelineState = {
 
 const flag = (v: string | null) => v === "1" || v === "true";
 
+/** Unknown `view` values, including the retired `list`, fall back to the Gantt. */
 export function parseTimelineState(params: { get(name: string): string | null }): TimelineState {
   const view = params.get("view");
   const level = params.get("level");

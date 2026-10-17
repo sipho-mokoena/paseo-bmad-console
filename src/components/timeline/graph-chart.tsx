@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHorizontalWheel } from "@/lib/wheel";
 import { epicLabel } from "@/lib/bmad/ids";
-import type { DepGraph } from "@/lib/dependency-graph";
+import type { DepGraph, DepNode } from "@/lib/dependency-graph";
 import { NODE_H, NODE_W, edgePath, layoutLayers, neighbourKey } from "@/lib/timeline-layout";
 import { statusLabel, statusStyle } from "./timeline-style";
-
-export const ZOOM_MIN = 0.5;
-export const ZOOM_MAX = 2;
-export const ZOOM_STEP = 0.25;
-export const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z / ZOOM_STEP) * ZOOM_STEP));
 
 interface GraphChartProps {
   graph: DepGraph;
@@ -26,19 +21,27 @@ interface GraphChartProps {
   /** Draw only these nodes (epic level scoped to one epic). */
   only?: Set<string>;
   critical: boolean;
-  zoom: number;
-  onZoom(z: number): void;
   onSelect(key: string): void;
   onHover(key: string): void;
+}
+
+/** Accessible name of a node: id, title, status, wave and the items still blocking it. */
+export function nodeLabel(graph: DepGraph, n: DepNode): string {
+  const name = (k: string) => {
+    const b = graph.byKey.get(k);
+    return b ? (b.kind === "epic" ? epicLabel(b.id) : b.id) : k;
+  };
+  return `${n.kind === "epic" ? "Epic " : ""}${n.id} ${n.title}, ${statusLabel(n.status)}, wave ${n.layer + 1}${n.ready ? ", ready now" : ""}${n.blockedBy.length ? `, blocked by ${n.blockedBy.map(name).join(", ")}` : ""}`;
 }
 
 const MAX_TITLE = 24;
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 /** Layered left-to-right DAG; one column per wave. */
-export function GraphChart({ graph, prefix, selected, hovered, upstream, downstream, matches, only, critical, zoom, onZoom, onSelect, onHover }: GraphChartProps) {
+export function GraphChart({ graph, prefix, selected, hovered, upstream, downstream, matches, only, critical, onSelect, onHover }: GraphChartProps) {
   const layout = useMemo(() => layoutLayers(graph, only ? (n) => only.has(n.key) : undefined), [graph, only]);
   const scroller = useRef<HTMLDivElement>(null);
+  useHorizontalWheel(scroller);
   const nodeRefs = useRef(new Map<string, SVGGElement>());
   const active = (hovered || selected).startsWith(prefix) ? (hovered || selected).slice(prefix.length) : "";
   const selectedKey = selected.startsWith(prefix) ? selected.slice(prefix.length) : "";
@@ -55,9 +58,6 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
   }, [selectedKey]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "+" || e.key === "=") return void (e.preventDefault(), onZoom(clampZoom(zoom + ZOOM_STEP)));
-    if (e.key === "-" || e.key === "_") return void (e.preventDefault(), onZoom(clampZoom(zoom - ZOOM_STEP)));
-    if (e.key === "0") return void (e.preventDefault(), onZoom(1));
     const dir = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" }[e.key] as "left" | "right" | "up" | "down" | undefined;
     if (!dir) return;
     const from = (e.target as Element).closest("[data-node]")?.getAttribute("data-node") ?? focusKey;
@@ -71,19 +71,7 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
   const dimmed = (key: string) => (chain ? !chain.has(key) : false) || !matches.has(key);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1" role="group" aria-label="Zoom">
-        <button type="button" aria-label="Zoom out" onClick={() => onZoom(clampZoom(zoom - ZOOM_STEP))} disabled={zoom <= ZOOM_MIN} className={ZOOM_BTN}>
-          <Minus className="size-3.5" aria-hidden="true" />
-        </button>
-        <button type="button" aria-label="Reset zoom to 100%" onClick={() => onZoom(1)} className={cn(ZOOM_BTN, "w-14 tabular-nums")}>
-          {Math.round(zoom * 100)}%
-        </button>
-        <button type="button" aria-label="Zoom in" onClick={() => onZoom(clampZoom(zoom + ZOOM_STEP))} disabled={zoom >= ZOOM_MAX} className={ZOOM_BTN}>
-          <Plus className="size-3.5" aria-hidden="true" />
-        </button>
-        <span className="ml-2 hidden text-xs text-muted-foreground md:inline">Click the chart, then + / - / 0 to zoom and arrow keys to move between items.</span>
-      </div>
+    <div>
       <div
         ref={scroller}
         role="group"
@@ -91,13 +79,13 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
         onKeyDown={onKeyDown}
         className="max-h-[72vh] min-h-48 overflow-auto rounded-lg border bg-background"
       >
-        <svg width={layout.width * zoom} height={layout.height * zoom} className="block" role="group" aria-label="Dependency graph canvas">
+        <svg width={layout.width} height={layout.height} className="block" role="group" aria-label="Dependency graph canvas">
           <defs>
             <marker id="graph-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0 0 L8 4 L0 8 z" fill="currentColor" />
             </marker>
           </defs>
-          <g transform={`scale(${zoom})`}>
+          <g>
             {layout.columns.map((col, l) => (
               <text key={l} x={16 + l * (NODE_W + 64)} y={11} className="fill-muted-foreground" fontSize={12} aria-hidden="true">
                 Wave {l + 1}
@@ -132,7 +120,7 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
               if (!p) return null;
               const s = statusStyle(n.status);
               const isSel = selectedKey === n.key;
-              const label = `${n.kind === "epic" ? "Epic " : ""}${n.id} ${n.title}, ${statusLabel(n.status)}, wave ${n.layer + 1}${n.ready ? ", ready now" : ""}${n.blockedBy.length ? `, blocked by ${n.blockedBy.length}` : ""}`;
+              const label = nodeLabel(graph, n);
               return (
                 <g
                   key={n.key}
@@ -185,6 +173,3 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
     </div>
   );
 }
-
-const ZOOM_BTN =
-  "inline-flex h-10 min-w-10 items-center justify-center rounded-lg border border-input bg-card px-2 text-xs text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 md:h-8 md:min-w-8";

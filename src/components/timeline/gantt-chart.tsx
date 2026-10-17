@@ -4,6 +4,7 @@ import { COL_W, barBox, connectorPath } from "@/lib/gantt-geometry";
 import { useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHorizontalWheel } from "@/lib/wheel";
 import { epicLabel } from "@/lib/bmad/ids";
 import type { DepGraph } from "@/lib/dependency-graph";
 import type { GanttModel, GanttRow } from "@/lib/timeline-layout";
@@ -62,6 +63,7 @@ export function GanttChart({
 }: GanttChartProps) {
   const { rows, waves } = model;
   const scroller = useRef<HTMLDivElement>(null);
+  useHorizontalWheel(scroller);
   // Bring a newly selected item into view (deep links like ?focus=3.4).
   useEffect(() => {
     if (!selected) return;

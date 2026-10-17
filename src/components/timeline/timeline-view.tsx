@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { GanttChart as GanttIcon, ListTree, Network } from "lucide-react";
+import { GanttChart as GanttIcon, Network } from "lucide-react";
 import { PillToggle, SearchField, StateMessage } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
 import { epicLabel } from "@/lib/bmad/ids";
@@ -28,7 +28,7 @@ import {
 import { buildGanttModel, nodePasses, type NodeFilter } from "@/lib/timeline-layout";
 import type { TimelineData } from "@/lib/timeline-data";
 import { GanttChart } from "./gantt-chart";
-import { DependencyList } from "./dependency-list";
+import { ScopeSelect } from "./scope-select";
 import { DetailsPanel, type DetailItem, type DetailRef } from "./details-panel";
 import { TimelineEmpty } from "./timeline-empty";
 import { CHIP, CHIP_ON, FILTER_STATUS_OPTIONS } from "./timeline-style";
@@ -56,18 +56,6 @@ const useDesktop = () =>
     () => true,
   );
 
-const subscribePhone = (cb: () => void) => {
-  const mq = window.matchMedia("(max-width: 639px)");
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-};
-const usePhone = () =>
-  useSyncExternalStore(
-    subscribePhone,
-    () => window.matchMedia("(max-width: 639px)").matches,
-    () => false,
-  );
-
 const FILTER_OPTIONS = [
   { value: READY_FILTER_VALUE, label: "Ready now" },
   ...FILTER_STATUS_OPTIONS,
@@ -85,7 +73,7 @@ interface TimelineViewProps {
   base: string;
 }
 
-/** The Timeline section of the Overview page: Gantt, dependency graph and list over one dependency-driven schedule. */
+/** The Timeline section of the Overview page: Gantt and dependency graph over one dependency-driven schedule. */
 export function TimelineView({ data, base }: TimelineViewProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -109,10 +97,7 @@ export function TimelineView({ data, base }: TimelineViewProps) {
   }, []);
 
   const [hovered, setHovered] = useState("");
-  const [zoom, setZoom] = useState(1);
-  const [pickedView, setPickedView] = useState(false);
-  const phone = usePhone();
-  const view: TimelineViewId = pickedView || searchParams.has("view") || !phone ? urlState.view : "list";
+  const view: TimelineViewId = urlState.view;
 
   const commit = useCallback(
     (patch: Partial<TimelineState>, mode: "replace" | "push" = "replace") => {
@@ -177,12 +162,12 @@ export function TimelineView({ data, base }: TimelineViewProps) {
     return model;
   }, [storyGraph, epicGraph, epicOrder, epicTitles, expanded, filter, storyLevel, epicScopeSet]);
 
-  const listNodes = useMemo(() => {
+  const matchNodes = useMemo(() => {
     const nodes = viewGraph.nodes.filter((n) => nodePasses(n, filter) && (graphLevel !== "epic" || !epicScopeSet || epicScopeSet.has(n.key)));
     return nodes;
   }, [viewGraph, filter, graphLevel, epicScopeSet]);
 
-  const matches = useMemo(() => new Set(listNodes.map((n) => n.key)), [listNodes]);
+  const matches = useMemo(() => new Set(matchNodes.map((n) => n.key)), [matchNodes]);
 
   const selected = useMemo(() => {
     const f = urlState.focus;
@@ -256,14 +241,10 @@ export function TimelineView({ data, base }: TimelineViewProps) {
           <PillToggle<TimelineViewId>
             label="Timeline view"
             value={view}
-            onChange={(v) => {
-              setPickedView(true);
-              commit({ view: v }, "push");
-            }}
+            onChange={(v) => commit({ view: v }, "push")}
             options={[
               { value: "gantt", label: "Gantt", icon: GanttIcon, ariaLabel: "Gantt view" },
               { value: "graph", label: "Graph", icon: Network, ariaLabel: "Dependency graph view" },
-              { value: "list", label: "List", icon: ListTree, ariaLabel: "Dependencies as a list" },
             ]}
           />
           <TimelineViewMenu
@@ -274,17 +255,6 @@ export function TimelineView({ data, base }: TimelineViewProps) {
             onToggle={(patch) => commit(patch)}
             onExpandAll={setAllExpanded}
           />
-          {view === "graph" && storyLevel && !scope && (
-            <PillToggle
-              label="Graph level"
-              value={urlState.level}
-              onChange={(level) => commit({ level }, "push")}
-              options={[
-                { value: "stories", label: "Stories" },
-                { value: "epics", label: "Epics" },
-              ]}
-            />
-          )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Filters filters={filters} fields={filterFields} onChange={onFilters} allowMultiple={false} size="sm" />
             {filters.length > 0 && (
@@ -295,29 +265,18 @@ export function TimelineView({ data, base }: TimelineViewProps) {
           </div>
         </div>
         <div role="group" aria-label="Scope and search" className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Scope</span>
-            <select
-              aria-label="Scope"
-              value={scope}
-              onChange={(e) => commit({ scope: e.target.value, focus: "" }, "push")}
-              className="h-10 max-w-[12rem] rounded-lg border border-input bg-card px-2 text-sm text-foreground outline-hidden focus-visible:ring-2 focus-visible:ring-ring md:h-9 md:max-w-[18rem]"
-            >
-              <option value="">All epics</option>
-              {epics.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {epicLabel(e.id)} {e.title}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ScopeSelect
+            value={scope}
+            epics={epics}
+            onChange={(next) => commit({ scope: next, focus: "" }, "push")}
+          />
           <SearchField value={query} onChange={onQuery} placeholder="Search id or title" ariaLabel="Search id or title" clearable className="min-w-40 basis-full sm:basis-auto sm:max-w-72 sm:flex-1" />
         </div>
       </div>
 
       <p className="sr-only" role="status" aria-live="polite">
         {waves} {waves === 1 ? "wave" : "waves"}
-        {view === "list" || graphLevel === "story" ? `, ${viewGraph.nodes.filter((n) => n.kind !== "external").length} items` : ""}
+        {(view === "gantt" ? !gantt.epicOnly : graphLevel === "story") ? `, ${viewGraph.nodes.filter((n) => n.kind !== "external").length} items` : ""}
         {gantt.epicOnly && view !== "graph" ? ". Story-level dependencies are not available for this project, so only epics are drawn." : ""}
       </p>
       {(cycles.length > 0 || unresolved.length > 0) && (
@@ -329,9 +288,7 @@ export function TimelineView({ data, base }: TimelineViewProps) {
 
       <div className={cn("grid min-w-0 gap-3", showPanel && "xl:grid-cols-[minmax(0,1fr)_20rem]")}>
         <div className="min-w-0">
-          {view === "list" ? (
-            <DependencyList graph={viewGraph} epicTitles={epicTitles} nodes={listNodes} selected={selected} onSelect={select} prefix={prefix} />
-          ) : view === "gantt" ? (
+          {view === "gantt" ? (
             gantt.rows.length === 0 ? (
               <StateMessage>No item matches the filters</StateMessage>
             ) : (
@@ -351,7 +308,22 @@ export function TimelineView({ data, base }: TimelineViewProps) {
                 onToggleEpic={(id) => setOverride((prev) => new Map(prev).set(id, !expanded.has(id)))}
               />
             )
-          ) : tooMany ? (
+          ) : (
+            <div>
+              {storyLevel && !scope && (
+                <div className="mb-2 flex items-center">
+                  <PillToggle
+                    label="Graph level"
+                    value={urlState.level}
+                    onChange={(level) => commit({ level }, "push")}
+                    options={[
+                      { value: "stories", label: "Stories" },
+                      { value: "epics", label: "Epics" },
+                    ]}
+                  />
+                </div>
+              )}
+              {tooMany ? (
             <StateMessage className="flex-col gap-3">
               <p className="text-foreground">Too many nodes: pick an epic</p>
               <p className="max-w-prose">
@@ -379,11 +351,11 @@ export function TimelineView({ data, base }: TimelineViewProps) {
               matches={matches}
               only={graphLevel === "epic" && epicScopeSet ? epicScopeSet : undefined}
               critical={urlState.critical}
-              zoom={zoom}
-              onZoom={setZoom}
               onSelect={select}
               onHover={setHovered}
             />
+              )}
+            </div>
           )}
         </div>
         {detail && <DetailsPanel item={detail} base={base} onSelect={select} onClose={() => commit({ focus: "" })} />}
