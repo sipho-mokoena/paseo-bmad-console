@@ -23,7 +23,7 @@ There is no CI. Run `pnpm exec tsc --noEmit`, `pnpm lint` and `pnpm test` yourse
 - `src/components/`: `dashboard`, `epics`, `stories`, `docs`, `search`, `layout`, `shared`, `ui` (shadcn, project-owned), `reui` (vendored, not linted).
 - `src/lib/bmad/`: parsers, `correlate`, ids, scope and `layouts/` (one adapter per BMAD layout). Details in [docs/layouts.md](./docs/layouts.md).
 - `src/lib/content-provider/`: GitHub and local providers with the path guards.
-- `src/lib/github/`, `src/lib/db/`, `src/lib/search*.ts`, `src/lib/doc-groups.ts`.
+- `src/lib/github/`, `src/lib/db/`, `src/lib/search*.ts`, `src/lib/doc-groups.ts`, `src/lib/dependency-graph.ts` (pure dependency graph, waves and critical path; dependency parsing is `src/lib/bmad/deps.ts`).
 - `prisma/`: one model (`Repo`, table `repos`) and migrations. The generated client in `src/generated/` is gitignored.
 - `plugin/`: the Paseo plugin.
 - `docs/`: documentation. Start with [docs/architecture.md](./docs/architecture.md).

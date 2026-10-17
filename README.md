@@ -94,6 +94,7 @@ src/
     docs/              image path helpers for the repo-asset route
     search*.ts         search scoring and server-side snapshot
     doc-groups.ts      Specs and Design classification
+    dependency-graph.ts  dependency graph, waves and critical path (pure logic)
 prisma/                schema and migrations
 plugin/                Paseo plugin (separate npm project)
 scripts/               setup.sh

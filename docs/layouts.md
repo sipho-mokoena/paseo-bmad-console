@@ -128,6 +128,16 @@ docs/
 - Story status is read from frontmatter, a `## Status` section or a `Status:` line. The v4 words `Approved` and `InProgress` map to ready-for-dev and in-progress.
 - The adapter declares `docs` as an extra root.
 
+## Dependencies between stories and epics
+
+Stories and epics can declare what must be done first. The story page shows these as "after" links (the prerequisites) and "blocks" links (the stories that wait for this one).
+
+- **Story files** (v6 default, v6 project layout, v4): frontmatter key `depends_on`, `dependsOn`, `depends-on` or `after`, the first one present. The value can be a list or a string separated by commas or semicolons, for example `[E1-S1, E1-S2]` or `"1.2, 1.3 (partial)"`. Each entry is a story id (`E1-S4`, `1.2`) or an epic id (`E2`, `3`, meaning the whole epic). A trailing note after the id is ignored, `none` and `n/a` mean no dependency, and entries that are not ids are dropped.
+- **Ticket tree**: the `after` list of a ticket in `tickets.toml`. A bare number is a sibling in the same epic, and `4.1` is a full story reference.
+- **Epics**: the same frontmatter keys in an epic file (`epic.md`, `epics/epic-1.md`, `E1-name.md`) give the epic's `after` list. A story id there becomes a dependency on that story's epic, with the story id kept as the reason. In the ticket tree, an epic row can carry `after = [{ epic = 1, needs = "reason" }]`, or bare ids.
+
+`src/lib/bmad/deps.ts` holds the parsing (`parseDependencyRefs`, `frontmatterDependencies`, `storyDeps`). `src/lib/dependency-graph.ts` builds a graph from these declarations and computes waves (an abstract schedule, since BMAD data has no dates), the critical path through unfinished items, cycle reporting and scoping to the neighbourhood of one item. No page uses the graph module yet, so no screen shows waves or a critical path.
+
 ## How statuses map
 
 All adapters normalise story status words the same way. Matching is case-insensitive.

@@ -40,9 +40,10 @@ In more detail:
 2. `getCachedBmadProject` (`src/lib/bmad/cached-project.ts`) is wrapped in React `cache()`, so the layout and the page of one request share a single load. The content provider is built inside the cached function so the argument keeps a stable identity.
 3. `getBmadProject` (`src/lib/bmad/parser.ts`) calls `openProject` (`scope.ts`). That lists the tree, resolves the output folder (`parse-config.ts`), runs layout detection and, for local projects, opens the extra roots that the detected adapters declare, then lists the tree again.
 4. The adapters are tried from the highest score down and the first one that returns epics, stories or sprint entries is used (see [layouts.md](./layouts.md)).
-5. `correlate` (`correlate.ts`) merges sprint status into stories, creates placeholders for sprint entries without a file, derives each epic's status and progress and attaches the epic title to each story.
-6. The result is a `BmadProject` (`types.ts`) with epics, stories, file trees for the Library, the layout info (id, label, notes, "recognised" flag, places searched) and parse health.
-7. Pages pass the data to client components. List views get trimmed copies without the long Markdown bodies (`list-view.ts`).
+5. Stories and epics carry their declared dependencies (`deps.ts`, see [layouts.md](./layouts.md#dependencies-between-stories-and-epics)).
+6. `correlate` (`correlate.ts`) merges sprint status into stories, creates placeholders for sprint entries without a file, derives each epic's status and progress and attaches the epic title to each story.
+7. The result is a `BmadProject` (`types.ts`) with epics, stories, file trees for the Library, the layout info (id, label, notes, "recognised" flag, places searched) and parse health.
+8. Pages pass the data to client components. List views get trimmed copies without the long Markdown bodies (`list-view.ts`).
 
 The home page loads every registered project in parallel with `Promise.allSettled`, so one broken project shows a warning and the others still load.
 
