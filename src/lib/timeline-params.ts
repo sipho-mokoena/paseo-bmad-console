@@ -109,3 +109,36 @@ export function timelineRedirectTarget(base: string, search: Record<string, stri
 export function shouldShowTimelineOnOverview(project: Pick<BmadProject, "epics" | "stories">): boolean {
   return hasDependencyData(project.epics, project.stories.map((s) => ({ deps: storyDeps(s) })));
 }
+
+/** Value of the "Ready now" option in the Filter multiselect; it maps to `ready=1`, the others to `status`. */
+export const READY_FILTER_VALUE = "ready";
+
+/** Filter multiselect options, in menu order. */
+export const FILTER_OPTION_VALUES = [READY_FILTER_VALUE, ...TIMELINE_STATUSES] as const;
+
+/** URL state -> selected options of the Filter multiselect. */
+export function filterValuesOf(s: Pick<TimelineState, "status" | "ready">): string[] {
+  const picked = new Set<string>(s.status);
+  return FILTER_OPTION_VALUES.filter((v) => (v === READY_FILTER_VALUE ? s.ready : picked.has(v)));
+}
+
+/** Selected options of the Filter multiselect -> `status` / `ready` URL state. */
+export function filterPatchOf(values: readonly string[]): Pick<TimelineState, "status" | "ready"> {
+  const picked = new Set(values);
+  return {
+    ready: picked.has(READY_FILTER_VALUE),
+    status: TIMELINE_STATUSES.filter((v) => picked.has(v)),
+  };
+}
+
+export type ViewToggleKey = "critical" | "all" | "risk";
+
+/** Toggles offered in the View menu: Show all dependencies only in the Gantt, Size by risk only with risk data. */
+export function viewToggleKeys(view: TimelineViewId, hasRisk: boolean): ViewToggleKey[] {
+  return ["critical", ...(view === "gantt" ? (["all"] as const) : []), ...(hasRisk ? (["risk"] as const) : [])];
+}
+
+/** How many of the offered View toggles are on (the badge on the View button). */
+export function viewToggleCount(s: Pick<TimelineState, ViewToggleKey>, view: TimelineViewId, hasRisk: boolean): number {
+  return viewToggleKeys(view, hasRisk).filter((k) => s[k]).length;
+}

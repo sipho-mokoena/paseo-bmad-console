@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildEpicGraph, buildStoryGraph, type GraphStoryInput } from "../dependency-graph";
 import {
+  filterPatchOf,
+  filterValuesOf,
+  viewToggleCount,
+  viewToggleKeys,
   DEFAULT_TIMELINE_STATE,
   parseTimelineState,
   serializeTimelineState,
@@ -49,6 +53,29 @@ describe("timeline params", () => {
     expect(timelineHref("/repo/o/r")).toBe("/repo/o/r#timeline");
     expect(timelineHref("/repo/o/r", { focus: "E1-S1" })).toBe("/repo/o/r?focus=E1-S1#timeline");
     expect(timelineHref("/repo/o/r", { scope: "2" })).toBe("/repo/o/r?scope=2#timeline");
+  });
+});
+
+describe("timeline toolbar mapping", () => {
+  it("maps the Filter selection to status and ready, in menu order", () => {
+    expect(filterPatchOf(["in-progress", "ready", "done", "bogus"])).toEqual({ ready: true, status: ["done", "in-progress"] });
+    expect(filterPatchOf([])).toEqual({ ready: false, status: [] });
+  });
+  it("maps URL state back to the selection", () => {
+    expect(filterValuesOf({ ready: true, status: ["blocked", "done"] })).toEqual(["ready", "done", "blocked"]);
+    expect(filterValuesOf({ ready: false, status: [] })).toEqual([]);
+  });
+  it("offers View toggles per view and risk data", () => {
+    expect(viewToggleKeys("gantt", true)).toEqual(["critical", "all", "risk"]);
+    expect(viewToggleKeys("gantt", false)).toEqual(["critical", "all"]);
+    expect(viewToggleKeys("graph", true)).toEqual(["critical", "risk"]);
+    expect(viewToggleKeys("list", false)).toEqual(["critical"]);
+  });
+  it("counts only the toggles on offer", () => {
+    const on = { critical: true, all: true, risk: true };
+    expect(viewToggleCount(on, "gantt", true)).toBe(3);
+    expect(viewToggleCount(on, "list", false)).toBe(1);
+    expect(viewToggleCount({ critical: false, all: false, risk: false }, "gantt", true)).toBe(0);
   });
 });
 
