@@ -6,7 +6,7 @@ Starts and stops the Paseo BMAD Console web app (a local Next.js dashboard for B
 
 The plugin does not bundle the console. It runs a copy of the console that you already have on disk. When you press Start, the daemon-side part of the plugin runs `pnpm exec next dev` (dev mode) or `pnpm exec next start` (start mode) in the console directory, without a shell, in its own process group. It checks the console by requesting `/api/health` on the configured port, with a 1.5 second timeout. It keeps the last 300 lines of the console's output in memory so you can read them in the plugin screen.
 
-The plugin only stops the process it started. If a console is already answering on the port, the plugin reports it as started elsewhere and leaves it alone. It does not restart a crashed console automatically; it shows the exit code and the last lines of output instead. When the plugin unloads, it stops the process it started.
+The plugin only stops the process it started. If a console is already answering on the port, the plugin reports it as started outside Paseo and leaves it alone. This also applies to a standalone deployment folder: the plugin can open it but cannot start or stop it, because it only starts a source checkout. It does not restart a crashed console automatically; it shows the exit code and the last lines of output instead. When the plugin unloads, it stops the process it started.
 
 ## Setup
 
