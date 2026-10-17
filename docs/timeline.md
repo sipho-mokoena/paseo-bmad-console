@@ -20,14 +20,17 @@ BMAD data has no dates, so the chart is a schedule computed from the dependency 
 ## Views
 
 - Gantt: epics as collapsible groups, bars coloured by status, an epic bar spanning its stories with a progress fill, and connectors for the selected item or for all items.
-- Graph: a layered left-to-right graph with hover highlighting of upstream and downstream chains, zoom from 50 to 200 percent, and arrow-key navigation. With all epics and more than 150 nodes it asks you to pick an epic.
-- List: every item with its wave, prerequisites and dependents. It is the default under 640px and the text alternative for screen readers.
+- Graph: a layered left-to-right graph with hover highlighting of upstream and downstream chains. The arrow keys move between items: left goes to a prerequisite, right to a dependent, up and down within a column. With all epics and more than 150 nodes it asks you to pick an epic. When the scope is all epics, a Stories | Epics toggle sits on the row above the chart.
 
-Toolbar: the view toggle, a View dropdown, a Filter dropdown, then the scope select and search on the right. The Filter dropdown is a multiselect of Ready now and the statuses (Done, In review, In progress, Blocked, Ready for dev, Backlog); the selection shows as removable chips with a Clear action, and maps to the `ready` and `status` URL params. The View dropdown holds checkable Highlight critical path, Show all dependencies (Gantt only) and Size by risk (only when risk data exists), plus Expand all and Collapse all (Gantt only); a badge counts the toggles that are on. Scope narrows to one epic (outside prerequisites show as collapsed external nodes).
+Both charts are the same on phones and desktops and scroll sideways inside their frame. There is no zoom. The mouse wheel only scrolls the chart left and right (a vertical wheel gesture moves it sideways, as does shift+wheel or a horizontal gesture), and pinch or ctrl+wheel does not zoom the page over a chart. At the start or end of the chart the wheel scrolls the page as usual.
+
+For screen readers, every bar and node has a name with its id, title, status, wave and the items blocking it ("3.8 A Peer joins, Backlog, wave 13, blocked by 3.6, 3.7"), and a hidden status line announces the waves, the item count, unresolved references and cycles.
+
+Toolbar: the view toggle (Gantt | Graph), a View dropdown and a Filter dropdown on the left, then the Scope dropdown and search on the right. Scope is a styled dropdown, not the browser's native select. The Filter dropdown is a multiselect of Ready now and the statuses (Done, In review, In progress, Blocked, Ready for dev, Backlog); the selection shows as removable chips with a Clear action, and maps to the `ready` and `status` URL params. The View dropdown holds checkable Highlight critical path, Show all dependencies (Gantt only) and Size by risk (only when risk data exists), plus Expand all and Collapse all (Gantt only); a badge counts the toggles that are on. Scope narrows to one epic (outside prerequisites show as collapsed external nodes).
 
 ## URL parameters
 
-The parameters live on the Overview URL: `view` (gantt, graph, list), `scope`, `status` (comma list), `q`, `critical=1`, `all=1`, `focus`, `ready=1`, `risk=1`, `level` (stories, epics). Story and epic pages link to the Overview with `#timeline` ("View on timeline"), which scrolls the section into view. The old `/repo/<owner>/<repo>/timeline` URL redirects to the Overview and keeps its query.
+The parameters live on the Overview URL: `view` (gantt, graph; the retired `list` falls back to gantt), `scope`, `status` (comma list), `q`, `critical=1`, `all=1`, `focus`, `ready=1`, `risk=1`, `level` (stories, epics). Story and epic pages link to the Overview with `#timeline` ("View on timeline"), which scrolls the section into view. The old `/repo/<owner>/<repo>/timeline` URL redirects to the Overview and keeps its query.
 
 ## Code
 

@@ -6,6 +6,7 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Changed
 
+- Timeline: removed the List view (old `view=list` links open the Gantt) and the graph zoom, the wheel now only scrolls charts sideways, the Stories | Epics toggle moved above the graph, and Scope is a styled dropdown instead of the native select.
 - Timeline toolbar: status chips are now a Filter multiselect with removable chips, the chart options are a View dropdown with a count badge, scope and search sit on the right, and the derived-schedule note is gone.
 - The Timeline moved from its own tab into the project Overview, where it replaces the epics list when the project has dependency data. `/timeline` URLs redirect to the Overview with their query kept, and "View on timeline" links point there.
 - Rewrote the documentation from the code: README, getting started, local folder import, API, Paseo UI reference, contributing, security and agent guidance.
