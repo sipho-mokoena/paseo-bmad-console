@@ -6,7 +6,6 @@ import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { epicName } from "@/lib/bmad/ids";
 import { useBreadcrumb } from "@/contexts/breadcrumb-context";
-import { ScrollProgress } from "@/components/ui/scroll-progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,7 +111,6 @@ export function AppHeader({ repos = [] }: { repos?: RepoConfig[] }) {
           </DropdownMenu>
         )}
       </nav>
-      <ScrollProgress />
     </header>
   );
 }
