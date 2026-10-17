@@ -88,6 +88,13 @@ export function TimelineView({ data, base }: TimelineViewProps) {
     writtenQ.current = urlState.q;
   }, [urlState.q]);
 
+  // Arriving with #timeline (links from story and epic pages, the old /timeline URL): bring the section into view once
+  // the chart is in the page, since the browser's own hash scroll can run before it has its height.
+  useEffect(() => {
+    if (window.location.hash !== "#timeline") return;
+    document.getElementById("timeline")?.scrollIntoView({ block: "start" });
+  }, []);
+
   const [hovered, setHovered] = useState("");
   const [zoom, setZoom] = useState(1);
   const [pickedView, setPickedView] = useState(false);
