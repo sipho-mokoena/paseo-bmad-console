@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { DocumentTabBrowser } from "@/components/docs/document-tab-browser";
 import { classifyDocs, pickDoc } from "@/lib/doc-groups";
+import { getRepoConfig } from "@/lib/db/helpers";
+import { localRootOf } from "@/lib/copy-path";
 import { loadProject } from "@/lib/load-project";
 
 interface DesignPageProps {
@@ -12,6 +14,7 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
   const { owner, repo } = await params;
   const { file } = await searchParams;
   const project = await loadProject(owner, repo);
+  const localRoot = localRootOf(await getRepoConfig(owner, repo));
 
   const groups = classifyDocs(project.bmadFiles).design;
   const selected = pickDoc(groups, Array.isArray(file) ? file[0] : file);
@@ -24,6 +27,7 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
       selectedPath={selected.path}
       owner={owner}
       repo={repo}
+      localRoot={localRoot}
       basePath={`/repo/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`}
     />
   );

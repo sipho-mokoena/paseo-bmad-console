@@ -9,6 +9,7 @@ import { DefinitionTable, type DefinitionRow } from "@/components/shared/definit
 import { Pill } from "@/components/shared/pill";
 import { AlertTriangle, Check, Copy } from "lucide-react";
 import { copyText } from "@/lib/copy-text";
+import { copyPathTarget } from "@/lib/copy-path";
 import { fetchParsedFileContent } from "@/actions/repo-actions";
 import hljs from "highlight.js/lib/core";
 import yamlLang from "highlight.js/lib/languages/yaml";
@@ -68,8 +69,22 @@ type ViewMode = "preview" | "source";
 
 type CopyState = "idle" | "copied" | "error";
 
-/** Ghost button that copies the repo-relative path of the open document. */
-export function CopyPathButton({ path }: { path: string }) {
+/**
+ * Ghost button that copies the full path of the open document: the absolute path on the
+ * server machine for local projects, `<owner>/<repo>/<path>` for GitHub projects.
+ */
+export function CopyPathButton({
+  path,
+  owner,
+  repo,
+  localRoot,
+}: {
+  path: string;
+  owner: string;
+  repo: string;
+  localRoot?: string;
+}) {
+  const target = copyPathTarget({ relativePath: path, owner, repo, localRoot });
   const [state, setState] = useState<CopyState>("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -81,7 +96,7 @@ export function CopyPathButton({ path }: { path: string }) {
   );
 
   async function copy() {
-    const ok = await copyText(path);
+    const ok = await copyText(target.text);
     setState(ok ? "copied" : "error");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setState("idle"), 1500);
@@ -94,7 +109,7 @@ export function CopyPathButton({ path }: { path: string }) {
         type="button"
         onClick={() => void copy()}
         aria-label="Copy file path"
-        title={path}
+        title={target.title}
         className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-md text-xs text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-8 md:w-auto md:px-2 [&_svg]:size-4"
       >
         {state === "copied" ? (
@@ -121,11 +136,14 @@ export function DocumentPane({
   owner,
   repo,
   path,
+  localRoot,
   linkResolver,
   emptyMessage = "Select a file from the tree to view its content",
 }: {
   owner: string;
   repo: string;
+  /** Absolute project folder on the server machine (local projects only). */
+  localRoot?: string;
   path: string | null;
   linkResolver?: MarkdownLinkResolver;
   emptyMessage?: string;
@@ -191,7 +209,7 @@ export function DocumentPane({
         </span>
         {path && parsedFile && (
           <div className="flex shrink-0 items-center gap-1">
-            <CopyPathButton path={path} />
+            <CopyPathButton path={path} owner={owner} repo={repo} localRoot={localRoot} />
             <PillToggle
               label="File view"
               value={mode}

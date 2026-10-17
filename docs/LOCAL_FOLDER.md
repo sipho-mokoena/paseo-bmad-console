@@ -62,7 +62,7 @@ Removing a project deletes its row in the database only. Your files are not touc
 
 ## Security notes
 
-The app has no authentication. Anyone who can reach the server can register any readable folder that contains a `_bmad` or `_bmad-output` directory and then read the files in the allowed folders. Enable local import only on a machine you control, on `localhost` or a private network.
+The app has no authentication. Anyone who can reach the server can register any readable folder that contains a `_bmad` or `_bmad-output` directory and then read the files in the allowed folders. Enable local import only on a machine you control, on `localhost` or a private network. The Copy path button on a document copies the absolute path of the project folder on the server machine, so anyone who can open the app can see where the folder lives.
 
 The guards that remain:
 

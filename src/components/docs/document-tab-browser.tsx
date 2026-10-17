@@ -16,6 +16,8 @@ interface DocumentTabBrowserProps {
   selectedPath: string;
   owner: string;
   repo: string;
+  /** Absolute project folder on the server machine (local projects only). */
+  localRoot?: string;
   /** `/repo/<owner>/<repo>` */
   basePath: string;
 }
@@ -27,6 +29,7 @@ export function DocumentTabBrowser({
   selectedPath,
   owner,
   repo,
+  localRoot,
   basePath,
 }: DocumentTabBrowserProps) {
   // Phone: the list is a collapsible "Documents" row that closes once a document is picked.
@@ -116,6 +119,7 @@ export function DocumentTabBrowser({
           owner={owner}
           repo={repo}
           path={selectedPath}
+          localRoot={localRoot}
           linkResolver={linkResolver}
         />
       </div>

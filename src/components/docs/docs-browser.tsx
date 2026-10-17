@@ -67,6 +67,7 @@ function FilePanel({
   extraTrees = [],
   owner,
   repo,
+  localRoot,
   initialSelectedFile,
   sources,
 }: {
@@ -76,6 +77,7 @@ function FilePanel({
   extraTrees?: { root: string; tree: FileTreeNode[] }[];
   owner: string;
   repo: string;
+  localRoot?: string;
   initialSelectedFile?: string;
   /** When both BMAD and docs trees exist, switch between them in the panel header. */
   sources?: { value: string; label: string; active: string; onChange: (v: string) => void };
@@ -201,6 +203,7 @@ function FilePanel({
           owner={owner}
           repo={repo}
           path={selectedPath}
+          localRoot={localRoot}
         />
       </div>
 
@@ -297,6 +300,8 @@ interface DocsBrowserProps {
   extraTrees?: { root: string; tree: FileTreeNode[] }[];
   owner: string;
   repo: string;
+  /** Absolute project folder on the server machine (local projects only). */
+  localRoot?: string;
   initialSelectedFile?: string;
 }
 
@@ -307,6 +312,7 @@ export function DocsBrowser({
   extraTrees = [],
   owner,
   repo,
+  localRoot,
   initialSelectedFile,
 }: DocsBrowserProps) {
   const hasDocs = docsTree.length > 0;
@@ -326,6 +332,7 @@ export function DocsBrowser({
         extraTrees={extraTrees}
         owner={owner}
         repo={repo}
+        localRoot={localRoot}
         initialSelectedFile={initialSelectedFile}
       />
     );
@@ -337,6 +344,7 @@ export function DocsBrowser({
         fileTree={docsTree}
         owner={owner}
         repo={repo}
+        localRoot={localRoot}
         initialSelectedFile={initialSelectedFile}
       />
     );
@@ -355,6 +363,7 @@ export function DocsBrowser({
       fileTree={docsTree}
       owner={owner}
       repo={repo}
+      localRoot={localRoot}
       initialSelectedFile={initialInDocs ? initialSelectedFile : undefined}
       sources={sources}
     />
@@ -366,6 +375,7 @@ export function DocsBrowser({
       extraTrees={extraTrees}
       owner={owner}
       repo={repo}
+      localRoot={localRoot}
       initialSelectedFile={initialInDocs ? undefined : initialSelectedFile}
       sources={sources}
     />

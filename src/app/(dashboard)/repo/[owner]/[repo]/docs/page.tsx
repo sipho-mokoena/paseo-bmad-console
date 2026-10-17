@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { DocsBrowser } from "@/components/docs/docs-browser";
 import { fetchBmadFiles } from "@/actions/repo-actions";
 import { getRepoConfig } from "@/lib/db/helpers";
+import { localRootOf } from "@/lib/copy-path";
 
 interface DocsPageProps {
   params: Promise<{ owner: string; repo: string }>;
@@ -38,6 +39,7 @@ export default async function DocsPage({
       extraTrees={result.data.extraTrees}
       owner={owner}
       repo={repoName}
+      localRoot={localRootOf(repoConfig)}
       initialSelectedFile={initialFile}
     />
   );
