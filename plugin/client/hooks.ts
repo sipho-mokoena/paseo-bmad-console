@@ -12,25 +12,16 @@ import {
 } from "../shared/console";
 
 const STATUS_KEY = ["bmad-console", "status"] as const;
-const LOGS_KEY = ["bmad-console", "logs"] as const;
 
 export function useConsoleStatus() {
   const status = useRpc(statusRpc);
-  return useQuery({
-    queryKey: STATUS_KEY,
-    queryFn: () => status({}),
-    refetchInterval: 2000,
-  });
+  return useQuery({ queryKey: STATUS_KEY, queryFn: () => status({}), refetchInterval: 2000 });
 }
 
-/** Always loaded once (for the line count); polls only while the logs are open. */
-export function useConsoleLogs(open: boolean) {
+/** Loaded once for the line count; refetch() when the logs are opened. No polling. */
+export function useConsoleLogs() {
   const logs = useRpc(logsRpc);
-  return useQuery({
-    queryKey: LOGS_KEY,
-    queryFn: () => logs({ lines: 300 }),
-    refetchInterval: open ? 3000 : false,
-  });
+  return useQuery({ queryKey: ["bmad-console", "logs"], queryFn: () => logs({ lines: 300 }) });
 }
 
 export function useConsoleActions() {
@@ -40,19 +31,12 @@ export function useConsoleActions() {
   const stop = useRpc(stopRpc);
   const restart = useRpc(restartRpc);
 
-  function build(call: () => Promise<ConsoleActionResult>, success: string) {
+  function build(call: () => Promise<ConsoleActionResult>) {
     return {
       mutationFn: async () => {
         const result = await call();
         client.setQueryData<ConsoleStatus>(STATUS_KEY, result.status);
         if (!result.ok) throw new Error(result.error ?? "The action failed.");
-        return result;
-      },
-      onSuccess: (result: ConsoleActionResult) => {
-        toast.show(result.alreadyRunning && success === "Starting" ? "Already running" : success, {
-          variant: "success",
-        });
-        void client.invalidateQueries({ queryKey: LOGS_KEY });
       },
       onError: (error: unknown) => {
         toast.error(error instanceof Error ? error.message : String(error));
@@ -62,8 +46,8 @@ export function useConsoleActions() {
   }
 
   return {
-    start: useMutation(build(() => start({}), "Starting")),
-    stop: useMutation(build(() => stop({}), "Stopped")),
-    restart: useMutation(build(() => restart({}), "Restarting")),
+    start: useMutation(build(() => start({}))),
+    stop: useMutation(build(() => stop({}))),
+    restart: useMutation(build(() => restart({}))),
   };
 }

@@ -1,16 +1,10 @@
-import type {
-  PluginScreenProps,
-  PluginSurfaceProps,
-  PluginWorkspacePanelProps,
-} from "@getpaseo/plugin/client";
-import { ConsoleView } from "./console-view";
-import { StandaloneSettings } from "./settings-view";
+import type { PluginScreenProps, PluginSurfaceProps, PluginWorkspacePanelProps } from "@getpaseo/plugin/client";
+import { ConsolePage } from "./console-page";
 
-export function MainScreen({ theme, layout, navigation, params }: PluginScreenProps) {
+export function MainScreen({ theme, navigation, params }: PluginScreenProps) {
   return (
-    <ConsoleView
+    <ConsolePage
       theme={theme}
-      layout={layout}
       navigation={navigation}
       workspaceId={params.workspaceId ? params.workspaceId : null}
       autoOpen={params.autoOpen === "1"}
@@ -18,12 +12,11 @@ export function MainScreen({ theme, layout, navigation, params }: PluginScreenPr
   );
 }
 
-/** Same view in a compact form: status, actions and the main address. */
-export function WorkspacePanel({ theme, layout, navigation, workspaceId }: PluginWorkspacePanelProps) {
-  return <ConsoleView theme={theme} layout={layout} navigation={navigation} workspaceId={workspaceId} compact />;
+export function WorkspacePanel({ theme, navigation, workspaceId }: PluginWorkspacePanelProps) {
+  return <ConsolePage theme={theme} navigation={navigation} workspaceId={workspaceId} />;
 }
 
 /** Registered under Settings > Plugins. */
-export function SettingsScreen({ theme, layout }: PluginSurfaceProps) {
-  return <StandaloneSettings theme={theme} layout={layout} />;
+export function SettingsScreen({ theme, navigation }: PluginSurfaceProps) {
+  return <ConsolePage theme={theme} navigation={navigation} workspaceId={null} />;
 }
