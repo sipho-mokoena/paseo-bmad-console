@@ -22,6 +22,12 @@ const nextConfig: NextConfig = {
         destination: "/repo/:owner/:repo/epics",
         permanent: true,
       },
+      // The Timeline tab became a section of the Overview.
+      {
+        source: "/repo/:owner/:repo/timeline",
+        destination: "/repo/:owner/:repo#timeline",
+        permanent: true,
+      },
     ];
   },
   async headers() {
