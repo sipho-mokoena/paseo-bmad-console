@@ -5,7 +5,6 @@ import {
   formatUptime,
   isAbsolutePath,
   logsRpc,
-  NO_LOGIN_WARNING,
   statusRpc,
   validateSettings,
   type ConsoleSettingsValues,
@@ -17,13 +16,12 @@ describe("settings defaults", () => {
   it("parses an empty document into the documented defaults", () => {
     expect(defaults).toEqual({
       consoleDirectory: "",
-      port: 3002,
+      port: 7002,
       mode: "dev",
       bindHost: "127.0.0.1",
       publicUrl: "",
       allowedDevOrigins: "",
       autoStart: false,
-      noLoginMode: false,
       lastWorkspaceId: "",
     });
     expect(validateSettings(defaults)).toEqual({});
@@ -46,7 +44,7 @@ describe("settings validation", () => {
     expect(errorsFor({ port: 1024 }).port).toBeUndefined();
     expect(errorsFor({ port: 65535 }).port).toBeUndefined();
     expect(errorsFor({ port: 65536 }).port).toBeDefined();
-    expect(errorsFor({ port: 3002.5 }).port).toBeDefined();
+    expect(errorsFor({ port: 7002.5 }).port).toBeDefined();
     expect(errorsFor({ port: Number.NaN }).port).toBeDefined();
   });
 
@@ -62,11 +60,16 @@ describe("settings validation", () => {
     expect(errorsFor({ allowedDevOrigins: "a;rm -rf /" }).allowedDevOrigins).toBeDefined();
   });
 
-  it("only allows no-login mode on a loopback bind host", () => {
-    expect(errorsFor({ noLoginMode: true }).noLoginMode).toBeUndefined();
-    expect(errorsFor({ noLoginMode: true, bindHost: "localhost" }).noLoginMode).toBeUndefined();
-    expect(errorsFor({ noLoginMode: true, bindHost: "0.0.0.0" }).noLoginMode).toMatch(/127\.0\.0\.1/);
-    expect(errorsFor({ noLoginMode: false, bindHost: "0.0.0.0" }).noLoginMode).toBeUndefined();
+  it("ignores an old noLoginMode key in a stored document", () => {
+    const parsed = consoleSettings.schema.safeParse({
+      consoleDirectory: "/srv/console",
+      noLoginMode: true,
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect("noLoginMode" in parsed.data).toBe(false);
+      expect(parsed.data.port).toBe(7002);
+    }
   });
 
   it("makes the schema reject invalid documents with the same messages", () => {
@@ -76,39 +79,33 @@ describe("settings validation", () => {
     expect(messages.join(" ")).toMatch(/port/i);
     expect(messages.join(" ")).toMatch(/absolute/);
   });
-
-  it("has the documented warning text", () => {
-    expect(NO_LOGIN_WARNING).toBe(
-      "Disables login. Only use on a trusted machine and only with the local address.",
-    );
-  });
 });
 
 describe("URL candidates", () => {
   it("returns just the local URL when nothing else is set", () => {
-    const urls = buildUrlCandidates({ port: 3002, bindHost: "127.0.0.1", publicUrl: "" });
-    expect(urls.local).toBe("http://127.0.0.1:3002");
+    const urls = buildUrlCandidates({ port: 7002, bindHost: "127.0.0.1", publicUrl: "" });
+    expect(urls.local).toBe("http://127.0.0.1:7002");
     expect(urls.public).toBeNull();
-    expect(urls.preferred).toBe("http://127.0.0.1:3002");
+    expect(urls.preferred).toBe("http://127.0.0.1:7002");
     expect(urls.all.map((item) => item.kind)).toEqual(["local"]);
   });
 
   it("trims the public URL and its trailing slashes and prefers it", () => {
     const urls = buildUrlCandidates({
-      port: 3002,
+      port: 7002,
       bindHost: "0.0.0.0",
-      publicUrl: "  https://box.tail.ts.net:3002//  ",
+      publicUrl: "  https://box.tail.ts.net:7002//  ",
     });
-    expect(urls.public).toBe("https://box.tail.ts.net:3002");
-    expect(urls.preferred).toBe("https://box.tail.ts.net:3002");
+    expect(urls.public).toBe("https://box.tail.ts.net:7002");
+    expect(urls.preferred).toBe("https://box.tail.ts.net:7002");
     expect(urls.all.map((item) => item.url)).toEqual([
-      "http://127.0.0.1:3002",
-      "https://box.tail.ts.net:3002",
+      "http://127.0.0.1:7002",
+      "https://box.tail.ts.net:7002",
     ]);
   });
 
   it("treats a whitespace-only public URL as unset", () => {
-    expect(buildUrlCandidates({ port: 3002, bindHost: "127.0.0.1", publicUrl: "   " }).public).toBeNull();
+    expect(buildUrlCandidates({ port: 7002, bindHost: "127.0.0.1", publicUrl: "   " }).public).toBeNull();
   });
 
   it("adds a bind-address URL for a specific non-loopback host, including IPv6", () => {
@@ -119,7 +116,7 @@ describe("URL candidates", () => {
   });
 
   it("does not repeat the local URL when the public URL equals it", () => {
-    const urls = buildUrlCandidates({ port: 3002, bindHost: "127.0.0.1", publicUrl: "http://127.0.0.1:3002/" });
+    const urls = buildUrlCandidates({ port: 7002, bindHost: "127.0.0.1", publicUrl: "http://127.0.0.1:7002/" });
     expect(urls.all).toHaveLength(1);
   });
 });

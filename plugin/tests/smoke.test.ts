@@ -8,11 +8,11 @@ import type { ConsoleSettingsValues } from "../shared/console";
 /**
  * Starts the REAL console through the real process manager on a spare port.
  * Skipped unless SMOKE=1. Run by hand:
- *   SMOKE=1 SMOKE_DIR=/abs/path/to/paseo-bmad-console SMOKE_PORT=3011 npx vitest run tests/smoke.test.ts
+ *   SMOKE=1 SMOKE_DIR=/abs/path/to/paseo-bmad-console SMOKE_PORT=7011 npx vitest run tests/smoke.test.ts
  */
 const enabled = process.env.SMOKE === "1";
 const dir = process.env.SMOKE_DIR ?? "";
-const port = Number(process.env.SMOKE_PORT ?? 3011);
+const port = Number(process.env.SMOKE_PORT ?? 7011);
 
 function portFree(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -35,8 +35,8 @@ function groupAlive(pid: number): boolean {
 }
 
 describe.skipIf(!enabled)("real console smoke test", () => {
-  it("starts, answers /login with 200, stops and leaves nothing behind", async () => {
-    expect(port).not.toBe(3002);
+  it("starts, answers /api/health with 200, stops and leaves nothing behind", async () => {
+    expect(port).not.toBe(7002);
     expect(await portFree()).toBe(true);
     const manager = new ProcessManager({
       spawn: (command, args, options) => spawn(command, args, options),
@@ -64,7 +64,6 @@ describe.skipIf(!enabled)("real console smoke test", () => {
       publicUrl: "",
       allowedDevOrigins: "",
       autoStart: false,
-      noLoginMode: false,
     };
     const started = await manager.start(config);
     console.log("start:", started.ok, started.error, "state:", started.status.state, "pid:", started.status.pid);
@@ -82,8 +81,8 @@ describe.skipIf(!enabled)("real console smoke test", () => {
     expect(state, `console log tail:\n${log}`).toBe("running");
     console.log("state after wait:", state, "uptime ok");
 
-    const response = await fetch(`http://127.0.0.1:${port}/login`, { redirect: "manual" });
-    console.log("GET /login ->", response.status);
+    const response = await fetch(`http://127.0.0.1:${port}/api/health`, { redirect: "manual" });
+    console.log("GET /api/health ->", response.status);
     expect(response.status).toBe(200);
 
     // A second start must not spawn another process.

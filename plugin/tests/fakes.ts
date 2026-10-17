@@ -19,7 +19,6 @@ export const baseConfig: ConsoleSettingsValues = {
   publicUrl: "",
   allowedDevOrigins: "",
   autoStart: false,
-  noLoginMode: false,
 };
 
 export class FakeChild extends EventEmitter implements ChildLike {

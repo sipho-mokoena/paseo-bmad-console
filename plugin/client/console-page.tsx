@@ -173,7 +173,7 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
           <SettingsInput
             key={`port-${keyBase}`}
             label="Port"
-            hint="1024 to 65535. Default 3002."
+            hint="1024 to 65535. Default 7002."
             initialValue={portText ?? String(current.port)}
             error={errors.port}
             onChangeText={(text) => {
@@ -191,7 +191,7 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
           <SettingsInput
             key={`host-${keyBase}`}
             label="Bind host"
-            hint="127.0.0.1 keeps it on this machine. A phone needs 0.0.0.0 or your Tailscale or LAN address."
+            hint="127.0.0.1 keeps it on this machine. The console has no login, so only use 0.0.0.0 or a Tailscale or LAN address on a private network."
             initialValue={current.bindHost}
             error={errors.bindHost}
             onChangeText={(bindHost) => change({ bindHost })}
@@ -200,7 +200,7 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
             key={`public-${keyBase}`}
             label="Public URL"
             hint="Optional. The address your other devices use, for example your Tailscale URL."
-            placeholder="https://my-machine.tailnet.ts.net:3002"
+            placeholder="https://my-machine.tailnet.ts.net:7002"
             initialValue={current.publicUrl}
             error={errors.publicUrl}
             onChangeText={(publicUrl) => change({ publicUrl })}
@@ -220,13 +220,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
             value={current.autoStart}
             onValueChange={(autoStart) => change({ autoStart })}
           />
-          <SettingsSwitch
-            label="No-login mode"
-            hint="Disables login. Only use on a trusted machine and only with the local address."
-            error={errors.noLoginMode}
-            value={current.noLoginMode}
-            onValueChange={(noLoginMode) => change({ noLoginMode })}
-          />
           <SettingsAction
             label="Save changes"
             hint={dirty ? "Restart the console afterwards to apply them." : undefined}
@@ -236,13 +229,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
             onPress={() => void save()}
           />
         </SettingsCard>
-        {current.noLoginMode ? (
-          <View style={{ marginTop: 12, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: c.statusWarning }}>
-            <Text style={{ color: c.statusWarning, fontSize: 13 }}>
-              No-login mode is on. Anyone who can reach this console can use it.
-            </Text>
-          </View>
-        ) : null}
       </SettingsGroup>
     );
   }

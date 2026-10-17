@@ -3,12 +3,10 @@ import { z } from "zod";
 
 /** Package name the console checkout must declare in its package.json. */
 export const CONSOLE_PACKAGE_NAME = "paseo-bmad-console";
-export const DEFAULT_PORT = 3002;
+export const DEFAULT_PORT = 7002;
 export const MIN_PORT = 1024;
 export const MAX_PORT = 65535;
 export const MAX_LOG_LINES = 300;
-export const NO_LOGIN_WARNING =
-  "Disables login. Only use on a trusted machine and only with the local address.";
 
 export type ConsoleMode = "dev" | "start";
 
@@ -20,7 +18,6 @@ export interface ConsoleSettingsValues {
   publicUrl: string;
   allowedDevOrigins: string;
   autoStart: boolean;
-  noLoginMode: boolean;
   /** UI only: the workspace the Open button last used. Optional so older documents stay valid. */
   lastWorkspaceId?: string;
 }
@@ -73,9 +70,6 @@ export function validateSettings(values: ConsoleSettingsValues): SettingsErrors 
   if (!ORIGINS_PATTERN.test(values.allowedDevOrigins)) {
     errors.allowedDevOrigins = "Use a comma separated list of host names or IP addresses.";
   }
-  if (values.noLoginMode && !errors.bindHost && !isLoopbackHost(bindHost)) {
-    errors.noLoginMode = "No-login mode requires the bind host to be 127.0.0.1 or localhost.";
-  }
   return errors;
 }
 
@@ -84,6 +78,8 @@ export const consoleSettings = defineSettings({
   scope: "host",
   version: 1,
   schema: z
+    // Not strict: unknown keys (for example an old `noLoginMode`) are ignored, so
+    // documents written by earlier versions keep validating.
     .object({
       consoleDirectory: z.string().default(""),
       port: z.number().default(DEFAULT_PORT),
@@ -92,7 +88,6 @@ export const consoleSettings = defineSettings({
       publicUrl: z.string().default(""),
       allowedDevOrigins: z.string().default(""),
       autoStart: z.boolean().default(false),
-      noLoginMode: z.boolean().default(false),
       lastWorkspaceId: z.string().default(""),
     })
     .superRefine((values, ctx) => {
@@ -178,7 +173,6 @@ export const consoleStatusSchema = z.object({
   uptimeSeconds: z.number().nullable(),
   port: z.number(),
   mode: z.enum(["dev", "start"]),
-  noLoginActive: z.boolean(),
   bindHost: z.string(),
   autoStart: z.boolean(),
   urls: urlCandidatesSchema,

@@ -22,7 +22,6 @@ const CRASH_LINES = 15;
 export const MANAGED_ENV_KEYS = [
   "NODE_ENV",
   "ALLOWED_DEV_ORIGINS",
-  "DEV_BYPASS_AUTH",
   "ELECTRON_RUN_AS_NODE",
 ] as const;
 
@@ -82,18 +81,17 @@ export function probeHostFor(bindHost: string): string {
 
 /**
  * The child's environment: the plugin's own env, with only the keys the console
- * reads set or cleared. DEV_BYPASS_AUTH exists only in dev mode with opt-in.
+ * reads set or cleared.
  */
 export function buildChildEnv(
   base: NodeJS.ProcessEnv,
-  options: { mode: ConsoleMode; allowedDevOrigins: string; noLoginMode: boolean },
+  options: { mode: ConsoleMode; allowedDevOrigins: string },
 ): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...base };
   for (const key of MANAGED_ENV_KEYS) delete env[key];
   env.NODE_ENV = options.mode === "dev" ? "development" : "production";
   const origins = options.allowedDevOrigins.trim();
   if (origins !== "") env.ALLOWED_DEV_ORIGINS = origins;
-  if (options.mode === "dev" && options.noLoginMode) env.DEV_BYPASS_AUTH = "true";
   return env;
 }
 
@@ -114,7 +112,6 @@ interface Owned {
   startedAt: number;
   port: number;
   mode: ConsoleMode;
-  noLogin: boolean;
   exited: boolean;
   stopping: boolean;
 }
@@ -163,7 +160,7 @@ export class ProcessManager {
     const controller = new AbortController();
     const timer = this.deps.setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
     try {
-      const response = await this.deps.fetch(`http://${probeHostFor(bindHost)}:${port}/login`, {
+      const response = await this.deps.fetch(`http://${probeHostFor(bindHost)}:${port}/api/health`, {
         signal: controller.signal,
         redirect: "manual",
       });
@@ -224,7 +221,6 @@ export class ProcessManager {
       uptimeSeconds: owned ? Math.max(0, Math.floor((this.deps.now() - owned.startedAt) / 1000)) : null,
       port,
       mode,
-      noLoginActive: owned ? owned.noLogin : mode === "dev" && config.noLoginMode,
       bindHost: config.bindHost.trim(),
       autoStart: config.autoStart,
       urls: buildUrlCandidates({ port, bindHost, publicUrl: config.publicUrl }),
@@ -297,7 +293,6 @@ export class ProcessManager {
     const env = buildChildEnv(this.deps.env, {
       mode: config.mode,
       allowedDevOrigins: config.allowedDevOrigins,
-      noLoginMode: config.noLoginMode,
     });
     this.spawnError = null;
     this.crashed = false;
@@ -323,7 +318,6 @@ export class ProcessManager {
       startedAt: this.deps.now(),
       port: config.port,
       mode: config.mode,
-      noLogin: config.mode === "dev" && config.noLoginMode,
       exited: false,
       stopping: false,
     };
@@ -346,7 +340,7 @@ export class ProcessManager {
       return this.result(config, false, this.spawnError ?? "The console process could not be started.");
     }
     this.logs.note(
-      `Started \`${command} ${args.join(" ")}\` (pid ${child.pid}, mode ${config.mode}${owned.noLogin ? ", login disabled" : ""}).`,
+      `Started \`${command} ${args.join(" ")}\` (pid ${child.pid}, mode ${config.mode}).`,
     );
     return this.result(config, true, null);
   }

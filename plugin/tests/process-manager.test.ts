@@ -169,7 +169,7 @@ describe("environment", () => {
   const base = { PATH: "/usr/bin", HOME: "/h", SECRET_TOKEN: "x" };
 
   it("adds only the allowed keys", () => {
-    const env = buildChildEnv(base, { mode: "dev", allowedDevOrigins: " a.ts.net ", noLoginMode: false });
+    const env = buildChildEnv(base, { mode: "dev", allowedDevOrigins: " a.ts.net " });
     const added = Object.keys(env).filter((key) => !(key in base));
     expect(added.sort()).toEqual(["ALLOWED_DEV_ORIGINS", "NODE_ENV"]);
     expect(env.ALLOWED_DEV_ORIGINS).toBe("a.ts.net");
@@ -177,27 +177,23 @@ describe("environment", () => {
     for (const key of added) expect(MANAGED_ENV_KEYS).toContain(key);
   });
 
-  it("sets DEV_BYPASS_AUTH only in dev mode with the opt-in", () => {
-    const dev = buildChildEnv(base, { mode: "dev", allowedDevOrigins: "", noLoginMode: true });
-    expect(dev.DEV_BYPASS_AUTH).toBe("true");
+  it("sets NODE_ENV by mode and never sets an auth bypass", () => {
+    const dev = buildChildEnv(base, { mode: "dev", allowedDevOrigins: "" });
     expect(dev.NODE_ENV).toBe("development");
-    const devOff = buildChildEnv(base, { mode: "dev", allowedDevOrigins: "", noLoginMode: false });
-    expect("DEV_BYPASS_AUTH" in devOff).toBe(false);
-    const start = buildChildEnv(base, { mode: "start", allowedDevOrigins: "", noLoginMode: true });
-    expect("DEV_BYPASS_AUTH" in start).toBe(false);
+    expect("DEV_BYPASS_AUTH" in dev).toBe(false);
+    const start = buildChildEnv(base, { mode: "start", allowedDevOrigins: "" });
     expect(start.NODE_ENV).toBe("production");
+    expect("DEV_BYPASS_AUTH" in start).toBe(false);
   });
 
-  it("removes an inherited DEV_BYPASS_AUTH, NODE_ENV and ELECTRON_RUN_AS_NODE", () => {
+  it("removes an inherited NODE_ENV and ELECTRON_RUN_AS_NODE", () => {
     const inherited = {
       ...base,
-      DEV_BYPASS_AUTH: "true",
       NODE_ENV: "test",
       ALLOWED_DEV_ORIGINS: "old",
       ELECTRON_RUN_AS_NODE: "1",
     };
-    const env = buildChildEnv(inherited, { mode: "start", allowedDevOrigins: "", noLoginMode: false });
-    expect("DEV_BYPASS_AUTH" in env).toBe(false);
+    const env = buildChildEnv(inherited, { mode: "start", allowedDevOrigins: "" });
     expect("ALLOWED_DEV_ORIGINS" in env).toBe(false);
     expect("ELECTRON_RUN_AS_NODE" in env).toBe(false);
     expect(env.NODE_ENV).toBe("production");
@@ -205,15 +201,14 @@ describe("environment", () => {
 
   it("passes that env through spawn and never writes it to the logs", async () => {
     const h = makeHarness({ env: { PATH: "/usr/bin", SECRET_TOKEN: "hunter2" } });
-    await h.manager.start({ ...baseConfig, noLoginMode: true, allowedDevOrigins: "x.ts.net" });
+    await h.manager.start({ ...baseConfig, allowedDevOrigins: "x.ts.net" });
     const env = h.spawned[0].options.env;
-    expect(env.DEV_BYPASS_AUTH).toBe("true");
     expect(env.ALLOWED_DEV_ORIGINS).toBe("x.ts.net");
     expect(h.manager.readLogs().lines.join("\n")).not.toContain("hunter2");
   });
 
   it("builds the command with a trimmed bind host", () => {
-    expect(buildCommand("dev", 3002, " 127.0.0.1 ").args.slice(-2)).toEqual(["-H", "127.0.0.1"]);
+    expect(buildCommand("dev", 7002, " 127.0.0.1 ").args.slice(-2)).toEqual(["-H", "127.0.0.1"]);
   });
 });
 
