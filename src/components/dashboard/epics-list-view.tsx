@@ -2,18 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { EpicRow } from "@/components/epics/epic-row";
 import { GroupLabel, SearchField, StateMessage } from "@/components/shared/list-kit";
-import { Filters, type Filter, type FilterFieldConfig } from "@/components/reui/filters";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Filters, type Filter } from "@/components/reui/filters";
+import { SortMenu, statusChips, statusFilterField, statusValues } from "@/components/shared/list-controls";
 import { cn } from "@/lib/utils";
 import { epicHref } from "@/lib/stories-browse";
 import {
@@ -40,9 +33,6 @@ interface EpicsListViewProps {
 }
 
 const dirWord = (dir: "asc" | "desc") => (dir === "asc" ? "ascending" : "descending");
-
-const SORT_BTN =
-  "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-sm text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring md:h-9 [&_svg]:size-3.5";
 
 /** Overview epic list: search, status filter, sort and pagination, kept in the URL. */
 export function EpicsListView({ epics, base }: EpicsListViewProps) {
@@ -115,24 +105,11 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
     commit({ query: "", statuses: [] });
   };
 
-  const fields: FilterFieldConfig<string>[] = [
-    {
-      key: "status",
-      label: "Status",
-      type: "multiselect",
-      operators: [{ value: "is_any_of", label: "is any of", supportsMultiple: true }],
-      options: EPIC_STATUSES.map((s) => ({
-        value: s.value,
-        label: `${s.label} (${counts[s.value]})`,
-      })),
-    },
-  ];
+  const fields = [statusFilterField(EPIC_STATUSES, counts)];
 
   const countLabel = filteredNow
     ? `${filtered.length} of ${epics.length}`
     : `${epics.length}`;
-  const sortActive = state.sort !== "default";
-  const SortDirIcon = state.dir === "asc" ? ArrowUp : ArrowDown;
   const rangeStart = page.from;
 
   return (
@@ -158,46 +135,16 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
             allowMultiple={false}
             size="sm"
           />
-          <div className="ml-auto flex items-center gap-1 sm:ml-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger className={SORT_BTN} aria-label={`Sort: ${SORT_LABELS[state.sort]}`}>
-                <ArrowUpDown aria-hidden="true" />
-                <span>{sortActive ? SORT_LABELS[state.sort] : "Sort"}</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuRadioGroup
-                  value={state.sort}
-                  onValueChange={(v) => setSort(v as EpicSortKey)}
-                >
-                  {SORT_KEYS.map((k) => (
-                    <DropdownMenuRadioItem key={k} value={k} className="text-sm">
-                      {SORT_LABELS[k]}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={state.dir}
-                  onValueChange={(v) => commit({ dir: v as "asc" | "desc" })}
-                >
-                  <DropdownMenuRadioItem value="asc" className="text-sm">
-                    Ascending
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="desc" className="text-sm">
-                    Descending
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <button
-              type="button"
-              onClick={() => commit({ dir: state.dir === "asc" ? "desc" : "asc" })}
-              aria-label={`Sort direction: ${dirWord(state.dir)}. Switch to ${dirWord(state.dir === "asc" ? "desc" : "asc")}`}
-              className={cn(SORT_BTN, "w-10 justify-center px-0 md:w-9")}
-            >
-              <SortDirIcon aria-hidden="true" />
-            </button>
-          </div>
+          <SortMenu
+            keys={SORT_KEYS}
+            labels={SORT_LABELS}
+            sort={state.sort}
+            dir={state.dir}
+            defaultKey="default"
+            onSort={(k) => setSort(k)}
+            onDir={(dir) => commit({ dir })}
+            className="ml-auto sm:ml-0"
+          />
         </div>
       )}
 
@@ -293,19 +240,9 @@ export function EpicsListView({ epics, base }: EpicsListViewProps) {
   );
 }
 
-function statusFilters(statuses: EpicStatus[]): Filter<string>[] {
-  return statuses.length
-    ? [{ id: "epic-status", field: "status", operator: "is_any_of", values: statuses }]
-    : [];
-}
-
-function statusesOf(filters: Filter<string>[]): EpicStatus[] {
-  const valid = new Set<string>(EPIC_STATUSES.map((s) => s.value));
-  return filters
-    .filter((f) => f.field === "status")
-    .flatMap((f) => f.values)
-    .filter((v): v is EpicStatus => valid.has(v));
-}
+const statusFilters = (statuses: EpicStatus[]) => statusChips(statuses, "epic-status");
+const statusesOf = (filters: Filter<string>[]) =>
+  statusValues(filters, EPIC_STATUSES.map((s) => s.value)) as EpicStatus[];
 
 function ColumnHead({
   label,
