@@ -11,7 +11,7 @@ services:
     ports:
       # DEV ONLY: exposed on host for Prisma Studio/CLI. In production, remove this
       # section and let services communicate over the internal Docker network only.
-      - "5433:5432"
+      - "127.0.0.1:7433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

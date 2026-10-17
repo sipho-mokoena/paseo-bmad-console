@@ -33,7 +33,7 @@ import { sanitizeError } from "@/lib/errors";
 ## Server Actions Conventions
 
 - Always validate input with Zod at the top of the action
-- Use `requireAdmin()` from `@/lib/db/helpers` for admin-only actions
+- The app has no users or sessions: do not add auth checks. Repos are global; read them with `getRepos()` / `getRepoConfig(owner, name)` from `@/lib/db/helpers`
 - Call `revalidatePath()` or `revalidateTag()` after mutations
 - Return `ActionResult<T>` shape consistently
 - Actions live in `src/actions/`
@@ -51,9 +51,10 @@ import { sanitizeError } from "@/lib/errors";
 - **Watch mode:** `pnpm test:watch`
 - **Test locations:**
   - BMAD parsers: `src/lib/bmad/__tests__/`
-  - Middleware: `src/middleware.test.ts`
+  - Repo helpers: `src/lib/db/__tests__/`
+  - GitHub client (`GITHUB_PAT`): `src/lib/github/__tests__/`
   - Utilities: `src/lib/__tests__/`
 
-## Auth bypass
+## No authentication
 
-`DEV_BYPASS_AUTH` (local development only) is implemented in `src/lib/auth/dev-bypass.ts`. Never read `process.env.DEV_BYPASS_AUTH` directly: use `isDevAuthBypassEnabled()`, which is false in production. Production start and build fail if the variable is set.
+The app is single-tenant and has no login, sessions, users or roles (and no `better-auth`). Network isolation is the access control: it binds to `127.0.0.1` by default. Keep the local provider path guards, the repo-asset image allowlist and CSP headers, search/path validation and the `ENABLE_LOCAL_FS` gate intact: they are the only safety nets. GitHub access uses the optional `GITHUB_PAT` (see `src/lib/github/client.ts`). `src/lib/__tests__/no-auth.test.ts` fails if an auth dependency or import comes back.

@@ -60,13 +60,13 @@ pnpm install
 cp .env.example .env
 # Edit .env with your values
 
-# 4. Start database (if using Docker)
+# 4. Start database (if using Docker; PostgreSQL on 127.0.0.1:7433)
 docker compose up -d postgres
 
 # 5. Run migrations
 pnpm db:migrate
 
-# 6. Start dev server
+# 6. Start dev server (http://127.0.0.1:7002, no login)
 pnpm dev
 ```
 

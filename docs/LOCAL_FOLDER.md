@@ -15,7 +15,7 @@ Restart the dev server after changing this value.
 ## How it works
 
 1. Click **"Add a project"** in the dashboard
-2. A **"Local Folder"** tab appears alongside the GitHub tab
+2. A **"Local Folder"** tab appears alongside the GitHub tab (it is shown first)
 3. Enter the **absolute path** to your project folder (e.g. `/home/user/my-project`)
 4. The system validates that the folder contains a `_bmad/` or `_bmad-output/` directory
 5. The project is imported and appears in your dashboard just like a GitHub repo
@@ -23,6 +23,8 @@ Restart the dev server after changing this value.
 Once imported, you can browse epics, stories, and docs exactly as you would with a GitHub project. Use the **Refresh** action to re-scan the folder when files change.
 
 ## Security
+
+The app has no login: anyone who can reach the server can register a folder and read its BMAD directories. Use this only on localhost or a private network.
 
 The local provider includes multiple safety guards:
 - **Path traversal protection** — rejects `..`, null bytes, and special characters

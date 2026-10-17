@@ -52,19 +52,41 @@ Please provide as much of the following as possible:
 
 ### In Scope
 
-- Authentication bypass or session vulnerabilities
 - SQL injection or database access issues
-- GitHub token/secret exposure
-- Authorization issues (accessing other users' data)
+- Path traversal or reads outside the BMAD folders of a registered local project
+- GitHub token (`GITHUB_PAT`) or secret exposure
 - Server-Side Request Forgery (SSRF)
 - Cross-Site Scripting (XSS) in rendered content
 
 ### Out of Scope
 
+- The absence of authentication. The app has none by design (see below)
 - Vulnerabilities in third-party dependencies (report directly to maintainers)
-- Self-inflicted issues from misconfigured deployments
+- Self-inflicted issues from misconfigured deployments, including exposing the port to untrusted networks
 - Social engineering attacks
 - Rate limiting or denial of service in development environments
+
+---
+
+## Security Model: No Authentication
+
+Paseo BMAD Console is a single-tenant tool. It has **no login, no accounts, no sessions and no roles**. Network isolation is the access control.
+
+Anyone who can reach the port can:
+
+- list, add, remove and refresh projects;
+- read the documents of every registered project;
+- when `ENABLE_LOCAL_FS=true`, register any absolute folder on the server that contains a `_bmad` or `_bmad-output` directory and read the BMAD directories inside it (the local provider refuses everything else: path traversal, symlinks, other folders, oversized files);
+- spend the GitHub API quota of the server, and read any private repository that `GITHUB_PAT` can see, by adding it as a project.
+
+Therefore:
+
+- Run it on `localhost` or on a private network only, for example behind Tailscale. Do not expose it to the internet and do not put it behind a public reverse proxy without adding authentication in front of it.
+- The `pnpm dev` and `pnpm start` scripts bind to `127.0.0.1`. Binding to `0.0.0.0` or a LAN address exposes the app to that whole network.
+- Leave `ENABLE_LOCAL_FS` unset on any shared host.
+- Use a minimally scoped `GITHUB_PAT` (`public_repo`, or `repo` only if you need private repositories).
+
+The safety nets that remain regardless of the network: local provider path guards, the repo-asset image allowlist with its CSP headers, search and path validation, and the `ENABLE_LOCAL_FS` gate. `/api/revalidate` additionally requires `REVALIDATE_SECRET`.
 
 ---
 
@@ -73,25 +95,20 @@ Please provide as much of the following as possible:
 When self-hosting Paseo BMAD Console:
 
 - **Never commit** `.env` or `.env.local` files to version control
-- Use strong, randomly generated secrets for `BETTER_AUTH_SECRET` and `REVALIDATE_SECRET`
-- Use environment-specific GitHub OAuth Apps (separate dev/prod apps)
+- Use a strong, randomly generated `REVALIDATE_SECRET`
+- Store `GITHUB_PAT` only in the server environment, with the smallest scope that works
 - Keep your dependencies up to date
-- Restrict database access to the application only
-- Serve the app over HTTPS (for example behind a reverse proxy)
+- Restrict database access to the application only (the compose file publishes PostgreSQL on `127.0.0.1` only)
+- Keep the app on localhost or a private network (see above)
 
 ---
 
 ## Known Risks and Mitigations
 
-### OAuth Token Encryption at Rest
+### Cross-site requests
 
-**Status:** Not yet implemented
+Without a session there is no cookie to protect, but a web page you visit on the same machine can still send requests to a local, unauthenticated server. Next.js server actions reject cross-origin calls (they compare the `Origin` and `Host` headers), which covers adding, removing and refreshing projects. The read-only GET endpoints (`/api/search`, `/api/repo-asset`) are not protected by an origin check, but a foreign page cannot read their responses (no CORS headers are sent).
 
-**Risk:** GitHub OAuth tokens stored in the `account` table are not encrypted at rest. If an attacker gains read access to the database, they could use these tokens to access users' GitHub repositories.
+### GitHub token
 
-**Current mitigations:**
-- Database access should be restricted to the application only (network isolation)
-- The application enforces session-based authentication before any token usage
-- PostgreSQL connections use password authentication
-
-**Planned mitigation:** Implement AES-256-GCM encryption for OAuth tokens using `BETTER_AUTH_SECRET` as the key material. This requires intercepting Better Auth's account creation and token refresh flows via hooks or database triggers.
+`GITHUB_PAT` lives only in the server environment. It is never stored in the database, never sent to the browser and not logged.

@@ -7,13 +7,13 @@ A dashboard for [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) projects. I
 
 ## Features
 
-- Projects from GitHub repositories or, when self-hosted, from local folders ([docs/LOCAL_FOLDER.md](./docs/LOCAL_FOLDER.md)).
+- Projects from GitHub repositories (public, or private with an optional `GITHUB_PAT`) or, when self-hosted, from local folders ([docs/LOCAL_FOLDER.md](./docs/LOCAL_FOLDER.md)).
 - Epics and stories with status, progress and ticket metadata (list and kanban views, epic and story detail pages).
 - Specs and Design tabs that group the planning documents of a project.
 - Library: browse project documents with Markdown rendering, syntax highlighting and Mermaid diagrams, and images referenced by relative path from local projects.
-- Search across the documents of all your projects.
+- Search across the documents of all registered projects.
 - Several BMAD layouts, detected automatically: v6 default, v6 project layout, ticket tree, and v4.
-- Email/password login, optional GitHub OAuth, admin and user roles.
+- A single-tenant tool: no accounts, no login. See [Security](#security).
 
 ## Requirements
 
@@ -21,36 +21,29 @@ A dashboard for [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) projects. I
 - pnpm 10+
 - PostgreSQL 15+ (a docker compose file with PostgreSQL 17 is included)
 
+## Security
+
+**This app has no authentication.** Anyone who can reach the port can list, add, remove and refresh projects and, when `ENABLE_LOCAL_FS=true`, read the BMAD folders of any local project and register any absolute path that contains a `_bmad` or `_bmad-output` folder. Run it on `localhost` or on a private network only (for example behind Tailscale). Do not expose it to the internet. The default scripts bind to `127.0.0.1`. See [SECURITY.md](./SECURITY.md).
+
 ## Quick start
 
 ```bash
 pnpm install
-cp .env.example .env        # or: bash scripts/setup.sh  (generates the secrets for you)
-docker compose up -d        # PostgreSQL on localhost:5433
+cp .env.example .env        # or: bash scripts/setup.sh
+docker compose up -d        # PostgreSQL on 127.0.0.1:7433
 pnpm db:push                # create the schema
-pnpm db:create-admin --email you@example.com --password change-me --name Admin
-pnpm dev                    # http://localhost:3002
+pnpm dev                    # http://127.0.0.1:7002
 ```
 
-Edit `.env` first: set `DATABASE_URL`, `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `BETTER_AUTH_URL` and `REVALIDATE_SECRET`. The full variable reference is in [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md).
+Edit `.env` first: set `DATABASE_URL` and `REVALIDATE_SECRET`. The full variable reference is in [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md).
 
-### Local development without login
+### GitHub projects
 
-For a trusted, single-user machine you can skip the login screen:
-
-```bash
-# .env
-DEV_BYPASS_AUTH=true
-```
-
-Every request then acts as a built-in local admin (`local@localhost`) and the server prints a loud warning at startup.
-
-> **Warning: never enable this on a shared or public host.** It disables authentication completely.
-> The bypass is only honoured when `NODE_ENV` is not `production` and `DEV_BYPASS_AUTH` is exactly `true`. If `DEV_BYPASS_AUTH` is set while `NODE_ENV=production`, `next build` and server start fail with an error.
+Add a project from the **GitHub** tab by typing `owner/name` (and optionally a branch). Public repositories work without any configuration but GitHub then allows only 60 requests per hour. Set `GITHUB_PAT` to a personal access token to raise that to 5,000 per hour and to read private repositories (`public_repo` scope for public ones, `repo` for private ones). Restart the server after changing it. When the limit is hit the UI says so and points at `GITHUB_PAT`.
 
 ### Local folders
 
-Set `ENABLE_LOCAL_FS=true` to let users add a project by absolute folder path. **This is for self-hosted use only:** the server reads files on its own disk, so enable it only when the app runs on the machine that holds the projects and every user who can log in is trusted with that access. Leave it unset on any multi-tenant or public deployment.
+Set `ENABLE_LOCAL_FS=true` to let users add a project by absolute folder path. **This is for self-hosted use only:** the server reads files on its own disk, so enable it only when the app runs on the machine that holds the projects and everyone who can reach the port is trusted with that access (there is no login). Leave it unset on any shared or public deployment.
 
 ### Reaching the dev server from a phone or another machine
 
@@ -63,21 +56,20 @@ ALLOWED_DEV_ORIGINS=my-laptop.tailnet-name.ts.net,100.64.0.10
 pnpm dev -H 0.0.0.0
 ```
 
-`ALLOWED_DEV_ORIGINS` is a comma-separated list, empty by default. Set `BETTER_AUTH_URL` to the URL you browse from.
+`ALLOWED_DEV_ORIGINS` is a comma-separated list, empty by default. Binding to `0.0.0.0` exposes the unauthenticated app to that network, so do it only on a private one.
 
 ## Scripts
 
 ```bash
-pnpm dev              # dev server on port 3002
+pnpm dev              # dev server on 127.0.0.1:7002
 pnpm build            # production build
-pnpm start            # start the production server
+pnpm start            # start the production server on 127.0.0.1:7002
 pnpm lint             # ESLint
 pnpm test             # Vitest
 pnpm db:generate      # generate the Prisma client
 pnpm db:migrate       # prisma migrate dev
 pnpm db:push          # push the schema without a migration
 pnpm db:studio        # Prisma Studio
-pnpm db:create-admin  # create an admin user from the CLI
 ```
 
 Type check with `pnpm exec tsc --noEmit`.
@@ -97,8 +89,8 @@ paseo plugin ls
 Then open **BMAD Console** in the sidebar (or Settings, Plugins, BMAD Console) and set:
 
 - **Console directory**: absolute path to this checkout (dependencies installed, `.env` present, database running).
-- **Port** (default 3002), **mode** (`dev`, or `start` after `pnpm build`) and **bind host** (default `127.0.0.1`).
-- Optional: **public URL**, **allowed dev origins** (`ALLOWED_DEV_ORIGINS`), **start with Paseo**, and **no-login mode** (`DEV_BYPASS_AUTH`, dev mode and loopback only).
+- **Port** (default 7002), **mode** (`dev`, or `start` after `pnpm build`) and **bind host** (default `127.0.0.1`).
+- Optional: **public URL**, **allowed dev origins** (`ALLOWED_DEV_ORIGINS`), **start with Paseo**.
 
 The plugin only stops the process it started and reports a console that is already running on the port without touching it. Note that two `next dev` servers cannot share one checkout, so stop a manually started `pnpm dev` first, or use another checkout.
 
@@ -108,27 +100,26 @@ On a phone or in the web app, "Open in Paseo browser" is not available (Electron
 
 ```
 src/
-  app/            Next.js App Router: (dashboard) pages, login, api/ (auth, health, revalidate, search, repo-asset)
+  app/            Next.js App Router: (dashboard) pages, api/ (health, revalidate, search, repo-asset)
   actions/        Server actions
   components/     dashboard, epics, stories, docs, search, layout, shared, ui (shadcn), reui (data grid, filters)
   lib/
     bmad/         parsers and the layout adapters (layouts/)
     content-provider/  GitHub and local-folder providers
-    auth/         Better Auth setup and the dev-bypass guard
-    db/           Prisma client and session helpers
+    github/       Octokit client (optional GITHUB_PAT) and tree/content cache
+    db/           Prisma client and repo helpers
 docs/             guides and the Paseo UI reference
 prisma/           schema and migrations
-scripts/          setup.sh, create-admin.ts
+scripts/          setup.sh
 ```
 
 ## Production build
 
 `next.config.ts` builds a self-contained server (`output: "standalone"`). After `pnpm build`, copy
 `.next/standalone/*`, `.next/static` (to `.next/static`) and `public/` into a deployment folder and
-start it with `node server.js` (set `PORT` and `HOSTNAME`; load the env file first). The deployment folder
-holds build output only, no source. Do not set `DEV_BYPASS_AUTH` in production (the server refuses to start).
-Create the first admin with `pnpm db:create-admin`, and list every address people use to reach the app in
-`BETTER_AUTH_TRUSTED_ORIGINS`.
+start it with `node server.js` (set `PORT` and `HOSTNAME`, for example `HOSTNAME=127.0.0.1`; load the env file first). The deployment folder
+holds build output only, no source. Apply database migrations with `pnpm exec prisma migrate deploy` before the first start and after each update.
+There is no admin to create and no origin list to maintain: the app has no login. Keep it on localhost or a private network (see [Security](#security)).
 
 ## Documentation
 

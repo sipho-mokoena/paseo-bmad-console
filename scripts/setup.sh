@@ -3,7 +3,7 @@
 # Paseo BMAD Console — Quick Setup Script
 # =============================================================================
 # Creates a .env file with auto-generated secrets and sensible defaults.
-# You only need to fill in the GitHub OAuth credentials manually afterward.
+# Optionally add a GitHub personal access token (GITHUB_PAT) afterward.
 #
 # Usage:  bash scripts/setup.sh
 # =============================================================================
@@ -53,10 +53,8 @@ fi
 # ------------------------------------------------------------------
 echo -e "${CYAN}Generating secrets...${NC}"
 
-GENERATED_AUTH_SECRET=$(openssl rand -base64 32)
 GENERATED_REVALIDATE_SECRET=$(openssl rand -hex 32)
 
-echo "  BETTER_AUTH_SECRET  = (generated)"
 echo "  REVALIDATE_SECRET   = (generated)"
 echo ""
 
@@ -72,10 +70,8 @@ else
   SED_INPLACE=(sed -i)
 fi
 
-"${SED_INPLACE[@]}" "s|^BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=${GENERATED_AUTH_SECRET}|" "$ENV_FILE"
 "${SED_INPLACE[@]}" "s|^REVALIDATE_SECRET=.*|REVALIDATE_SECRET=${GENERATED_REVALIDATE_SECRET}|" "$ENV_FILE"
-"${SED_INPLACE[@]}" "s|^BETTER_AUTH_URL=.*|BETTER_AUTH_URL=http://localhost:3002|" "$ENV_FILE"
-"${SED_INPLACE[@]}" "s|^DATABASE_URL=.*|DATABASE_URL=postgresql://bmad:bmad_dev_password@localhost:5433/bmad_dashboard|" "$ENV_FILE"
+"${SED_INPLACE[@]}" "s|^DATABASE_URL=.*|DATABASE_URL=postgresql://bmad:bmad_dev_password@localhost:7433/bmad_dashboard|" "$ENV_FILE"
 
 echo -e "${GREEN}Created $ENV_FILE with auto-generated secrets.${NC}"
 echo ""
@@ -85,26 +81,17 @@ echo ""
 # ------------------------------------------------------------------
 echo -e "${BOLD}Remaining manual steps:${NC}"
 echo ""
-echo -e "  ${CYAN}1.${NC} Create a GitHub OAuth App:"
-echo "     https://github.com/settings/developers → New OAuth App"
-echo ""
-echo "     Application name:       Paseo BMAD Console (or anything)"
-echo "     Homepage URL:           http://localhost:3002"
-echo "     Authorization callback: http://localhost:3002/api/auth/callback/github"
-echo ""
-echo -e "  ${CYAN}2.${NC} Copy the Client ID and Client Secret into ${BOLD}.env${NC}:"
-echo "     GITHUB_CLIENT_ID=<your client id>"
-echo "     GITHUB_CLIENT_SECRET=<your client secret>"
-echo ""
-echo -e "  ${CYAN}3.${NC} (Optional) Create a GitHub PAT for higher rate limits:"
+echo -e "  ${CYAN}1.${NC} (Optional) Create a GitHub PAT for higher rate limits and private repos:"
 echo "     https://github.com/settings/tokens → Generate new token (classic)"
 echo "     Required scope: public_repo (or repo for private repos)"
+echo "     Put it in ${BOLD}.env${NC} as GITHUB_PAT=<token>"
 echo ""
-echo -e "  ${CYAN}4.${NC} Start the database and run migrations:"
+echo -e "  ${CYAN}2.${NC} Start the database and run migrations:"
 echo "     docker compose up -d postgres"
 echo "     pnpm db:migrate"
 echo ""
-echo -e "  ${CYAN}5.${NC} Start the dev server:"
+echo -e "  ${CYAN}3.${NC} Start the dev server:"
 echo "     pnpm dev"
 echo ""
-echo -e "${GREEN}Done!${NC} Open http://localhost:3002 after completing the steps above."
+echo -e "${GREEN}Done!${NC} Open http://127.0.0.1:7002 after completing the steps above."
+echo "The app has no login: keep it on localhost or a private network."
