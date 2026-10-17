@@ -21,6 +21,8 @@ export interface ConsoleSettingsValues {
   allowedDevOrigins: string;
   autoStart: boolean;
   noLoginMode: boolean;
+  /** UI only: the workspace the Open button last used. Optional so older documents stay valid. */
+  lastWorkspaceId?: string;
 }
 
 export type SettingsErrors = Partial<Record<keyof ConsoleSettingsValues, string>>;
@@ -91,6 +93,7 @@ export const consoleSettings = defineSettings({
       allowedDevOrigins: z.string().default(""),
       autoStart: z.boolean().default(false),
       noLoginMode: z.boolean().default(false),
+      lastWorkspaceId: z.string().default(""),
     })
     .superRefine((values, ctx) => {
       for (const [field, message] of Object.entries(validateSettings(values))) {

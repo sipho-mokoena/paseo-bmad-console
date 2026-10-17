@@ -24,6 +24,7 @@ describe("settings defaults", () => {
       allowedDevOrigins: "",
       autoStart: false,
       noLoginMode: false,
+      lastWorkspaceId: "",
     });
     expect(validateSettings(defaults)).toEqual({});
   });
