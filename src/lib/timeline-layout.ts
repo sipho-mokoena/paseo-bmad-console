@@ -109,6 +109,9 @@ export const NODE_H = 52;
 export const GAP_X = 64;
 export const GAP_Y = 12;
 export const PAD = 16;
+/** Space above the first row of nodes: 16px of top padding, the 12px wave labels, then a gap. */
+export const WAVE_LABEL_BASELINE = 28;
+export const HEADER_H = 44;
 
 export interface Placed {
   key: string;
@@ -201,12 +204,12 @@ export function layoutLayers(graph: DepGraph, include?: (node: DepNode) => boole
   columns.forEach((c, layer) => {
     tallest = Math.max(tallest, c.length);
     c.forEach((key, index) => {
-      placed.set(key, { key, layer, index, x: PAD + layer * (NODE_W + GAP_X), y: PAD + index * (NODE_H + GAP_Y) });
+      placed.set(key, { key, layer, index, x: PAD + layer * (NODE_W + GAP_X), y: HEADER_H + index * (NODE_H + GAP_Y) });
     });
   });
   return {
     width: PAD * 2 + Math.max(columns.length, 1) * NODE_W + Math.max(columns.length - 1, 0) * GAP_X,
-    height: PAD * 2 + Math.max(tallest, 1) * NODE_H + Math.max(tallest - 1, 0) * GAP_Y,
+    height: HEADER_H + PAD + Math.max(tallest, 1) * NODE_H + Math.max(tallest - 1, 0) * GAP_Y,
     columns,
     placed,
     crossings: bestScore,

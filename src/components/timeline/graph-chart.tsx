@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useHorizontalWheel } from "@/lib/wheel";
 import { epicLabel } from "@/lib/bmad/ids";
 import type { DepGraph, DepNode } from "@/lib/dependency-graph";
-import { NODE_H, NODE_W, edgePath, layoutLayers, neighbourKey } from "@/lib/timeline-layout";
+import { NODE_H, NODE_W, WAVE_LABEL_BASELINE, edgePath, layoutLayers, neighbourKey } from "@/lib/timeline-layout";
 import { statusLabel, statusStyle } from "./timeline-style";
 
 interface GraphChartProps {
@@ -87,7 +87,7 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
           </defs>
           <g>
             {layout.columns.map((col, l) => (
-              <text key={l} x={16 + l * (NODE_W + 64)} y={11} className="fill-muted-foreground" fontSize={12} aria-hidden="true">
+              <text key={l} x={16 + l * (NODE_W + 64)} y={WAVE_LABEL_BASELINE} className="fill-muted-foreground" fontSize={12} aria-hidden="true">
                 Wave {l + 1}
               </text>
             ))}
