@@ -13,6 +13,11 @@
 # testing
 /coverage
 
+# Paseo plugin (own npm project in plugin/)
+/plugin/node_modules/
+/plugin/dist/
+/plugin/*.tsbuildinfo
+
 # next.js
 /.next/
 /out/

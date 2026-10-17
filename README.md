@@ -82,6 +82,28 @@ pnpm db:create-admin  # create an admin user from the CLI
 
 Type check with `pnpm exec tsc --noEmit`.
 
+## Paseo plugin
+
+`plugin/` contains a [Paseo](https://paseo.sh) plugin that starts, stops and opens this console from Paseo: a sidebar item, a workspace panel and Command Center items ("Open BMAD Console", "Start/Stop BMAD Console"). It is a separate npm project (the rest of the repo uses pnpm) and is excluded from the root TypeScript, ESLint and Vitest runs.
+
+**Plugins are trusted, unsandboxed code.** This one runs `pnpm exec next dev` or `pnpm exec next start` on the machine that runs the Paseo daemon, with the daemon user's permissions. Read `plugin/` before installing it. Plugins are off by default: turn on **Enable plugins** under Paseo Settings, Plugins (the `pluginsEnabled` field in the daemon's `config.json`, applied with `paseo reload`). It needs Paseo 0.11.0 or later on the daemon and in the app.
+
+```bash
+cd plugin && npm install && npm run typecheck && npm test
+paseo plugin install /absolute/path/to/paseo-bmad-console/plugin
+paseo plugin ls
+```
+
+Then open **BMAD Console** in the sidebar (or Settings, Plugins, BMAD Console) and set:
+
+- **Console directory**: absolute path to this checkout (dependencies installed, `.env` present, database running).
+- **Port** (default 3002), **mode** (`dev`, or `start` after `pnpm build`) and **bind host** (default `127.0.0.1`).
+- Optional: **public URL**, **allowed dev origins** (`ALLOWED_DEV_ORIGINS`), **start with Paseo**, and **no-login mode** (`DEV_BYPASS_AUTH`, dev mode and loopback only).
+
+The plugin only stops the process it started and reports a console that is already running on the port without touching it. Note that two `next dev` servers cannot share one checkout, so stop a manually started `pnpm dev` first, or use another checkout.
+
+On a phone or in the web app, "Open in Paseo browser" is not available (Electron only). Use the URL shown in the plugin and set the public URL to the machine's Tailscale or LAN address, with a bind host that device can reach: `127.0.0.1` is not reachable from a phone.
+
 ## Project structure
 
 ```

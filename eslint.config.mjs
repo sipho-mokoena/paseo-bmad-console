@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Third-party vendored components
     "src/components/reui/**",
+    // Separate npm project with its own tooling
+    "plugin/**",
   ]),
 ]);
 
