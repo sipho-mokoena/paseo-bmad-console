@@ -14,6 +14,7 @@ import {
   buildEpicGraph,
   buildStoryGraph,
   busiestEpic,
+  isolatedDone,
   closure,
   scopeStoryGraph,
   type DepGraph,
@@ -256,7 +257,9 @@ export function TimelineView({ data, base }: TimelineViewProps) {
   }
 
   const rowH = desktop ? 36 : 40;
-  const tooMany = view === "graph" && graphLevel === "story" && !scope && storyGraph.nodes.length > GRAPH_NODE_CAP;
+  // The graph hides finished items with no dependencies, so they do not count towards the cap.
+  const drawn = storyGraph.nodes.length - isolatedDone(storyGraph).size;
+  const tooMany = view === "graph" && graphLevel === "story" && !scope && drawn > GRAPH_NODE_CAP;
   const busiest = busiestEpic(stories);
   const waves = view === "gantt" ? gantt.waves : viewGraph.waves;
   const unresolved = viewGraph.unresolved;
@@ -304,7 +307,7 @@ export function TimelineView({ data, base }: TimelineViewProps) {
             <StateMessage className="flex-col gap-3">
               <p className="text-foreground">Too many nodes: pick an epic</p>
               <p className="max-w-prose">
-                All epics together have {storyGraph.nodes.length} stories, more than the {GRAPH_NODE_CAP} the graph draws legibly. Choose one epic in Scope, or switch to the epic level.
+                All epics together have {drawn} stories with dependencies or work left, more than the {GRAPH_NODE_CAP} the graph draws legibly. Choose one epic in Scope, or switch to the epic level.
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 {busiest && (

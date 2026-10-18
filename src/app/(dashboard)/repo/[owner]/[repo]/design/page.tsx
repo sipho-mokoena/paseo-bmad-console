@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { DocumentTabBrowser } from "@/components/docs/document-tab-browser";
-import { classifyDocs, pickDoc } from "@/lib/doc-groups";
+import { classifyDocs, flattenDocs, pickDoc, withTitles } from "@/lib/doc-groups";
+import { loadDocTitles } from "@/lib/doc-titles-server";
 import { getRepoConfig } from "@/lib/db/helpers";
 import { localRootOf } from "@/lib/copy-path";
 import { loadProject } from "@/lib/load-project";
@@ -14,9 +15,11 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
   const { owner, repo } = await params;
   const { file } = await searchParams;
   const project = await loadProject(owner, repo);
-  const localRoot = localRootOf(await getRepoConfig(owner, repo));
+  const config = await getRepoConfig(owner, repo);
+  const localRoot = localRootOf(config);
 
-  const groups = classifyDocs(project.bmadFiles).design;
+  const classified = classifyDocs(project.bmadFiles).design;
+  const groups = withTitles(classified, config ? await loadDocTitles(config, flattenDocs(classified).map((d) => d.path)) : {});
   const selected = pickDoc(groups, Array.isArray(file) ? file[0] : file);
   if (!selected) notFound();
 

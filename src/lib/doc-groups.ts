@@ -7,7 +7,7 @@
 export interface DocEntry {
   /** Repo-relative path. */
   path: string;
-  /** Display name: the file name without `.md`. */
+  /** Display name: the document's title when known, else the file name without `.md`. */
   name: string;
 }
 
@@ -180,4 +180,9 @@ export function flattenDocs(groups: readonly DocGroup[]): DocEntry[] {
 export function pickDoc(groups: readonly DocGroup[], file: string | undefined): DocEntry | null {
   const all = flattenDocs(groups);
   return all.find((d) => d.path === file) ?? all[0] ?? null;
+}
+
+/** The groups with each document named by its title where one is known (order is unchanged). */
+export function withTitles(groups: readonly DocGroup[], titles: Readonly<Record<string, string>>): DocGroup[] {
+  return groups.map((g) => ({ ...g, docs: g.docs.map((d) => ({ ...d, name: titles[d.path] ?? d.name })) }));
 }

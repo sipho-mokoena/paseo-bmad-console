@@ -521,3 +521,13 @@ export function matchesQuery(node: Pick<DepNode, "id" | "title">, query: string)
   const hay = `${node.id} ${node.title}`.toLowerCase();
   return terms.every((t) => hay.includes(t));
 }
+
+/** Keys of finished nodes with no edges in either direction; they add height to a graph but no information. */
+export function isolatedDone(graph: Pick<DepGraph, "nodes" | "edges">): Set<string> {
+  const linked = new Set<string>();
+  for (const e of graph.edges) {
+    linked.add(e.from);
+    linked.add(e.to);
+  }
+  return new Set(graph.nodes.filter((n) => n.status === "done" && !linked.has(n.key)).map((n) => n.key));
+}
