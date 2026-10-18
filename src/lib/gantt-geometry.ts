@@ -11,10 +11,10 @@ export const BAR_PAD = 12;
 export const MIN_BAR_W = 12;
 
 /** Left offset and width of a bar that spans `start` to `end` (in waves). */
-export function barBox(start: number, end: number): { left: number; width: number } {
+export function barBox(start: number, end: number, colW = COL_W): { left: number; width: number } {
   return {
-    left: start * COL_W + BAR_PAD,
-    width: Math.max((end - start) * COL_W - 2 * BAR_PAD, MIN_BAR_W),
+    left: start * colW + BAR_PAD,
+    width: Math.max((end - start) * colW - 2 * BAR_PAD, MIN_BAR_W),
   };
 }
 
@@ -24,9 +24,9 @@ export function barBox(start: number, end: number): { left: number; width: numbe
  * the last segment always has room to run left to right, so the arrowhead points at the bar
  * instead of flipping when the two bars sit in adjacent waves.
  */
-export function connectorPath(fromEnd: number, toStart: number, y1: number, y2: number): string {
-  const x1 = fromEnd * COL_W - BAR_PAD;
-  const x2 = toStart * COL_W + BAR_PAD;
+export function connectorPath(fromEnd: number, toStart: number, y1: number, y2: number, colW = COL_W): string {
+  const x1 = fromEnd * colW - BAR_PAD;
+  const x2 = toStart * colW + BAR_PAD;
   const xm = x2 - x1 >= 2 * BAR_PAD ? (x1 + x2) / 2 : x1 + BAR_PAD / 2;
   return `M${x1} ${y1} H${xm} V${y2} H${x2}`;
 }

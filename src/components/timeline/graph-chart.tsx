@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useHorizontalWheel } from "@/lib/wheel";
 import { epicLabel } from "@/lib/bmad/ids";
@@ -39,7 +39,21 @@ const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` 
 
 /** Layered left-to-right DAG; one column per wave. */
 export function GraphChart({ graph, prefix, selected, hovered, upstream, downstream, matches, only, critical, onSelect, onHover }: GraphChartProps) {
-  const layout = useMemo(() => layoutLayers(graph, only ? (n) => only.has(n.key) : undefined), [graph, only]);
+  // Finished items nothing depends on and that depend on nothing add height but no information.
+  const [showIsolated, setShowIsolated] = useState(false);
+  const isolated = useMemo(() => {
+    const linked = new Set<string>();
+    for (const e of graph.edges) {
+      linked.add(e.from);
+      linked.add(e.to);
+    }
+    return new Set(graph.nodes.filter((n) => n.status === "done" && !linked.has(n.key)).map((n) => n.key));
+  }, [graph, only]);
+  const hidden = !showIsolated && isolated.size < graph.nodes.length ? isolated : null;
+  const layout = useMemo(
+    () => layoutLayers(graph, only || hidden ? (n) => (!only || only.has(n.key)) && !hidden?.has(n.key) : undefined),
+    [graph, only, hidden],
+  );
   const scroller = useRef<HTMLDivElement>(null);
   useHorizontalWheel(scroller);
   const nodeRefs = useRef(new Map<string, SVGGElement>());
@@ -72,10 +86,20 @@ export function GraphChart({ graph, prefix, selected, hovered, upstream, downstr
 
   return (
     <div>
+      {isolated.size > 0 && isolated.size < graph.nodes.length && (
+        <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {showIsolated ? "Showing" : "Hiding"} {isolated.size} finished {isolated.size === 1 ? "item" : "items"} with no dependencies
+          </span>
+          <button type="button" onClick={() => setShowIsolated((v) => !v)} className="rounded-md px-1.5 py-0.5 text-foreground underline-offset-2 outline-hidden hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+            {showIsolated ? "Hide" : "Show"}
+          </button>
+        </div>
+      )}
       <div
         ref={scroller}
         role="group"
-        aria-label={`Dependency graph, ${graph.nodes.length} items in ${layout.columns.length} waves`}
+        aria-label={`Dependency graph, ${layout.placed.size} items in ${layout.columns.length} waves`}
         onKeyDown={onKeyDown}
         className="max-h-[72vh] min-h-48 overflow-auto rounded-lg border bg-background"
       >

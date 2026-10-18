@@ -1,7 +1,7 @@
 "use client";
 
 import { COL_W, barBox, connectorPath } from "@/lib/gantt-geometry";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHorizontalWheel } from "@/lib/wheel";
@@ -70,7 +70,20 @@ export function GanttChart({
     const el = scroller.current?.querySelector<HTMLElement>(`[data-bar="${CSS.escape(selected)}"]`);
     el?.scrollIntoView?.({ block: "nearest", inline: "center" });
   }, [selected]);
-  const trackW = Math.max(waves, 1) * COL_W;
+  // Stretch the wave columns to fill the pane when there are too few waves to span it.
+  const [paneW, setPaneW] = useState(0);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const measure = () => setPaneW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const labelW = paneW >= 768 ? 248 : 152;
+  const colW = Math.max(COL_W, Math.floor((paneW - labelW - 2) / Math.max(waves, 1)));
+  const trackW = Math.max(waves, 1) * colW;
   const bodyH = rows.length * rowH;
   const kind = graph.kind;
   const rowIndex = new Map(rows.map((r, i) => [r.key, i]));
@@ -94,14 +107,14 @@ export function GanttChart({
     const y2 = b * rowH + rowH / 2;
     lines.push({
       id: `${e.from}->${e.to}`,
-      d: connectorPath(na.end, nb.start, y1, y2),
+      d: connectorPath(na.end, nb.start, y1, y2, colW),
       tone: direct ? "active" : onCritical ? "critical" : "all",
     });
   }
   lines.sort((p, q) => (p.tone === "active" ? 1 : 0) - (q.tone === "active" ? 1 : 0));
 
   const gridStyle = {
-    backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent ${COL_W - 1}px, var(--border) ${COL_W - 1}px, var(--border) ${COL_W}px)`,
+    backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent ${colW - 1}px, var(--border) ${colW - 1}px, var(--border) ${colW}px)`,
   };
 
   return (
@@ -141,7 +154,7 @@ export function GanttChart({
               <div
                 key={i}
                 className="flex shrink-0 items-center justify-center border-r text-xs text-muted-foreground"
-                style={{ width: COL_W }}
+                style={{ width: colW }}
               >
                 Wave {i + 1}
               </div>
@@ -154,6 +167,7 @@ export function GanttChart({
                 row={row}
                 top={i * rowH}
                 rowH={rowH}
+                colW={colW}
                 selected={selected === row.key}
                 hovered={hovered === row.key}
                 inChain={row.node ? upstream.has(row.node.key) || downstream.has(row.node.key) : false}
@@ -270,6 +284,7 @@ function Bar({
   row,
   top,
   rowH,
+  colW,
   selected,
   hovered,
   inChain,
@@ -280,6 +295,7 @@ function Bar({
   row: GanttRow;
   top: number;
   rowH: number;
+  colW: number;
   selected: boolean;
   hovered: boolean;
   inChain: boolean;
@@ -291,7 +307,7 @@ function Bar({
   const isStoryEpic = row.type === "epic" && !n;
   const start = row.span ? row.span.start : n!.start;
   const end = row.span ? row.span.end : n!.end;
-  const { left, width } = barBox(start, end);
+  const { left, width } = barBox(start, end, colW);
   const h = isStoryEpic ? 20 : rowH - 12;
   const style = { top: top + (rowH - h) / 2, left, width, height: h };
 
