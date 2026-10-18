@@ -11,6 +11,14 @@ import { storyHref } from "@/lib/stories-browse";
 import { timelineHref } from "@/lib/timeline-params";
 import type { StoryDetail } from "@/lib/bmad/types";
 
+/** Ticket-tree task `path -- action -- rationale`: split off the path when it looks like one. */
+function splitPlanTask(text: string): { path: string; rest: string } | null {
+  const at = text.indexOf(" -- ");
+  const head = at === -1 ? text : text.slice(0, at);
+  if (!/[/.]/.test(head) || /\s/.test(head.trim())) return null;
+  return { path: head, rest: at === -1 ? "" : text.slice(at + 4) };
+}
+
 export interface StoryRef {
   ref: string;
   /** Owning epic when the story is known (renders as a link); null for unknown refs. */
@@ -187,20 +195,31 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
             label="Task progress"
           />
           <ul className="space-y-1.5 pt-1">
-            {story.tasks.map((task, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
-                {task.completed ? (
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
-                ) : (
-                  <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                )}
-                <InlineMarkdown
-                  className={task.completed ? "flex-1 text-muted-foreground line-through" : "flex-1"}
-                >
-                  {task.description}
-                </InlineMarkdown>
-              </li>
-            ))}
+            {story.tasks.map((task, i) => {
+              const plain = story.ticket ? splitPlanTask(task.description) : null;
+              return (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  {task.completed ? (
+                    <CheckCircle2 aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                  ) : (
+                    <Circle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="sr-only">{task.completed ? "Done: " : "To do: "}</span>
+                  {plain ? (
+                    <span className={cn("min-w-0 flex-1", task.completed && "text-muted-foreground line-through")}>
+                      <code className="font-mono text-xs break-all">{plain.path}</code>
+                      {plain.rest && <span> -- {plain.rest}</span>}
+                    </span>
+                  ) : (
+                    <InlineMarkdown
+                      className={task.completed ? "flex-1 text-muted-foreground line-through" : "flex-1"}
+                    >
+                      {task.description}
+                    </InlineMarkdown>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </Section>
       )}
