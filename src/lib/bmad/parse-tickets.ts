@@ -1,8 +1,9 @@
 import { parse as parseToml } from "smol-toml";
 import type { ContentProvider } from "@/lib/content-provider";
 import matter from "gray-matter";
-import type { Epic, EpicDependency, StoryDetail, StoryStatus } from "./types";
+import type { Epic, EpicDependency, StoryDetail, StoryStatus, StoryTask } from "./types";
 import { capBody, plainSummary } from "./body";
+import { extractPlanTasks } from "./plan-tasks";
 
 export const INITIATIVE_TICKETS = /^(.*\/initiative-[^/]+)\/tickets\.toml$/;
 
@@ -49,6 +50,7 @@ interface Plan {
   status: StoryStatus | "dropped";
   assignee?: string;
   blockedReason?: string;
+  tasks: StoryTask[];
 }
 
 /** Plans (`<type>-<slug>-plan.md`) beside the tickets, keyed by their `ticket` id. */
@@ -64,13 +66,15 @@ async function readPlans(
     if (!p.startsWith(prefix) || !p.endsWith("-plan.md")) continue;
     if (p.slice(prefix.length).includes("/")) continue;
     files++;
-    const fm = matter(await provider.getFileContent(p)).data;
+    const parsed = matter(await provider.getFileContent(p));
+    const fm = parsed.data;
     if (fm.ticket === undefined) continue;
     const id = String(fm.ticket).split(".").pop() as string;
     plans.set(id, {
       status: planStatus(fm.status),
       assignee: fm.assignee ? String(fm.assignee) : undefined,
       blockedReason: fm.blocked_reason ? String(fm.blocked_reason) : undefined,
+      tasks: extractPlanTasks(parsed.content),
     });
   }
   return { plans, files };
@@ -177,9 +181,9 @@ export async function parseTicketTree(
             blockedReason: plan?.blockedReason,
           },
           acceptanceCriteria: e.verify ? [e.verify] : [],
-          tasks: [],
-          completedTasks: 0,
-          totalTasks: 0,
+          tasks: plan?.tasks ?? [],
+          completedTasks: plan?.tasks.filter((t) => t.completed).length ?? 0,
+          totalTasks: plan?.tasks.length ?? 0,
         });
       }
 

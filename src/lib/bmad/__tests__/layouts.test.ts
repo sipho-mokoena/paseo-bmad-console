@@ -147,6 +147,25 @@ describe("ticket-tree layout (wrapped)", () => {
     expect(p.completedStories).toBe(1);
     expect(p.stories.find((s) => s.id === "1.2")!.ticket?.after).toEqual(["1.1"]);
   });
+
+  it("fills tasks from the Execution checkboxes of the plan file", async () => {
+    const planBody =
+      "---\nticket: 1.1\nstatus: in-progress\n---\n\n## Tasks & Acceptance\n\n**Execution:**\n- [x] `src/a.ts` -- add -- why\n- [ ] `src/b.ts` -- wire -- why\n\n**Acceptance Criteria:**\n- Given x, when y, then z\n\n## Review Triage Log\n\n- [ ] ignored\n";
+    const p = (await getBmadProject(
+      config,
+      fake({
+        "_bmad-output/initiative-a/tickets.toml": '[[epic]]\nid = 1\nslug = "one"\ntitle = "One"\n',
+        "_bmad-output/initiative-a/one/tickets.toml": '[[entry]]\nid = 1\ntitle = "A"\nverify = "works"\n[[entry]]\nid = 2\ntitle = "B"\n',
+        "_bmad-output/initiative-a/one/feature-a-plan.md": planBody,
+      }),
+    ))!;
+    const s = p.stories.find((x) => x.id === "1.1")!;
+    expect([s.totalTasks, s.completedTasks]).toEqual([2, 1]);
+    expect(s.tasks[1]).toEqual({ description: "src/b.ts -- wire -- why", completed: false });
+    expect(s.acceptanceCriteria).toEqual(["works"]);
+    const other = p.stories.find((x) => x.id === "1.2")!;
+    expect([other.tasks, other.totalTasks]).toEqual([[], 0]);
+  });
 });
 
 describe("v4 layout (fixture only)", () => {
