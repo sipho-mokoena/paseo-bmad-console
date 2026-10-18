@@ -13,7 +13,7 @@ Anything marked "check your BMAD version" was not verified against your installa
 
 | Who | Updates | Reads in the console |
 | --- | --- | --- |
-| Developer | Code, the story or plan status while building (the BMAD skills do this), tasks | Ready now, story page, Verify and criteria |
+| Developer | Code, the story or plan status while building (the BMAD skills do this), tasks (in the ticket tree, the plan's Execution checkboxes) | Ready now, story page, Verify and criteria |
 | Reviewer | The review outcome, and `done` when the review passes | In review rows, the story page |
 | Lead | Epics, ids, dependencies, risk, retire or drop decisions, the retrospective | Overview, Timeline, Details notes, Specs and Design |
 

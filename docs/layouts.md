@@ -111,7 +111,8 @@ _bmad-output/
 - Story ids are `<epic id>.<entry id>`. In `after`, a bare number refers to a sibling in the same epic and `4.1` is a full reference.
 - Plan files named `*-plan.md` next to the tickets carry the status, matched by their `ticket` frontmatter field.
 - Ticket metadata (type, risk, human-in-the-loop flag, covers, after, assignee, blocked reason) is shown on story rows and the story page. `verify` becomes the story's single acceptance criterion.
-- A ticket without a plan file is `backlog` with no explicit status.
+- Tasks come from the plan file: the `- [ ]` and `- [x]` lines of its `## Tasks & Acceptance` section (the Execution block, up to `**Acceptance Criteria:**`). Checkboxes in other sections, nested sub-bullets and the template's unfilled `FILE -- ACTION -- RATIONALE` line are ignored.
+- A ticket without a plan file is `backlog` with no explicit status and no tasks.
 
 ### v4
 

@@ -17,6 +17,7 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Added
 
+- Ticket tree: stories now show tasks, read from the checkbox lines of the plan file's `## Tasks & Acceptance` Execution block, with the Tasks column, progress bar and checklist; the story page shows each task's file path in monospace.
 - Documentation: a best practices guide for BMAD projects in the console (`docs/best-practices.md`) and a workflow session guide with a worked example (`docs/workflow.md`), linked from the README and the docs index.
 - Timeline: the chart and the details panel sit in a resizable split from the xl breakpoint. Drag the handle (or use the arrow keys on it) to resize, double-click it to reset; the size is remembered. Below xl the panel still stacks under the chart.
 - Header: a Refresh data button on project pages, with the same result dialog as the sidebar project menu.

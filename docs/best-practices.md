@@ -15,7 +15,7 @@ Statements below are of two kinds. "The console reads ..." is behaviour checked 
 | Stories with a status | Status pills, epic progress (done stories divided by all stories) and the project progress bar |
 | Story descriptions in Markdown | The Description section of the story page (tables and fenced code render) |
 | Acceptance criteria as a list, or a `verify` field | The Acceptance criteria list, or the Verify section (ticket tree) |
-| Tasks as `- [ ]` checkboxes in a story file | A Tasks section with a progress bar and "n of m completed" |
+| Tasks as `- [ ]` checkboxes in a story file, or in the Execution block of a ticket's plan file (ticket tree) | A Tasks section with a progress bar and "n of m completed" |
 | `depends_on` or `after` declarations | "after" and "blocks" links on story pages, and the Timeline (Gantt and Graph) on the Overview |
 | `risk`, `type`, `hitl`, `covers` on tickets (ticket tree) | Risk pills, "Size by risk" in the Timeline and a details table on the story page |
 | Brief, PRD, spec, architecture documents in recognised folders | The Specs tab, grouped as Brief, PRD, Spec, Architecture |
@@ -36,7 +36,7 @@ The console detects a layout from the file list and uses the first adapter that 
 | Stories | `implementation-artifacts/1-1-title.md`, `story-1.md`, or files inside epic folders | `.agentic/.../E1-S1-slug/spec.md`, `implementation-artifacts/E1-S1-slug.md` | `[[entry]]` rows in `<epic>/tickets.toml` | `docs/stories/1.1.slug.md` |
 | Status from | Story `Status:` or frontmatter, then `sprint-status.yaml` | Spec status, then `sprint-status.yaml` | Plan files `*-plan.md` | Story status |
 | Dependencies | `depends_on` frontmatter | `depends_on` frontmatter | `after` lists | `depends_on` frontmatter |
-| Extra metadata | Tasks, criteria | Tasks, criteria | Type, risk, human in the loop, covers, assignee, blocked reason, verify | Tasks, criteria |
+| Extra metadata | Tasks, criteria | Tasks, criteria | Tasks (plan Execution checkboxes), type, risk, human in the loop, covers, assignee, blocked reason, verify | Tasks, criteria |
 | Ids | `1`, `1.2` | `E1`, `E1-S2` | `1`, `1.2` (`<epic>.<entry>`) | `1`, `1.2` |
 
 The ticket tree gives the richest view: risk, type, human in the loop, covers and `after` per ticket, a plan status per ticket, and the data that "Size by risk" needs. v4 support is minimal and tested with fixtures only.
@@ -124,7 +124,7 @@ For stories:
 - A clear title. v6 stories take it from frontmatter `title` or the first `#` heading ("# Story 1.1: Title" is fine). Ticket entries take it from `title`.
 - A short description as the body. Everything outside the criteria and task sections is shown as the Description section.
 - Acceptance criteria as a list under `## Acceptance Criteria` (v6, v4). Numbered and bulleted items each become one criterion, and indented sub-bullets stay inside their parent. In the ticket tree write one sentence in `verify`: it is shown as the Verify section.
-- Tasks as `- [ ]` and `- [x]` checkboxes. The console counts them for the Tasks progress bar. Any checkbox line in the file counts, so do not use checkboxes for other lists.
+- Tasks as `- [ ]` and `- [x]` checkboxes. The console counts them for the Tasks progress bar. Any checkbox line in the file counts, so do not use checkboxes for other lists. In the ticket tree the tasks are the checkboxes under `**Execution:**` in the `## Tasks & Acceptance` section of the ticket's plan file (`- [ ] \`path\` -- action -- rationale`), which `bmad-build` writes. Checkboxes in other plan sections are not counted.
 - Keep Markdown simple. Tables and fenced code render. Row summaries strip the markup, so do not put the key fact only in a table or a link target.
 
 What you see if you do not: an epic without a description paragraph has an empty summary line, a story without criteria has no criteria section, and a story whose tasks are plain bullets has no progress bar.
