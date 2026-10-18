@@ -39,7 +39,8 @@ export function statusRow(status: ConsoleStatus): { value: string; hint: string 
     case "crashed": {
       const { code, signal } = status.lastExit ?? { code: null, signal: null };
       const how = signal ? `signal ${signal}` : code !== null ? `code ${code}` : "an error";
-      return { value: "crashed", hint: `Stopped unexpectedly (${how}). See the logs.` };
+      const last = status.crashLines[status.crashLines.length - 1];
+      return { value: "crashed", hint: `Stopped unexpectedly (${how}).${last ? ` Last output: ${last}` : ""}` };
     }
     case "stopped":
       return { value: "stopped", hint: status.configError ?? undefined };
@@ -83,6 +84,7 @@ export function normalizeValues(values: ConsoleSettingsValues): ConsoleSettingsV
     bindHost: values.bindHost.trim(),
     publicUrl: values.publicUrl.trim(),
     allowedDevOrigins: values.allowedDevOrigins.trim(),
+    mode: "start",
   };
 }
 

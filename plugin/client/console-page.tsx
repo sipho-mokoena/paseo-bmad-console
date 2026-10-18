@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { usePaseo, useSettings, type PluginScreenProps } from "@getpaseo/plugin/client";
-import { Modal, ScrollView, copyText, useToast } from "@getpaseo/plugin/client/react-native";
+import { ScrollView, copyText, useToast } from "@getpaseo/plugin/client/react-native";
 import {
   ExternalLink,
   SettingsAction,
@@ -9,20 +9,14 @@ import {
   SettingsGroup,
   SettingsInput,
   SettingsRow,
-  SettingsSelect,
   SettingsSwitch,
 } from "@getpaseo/plugin/client/ui";
 import { useQuery } from "@tanstack/react-query";
 import { consoleSettings, validateSettings } from "../shared/console";
-import { useConsoleActions, useConsoleLogs, useConsoleStatus } from "./hooks";
+import { useConsoleActions, useConsoleStatus } from "./hooks";
 import { actionsFor, hasChanges, normalizeValues, pickWorkspace, statusChip, statusRow, type ChipTone } from "./logic";
 
 type Theme = PluginScreenProps["theme"];
-
-const MODES = [
-  { label: "Development (next dev)", value: "dev" },
-  { label: "Production (next start, needs a build)", value: "start" },
-] as const;
 
 export interface ConsolePageProps {
   theme: Theme;
@@ -65,11 +59,9 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
   const openBrowser = navigation?.openBrowser;
   const statusQuery = useConsoleStatus();
   const actions = useConsoleActions();
-  const logs = useConsoleLogs();
   const settings = useSettings(consoleSettings);
   const status = statusQuery.data;
 
-  const [logsOpen, setLogsOpen] = useState(false);
   const [draft, setDraft] = useState<ReturnType<typeof consoleSettings.schema.parse> | null>(null);
   const [portText, setPortText] = useState<string | null>(null);
 
@@ -115,8 +107,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
   const chip = statusChip(status?.state ?? "not_configured");
   const row = status ? statusRow(status) : null;
   const toShow = status ? actionsFor(status) : null;
-  const logLines = logs.data?.lines.length ? logs.data.lines : (status?.crashLines ?? []);
-  const logCount = logs.data?.total ?? logLines.length;
 
   function renderSettings() {
     if (settings.status === "loading") return null;
@@ -181,13 +171,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
               change({ port: text.trim() === "" ? Number.NaN : Number(text) });
             }}
           />
-          <SettingsSelect
-            label="Mode"
-            hint="Production needs a build first."
-            value={current.mode}
-            options={MODES}
-            onValueChange={(mode) => change({ mode })}
-          />
           <SettingsInput
             key={`host-${keyBase}`}
             label="Bind host"
@@ -204,15 +187,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
             initialValue={current.publicUrl}
             error={errors.publicUrl}
             onChangeText={(publicUrl) => change({ publicUrl })}
-          />
-          <SettingsInput
-            key={`origins-${keyBase}`}
-            label="Allowed dev origins"
-            hint="Optional. Comma separated host names allowed to load the dev server."
-            placeholder="my-machine.tailnet.ts.net"
-            initialValue={current.allowedDevOrigins}
-            error={errors.allowedDevOrigins}
-            onChangeText={(allowedDevOrigins) => change({ allowedDevOrigins })}
           />
           <SettingsSwitch
             label="Start with Paseo"
@@ -244,7 +218,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <Chip theme={theme} label={chip.label} tone={chip.tone} />
               <Chip theme={theme} label={`:${status.port}`} />
-              <Chip theme={theme} label={status.mode} />
             </View>
           ) : null}
         </View>
@@ -312,15 +285,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
                 actionLabel="Copy"
                 onPress={() => void copy(status.urls.preferred, "Address copied")}
               />
-              <SettingsAction
-                label="Logs"
-                hint={status.state === "crashed" && logLines.length > 0 ? `${logCount} lines. Last: ${logLines[logLines.length - 1]}` : `${logCount} ${logCount === 1 ? "line" : "lines"}`}
-                actionLabel="View logs"
-                onPress={() => {
-                  setLogsOpen(true);
-                  void logs.refetch();
-                }}
-              />
             </SettingsCard>
           </SettingsGroup>
         ) : null}
@@ -329,33 +293,6 @@ export function ConsolePage({ theme, navigation, workspaceId, autoOpen = false }
         {renderSettings()}
       </View>
 
-      <Modal title="Logs" open={logsOpen} onOpenChange={setLogsOpen}>
-        <Modal.Content>
-          <SettingsCard>
-            <SettingsAction
-              label="Copy logs"
-              actionLabel="Copy"
-              disabled={logLines.length === 0}
-              onPress={() => void copy(logLines.join("\n"), "Logs copied")}
-            />
-          </SettingsCard>
-          <ScrollView style={{ maxHeight: 360 }} nestedScrollEnabled>
-            {logLines.length === 0 ? (
-              <Text style={{ color: c.foregroundMuted }}>{logs.isError ? "Could not load logs." : "No output yet."}</Text>
-            ) : (
-              logLines.map((line, index) => (
-                <Text
-                  key={`${index}-${line.slice(0, 24)}`}
-                  selectable
-                  style={{ color: c.foreground, fontFamily: "monospace", fontSize: 12, lineHeight: 17 }}
-                >
-                  {line}
-                </Text>
-              ))
-            )}
-          </ScrollView>
-        </Modal.Content>
-      </Modal>
     </ScrollView>
   );
 }

@@ -59,6 +59,7 @@ describe("statusChip and statusRow", () => {
       hint: "Choose the console folder below",
     });
     expect(statusRow(status({ state: "crashed", lastExit: { code: 1, signal: null, at: 0 } })).hint).toContain("code 1");
+    expect(statusRow(status({ state: "crashed", lastExit: { code: 1, signal: null, at: 0 }, crashLines: ["a", "boom"] })).hint).toContain("Last output: boom");
   });
 });
 

@@ -17,7 +17,7 @@ describe("settings defaults", () => {
     expect(defaults).toEqual({
       consoleDirectory: "",
       port: 7002,
-      mode: "dev",
+      mode: "start",
       bindHost: "127.0.0.1",
       publicUrl: "",
       allowedDevOrigins: "",

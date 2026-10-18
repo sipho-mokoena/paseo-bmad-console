@@ -19,7 +19,8 @@ export function createService(manager: ProcessManager, settings: SettingsReader)
     { ok: true; values: ConsoleSettingsValues } | { ok: false; error: string }
   > {
     const state = await settings.read();
-    if (state.status === "ready") return { ok: true, values: state.values };
+    // The console always runs as a production build; an older saved `dev` mode is ignored.
+    if (state.status === "ready") return { ok: true, values: { ...state.values, mode: "start" } };
     return {
       ok: false,
       error:

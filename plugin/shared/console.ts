@@ -83,7 +83,7 @@ export const consoleSettings = defineSettings({
     .object({
       consoleDirectory: z.string().default(""),
       port: z.number().default(DEFAULT_PORT),
-      mode: z.enum(["dev", "start"]).default("dev"),
+      mode: z.enum(["dev", "start"]).default("start"),
       bindHost: z.string().default("127.0.0.1"),
       publicUrl: z.string().default(""),
       allowedDevOrigins: z.string().default(""),

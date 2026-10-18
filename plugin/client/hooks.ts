@@ -2,7 +2,6 @@ import { useRpc } from "@getpaseo/plugin/client";
 import { useToast } from "@getpaseo/plugin/client/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  logsRpc,
   restartRpc,
   startRpc,
   statusRpc,
@@ -16,12 +15,6 @@ const STATUS_KEY = ["bmad-console", "status"] as const;
 export function useConsoleStatus() {
   const status = useRpc(statusRpc);
   return useQuery({ queryKey: STATUS_KEY, queryFn: () => status({}), refetchInterval: 2000 });
-}
-
-/** Loaded once for the line count; refetch() when the logs are opened. No polling. */
-export function useConsoleLogs() {
-  const logs = useRpc(logsRpc);
-  return useQuery({ queryKey: ["bmad-console", "logs"], queryFn: () => logs({ lines: 300 }) });
 }
 
 export function useConsoleActions() {

@@ -19,12 +19,10 @@ You need:
 
 Open the BMAD Console screen (or Settings, Plugins, BMAD Console) and fill in:
 
-- Console directory: absolute path to the checkout. It must contain a package.json named `paseo-bmad-console` and a `next.config.ts`.
+- Console directory: absolute path to the checkout. It must contain a package.json named `paseo-bmad-console` and a `next.config.ts`, and a production build from `pnpm build` (the plugin tells you when it is missing).
 - Port: 1024 to 65535, default 7002.
-- Mode: `dev`, or `start` (needs a production build from `pnpm build`; the plugin tells you when it is missing).
 - Bind host: default 127.0.0.1, reachable from this machine only. Use 0.0.0.0 or a Tailscale or LAN address to reach it from another device.
 - Public URL (optional): the address other devices should use, for example a Tailscale URL. It is shown first on mobile.
-- Allowed dev origins (optional): comma separated host names passed to the console as `ALLOWED_DEV_ORIGINS`.
 - Start with Paseo: start the console when the plugin loads. Off by default.
 
 ## Opening the console

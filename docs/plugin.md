@@ -44,21 +44,19 @@ Open **BMAD Console** in the sidebar, or Settings, Plugins, BMAD Console. Settin
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Console directory | empty | Absolute path of the checkout. It must contain a `package.json` with the name `paseo-bmad-console`, a `next.config.ts` and `node_modules/next` |
+| Console directory | empty | Absolute path of the checkout. It must contain a `package.json` with the name `paseo-bmad-console`, a `next.config.ts` and `node_modules/next`, and a production build (`pnpm build`), because the plugin checks for `.next/BUILD_ID` |
 | Port | 7002 | 1024 to 65535 |
-| Mode | `dev` | `dev` runs `next dev`. `start` runs `next start` and needs a production build (`pnpm build`) in the checkout, because it checks for `.next/BUILD_ID` |
 | Bind host | `127.0.0.1` | Interface to listen on. Use a Tailscale or LAN address, or `0.0.0.0`, to reach it from another device |
 | Public URL | empty | Address other devices should use, for example a Tailscale URL. It is shown first, and it must start with `http://` or `https://` |
-| Allowed dev origins | empty | Comma-separated host names, passed to the console as `ALLOWED_DEV_ORIGINS` (development mode only) |
 | Start with Paseo | off | Start the console when the plugin loads. One attempt, no retry loop |
 
-The command that runs is `pnpm exec next dev|start -p <port> -H <bind host>` in the console directory, without a shell, in its own process group. The child gets the daemon's environment plus `NODE_ENV` (and `ALLOWED_DEV_ORIGINS` when set).
+The command that runs is `pnpm exec next start -p <port> -H <bind host>` in the console directory, without a shell, in its own process group. The child gets the daemon's environment plus `NODE_ENV=production`.
 
 ## What the page shows
 
-- Status chips: the state (Not configured, Stopped, Starting, Running, Stopping or Crashed), the port and the mode. A console that was started outside Paseo shows as running with the hint "Started outside Paseo, so Paseo will not stop it".
-- A **Console** group with Start, Restart, Stop, Open, the address (with a copy action) and the logs. The log view keeps the last 300 lines in memory and can copy them.
-- After a crash, the exit code and the last lines of output.
+- Status chips: the state (Not configured, Stopped, Starting, Running, Stopping or Crashed), and the port. A console that was started outside Paseo shows as running with the hint "Started outside Paseo, so Paseo will not stop it".
+- A **Console** group with Start, Restart, Stop, Open, and the address (with a copy action).
+- After a crash, the exit code and the last line of output in the Status row.
 - The settings form below it, with validation.
 
 ## Opening the console
@@ -68,9 +66,9 @@ The command that runs is `pnpm exec next dev|start -p <port> -H <bind host>` in 
 
 ## Limits
 
-- **Source checkout only.** The plugin starts the console from a source checkout with `pnpm exec next dev` or `pnpm exec next start`. It cannot start, stop or restart a standalone deployment folder (see [deployment.md](./deployment.md)), which has no source and no Next.js CLI. If a console already answers `/api/health` on the port, whatever started it, the plugin shows it as running with that "Started outside Paseo" hint, lets you open it and never touches it. So it can open a standalone deployment but not manage it.
-- **`start` mode warning.** The repository builds with `output: "standalone"`, so `next start` prints a warning that it does not work with that setting. The server still starts and answers.
-- **Next dev lock.** Two `next dev` servers cannot share one checkout. If you started `pnpm dev` yourself in the same checkout on another port, the plugin's start fails with a lock error in the logs. Stop the other server or use another checkout.
+- **Source checkout only.** The plugin starts the console from a source checkout with `pnpm exec next start`. It cannot start, stop or restart a standalone deployment folder (see [deployment.md](./deployment.md)), which has no source and no Next.js CLI. If a console already answers `/api/health` on the port, whatever started it, the plugin shows it as running with that "Started outside Paseo" hint, lets you open it and never touches it. So it can open a standalone deployment but not manage it.
+- **Production only.** The plugin always runs `next start`. Earlier versions had a development mode, an allowed dev origins setting and a log viewer; an old saved `dev` mode is ignored.
+- **`next start` warning.** The repository builds with `output: "standalone"`, so `next start` prints a warning that it does not work with that setting. The server still starts and answers.
 - **It only stops what it started.** When the plugin unloads it stops its own process. It does not restart a crashed console automatically.
 - **Port in use by something else.** If the port is taken by a process that does not answer like the console, the plugin refuses to start and asks for another port.
 - **No authentication.** The console has none. A non-loopback bind host exposes it to that network, so use one only on a private network.
@@ -85,9 +83,9 @@ paseo plugin logs bmad-console
 - The plugin is missing or disabled: check `paseo plugin ls`, enable plugins in Settings and run `paseo reload`.
 - "Set the console directory in the plugin settings": fill in the absolute path of the checkout.
 - "Dependencies are not installed": run `pnpm install` in the checkout.
-- "No production build" in `start` mode: run `pnpm build` in the checkout, or use `dev` mode.
+- "No production build": run `pnpm build` in the checkout.
 - "Could not run `pnpm`": `pnpm` is not on the daemon's `PATH`.
-- The console starts and exits at once: open the logs. The usual causes are a missing or wrong `DATABASE_URL` in the checkout's `.env`, the database not running, or the dev lock described above.
+- The console starts and exits at once: read the last output in the Status row, or `paseo plugin logs bmad-console`. The usual causes are a missing or wrong `DATABASE_URL` in the checkout's `.env` or the database not running.
 - "Could not reach the plugin on the Paseo daemon": the daemon is not running or the plugin did not load; see `paseo plugin logs bmad-console`.
 
 ## Development
