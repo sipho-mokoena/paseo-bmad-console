@@ -5,9 +5,9 @@ import Link from "next/link";
 import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { DocumentPane } from "./document-pane";
 import { groupIcon } from "./doc-icons";
-import { GroupLabel } from "@/components/shared/list-kit";
+import { GroupLabel, SearchField } from "@/components/shared/list-kit";
 import { cn } from "@/lib/utils";
-import { flattenDocs, type DocGroup } from "@/lib/doc-groups";
+import { filterGroups, flattenDocs, type DocGroup } from "@/lib/doc-groups";
 
 interface DocumentTabBrowserProps {
   tab: "specs" | "design";
@@ -34,6 +34,8 @@ export function DocumentTabBrowser({
 }: DocumentTabBrowserProps) {
   // Phone: the list is a collapsible "Documents" row that closes once a document is picked.
   const [listOpen, setListOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const shown = useMemo(() => filterGroups(groups, query), [groups, query]);
   const tabPaths = useMemo(() => new Set(flattenDocs(groups).map((d) => d.path)), [groups]);
 
   const hrefFor = useCallback(
@@ -70,18 +72,28 @@ export function DocumentTabBrowser({
             <ChevronRight className="h-4 w-4 shrink-0" />
           )}
         </button>
+        <div className={cn(listOpen ? "" : "hidden lg:block", "border-t px-1.5 py-1.5 lg:border-t-0")}>
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            placeholder={tab === "specs" ? "Search specs" : "Search design"}
+            ariaLabel="Search documents"
+            clearable
+          />
+        </div>
         <nav
           aria-label="Documents"
           className={cn(
             listOpen ? "" : "hidden lg:block",
-            "max-h-[55dvh] overflow-y-auto border-t px-1.5 pb-3 lg:max-h-none lg:min-h-0 lg:flex-1 lg:border-t-0",
+            "max-h-[55dvh] overflow-y-auto px-1.5 pb-3 lg:max-h-none lg:min-h-0 lg:flex-1",
           )}
         >
-          {groups.map((group, i) => {
+          {shown.length === 0 && <p className="px-2 py-3 text-sm text-muted-foreground">No documents match.</p>}
+          {shown.map((group, i) => {
             const GroupIcon = groupIcon(group.id);
             return (
             <section key={group.id}>
-              <GroupLabel className={cn("flex items-center gap-1.5", i === 0 && "pt-2")}>
+              <GroupLabel className={cn("flex items-center gap-1.5", i === 0 && "pt-1")}>
                 <GroupIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {group.label}
               </GroupLabel>

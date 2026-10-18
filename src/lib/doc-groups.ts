@@ -186,3 +186,19 @@ export function pickDoc(groups: readonly DocGroup[], file: string | undefined): 
 export function withTitles(groups: readonly DocGroup[], titles: Readonly<Record<string, string>>): DocGroup[] {
   return groups.map((g) => ({ ...g, docs: g.docs.map((d) => ({ ...d, name: titles[d.path] ?? d.name })) }));
 }
+
+/** Groups narrowed to documents whose name or folder/file path contains every word of `query` (empty groups drop out). */
+export function filterGroups(groups: readonly DocGroup[], query: string): DocGroup[] {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return [...groups];
+  return groups
+    .map((g) => ({
+      ...g,
+      docs: g.docs.filter((d) => {
+        // Skip the output root, which every path shares and would match any query.
+        const hay = `${d.name} ${d.path.split("/").slice(1).join("/")}`.toLowerCase();
+        return terms.every((t) => hay.includes(t));
+      }),
+    }))
+    .filter((g) => g.docs.length > 0);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyDocs, flattenDocs, pickDoc } from "../doc-groups";
+import { classifyDocs, filterGroups, flattenDocs, pickDoc } from "../doc-groups";
 
 const O = "_bmad-output/initiative-acme";
 const acme = [
@@ -126,5 +126,18 @@ describe("pickDoc", () => {
     expect(pickDoc(specs, "nope.md")?.name).toBe("brief-acme");
     expect(pickDoc(specs, `${O}/spec-acme/glossary.md`)?.name).toBe("glossary");
     expect(pickDoc([], "x")).toBeNull();
+  });
+});
+
+describe("filterGroups", () => {
+  const groups = classifyDocs(["_bmad-output/prd-a/prd-a.md", "_bmad-output/prd-b/prd-b.md", "_bmad-output/architecture-x/architecture-x.md"]).specs;
+  it("keeps everything for a blank query", () => {
+    expect(flattenDocs(filterGroups(groups, "  "))).toHaveLength(3);
+  });
+  it("matches every word against name or path and drops empty groups", () => {
+    const r = filterGroups(groups, "PRD b");
+    expect(r.map((g) => g.id)).toEqual(["prd"]);
+    expect(flattenDocs(r).map((d) => d.name)).toEqual(["prd-b"]);
+    expect(filterGroups(groups, "zzz")).toEqual([]);
   });
 });
