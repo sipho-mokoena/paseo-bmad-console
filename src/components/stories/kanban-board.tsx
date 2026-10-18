@@ -24,7 +24,7 @@ export function KanbanBoard({ stories, hrefFor }: KanbanBoardProps) {
   }
 
   return (
-    <div className="-mx-2 flex scroll-px-2 snap-x snap-mandatory overflow-x-auto px-2 pb-2 lg:mx-0 lg:grid lg:snap-none lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0 xl:grid-cols-6 lg:divide-x">
+    <div className="-mx-2 flex scroll-px-2 snap-x snap-mandatory overflow-x-auto px-2 pb-2 lg:mx-0 lg:grid lg:snap-none lg:grid-flow-col lg:auto-cols-[minmax(18rem,1fr)] lg:px-0 lg:pb-0 lg:divide-x">
       {kanbanColumns.map((col) => {
         const columnStories = stories.filter(
           (s) =>
