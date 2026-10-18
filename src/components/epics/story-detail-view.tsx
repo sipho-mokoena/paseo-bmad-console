@@ -15,7 +15,7 @@ import type { StoryDetail } from "@/lib/bmad/types";
 function splitPlanTask(text: string): { path: string; rest: string } | null {
   const at = text.indexOf(" -- ");
   const head = at === -1 ? text : text.slice(0, at);
-  if (!/[/.]/.test(head) || /\s/.test(head.trim())) return null;
+  if (!/[/.]/.test(head) || head.length > 200) return null;
   return { path: head, rest: at === -1 ? "" : text.slice(at + 4) };
 }
 
@@ -207,7 +207,7 @@ export function StoryDetailView({ story, base, after, blocks }: StoryDetailViewP
                   <span className="sr-only">{task.completed ? "Done: " : "To do: "}</span>
                   {plain ? (
                     <span className={cn("min-w-0 flex-1", task.completed && "text-muted-foreground line-through")}>
-                      <code className="font-mono text-xs break-all">{plain.path}</code>
+                      <code className="font-mono text-xs break-words">{plain.path}</code>
                       {plain.rest && <span> -- {plain.rest}</span>}
                     </span>
                   ) : (
