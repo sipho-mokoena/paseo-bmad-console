@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTheme } from "next-themes";
-import { Check, Copy, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
+import { Check, Copy, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copyText } from "@/lib/copy-text";
@@ -13,9 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { usePanZoom } from "./use-pan-zoom";
 import {
   getDiagramLabel,
   getMermaidConfig,
+  getSvgNaturalSize,
   getSvgNaturalWidth,
   type MermaidMode,
 } from "./mermaid-utils";
@@ -66,6 +68,35 @@ export function MermaidError({ message, source }: { message: string; source: str
   );
 }
 
+const VIEWER_LABEL = "Diagram viewer. Scroll to zoom, drag to pan, double-click to reset.";
+
+/** Pan and zoom surface for the full size dialog. Mounted only while the dialog is open. */
+export function DiagramViewer({ svg }: { svg: string; label?: string }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const size = getSvgNaturalSize(svg) ?? { width: getSvgNaturalWidth(svg) ?? 800, height: 600 };
+  const { style, dragging } = usePanZoom(viewportRef, size);
+  return (
+    <div
+      ref={viewportRef}
+      data-slot="dialog-viewer"
+      role="application"
+      tabIndex={0}
+      aria-label={VIEWER_LABEL}
+      className={`relative min-h-0 touch-none overflow-hidden border-t border-border bg-card outline-none select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+      style={{ touchAction: "none", userSelect: "none" }}
+    >
+      <div
+        style={{ ...style, width: size.width, height: size.height }}
+        className="[&_svg]:!block [&_svg]:!h-full [&_svg]:!max-w-none [&_svg]:!w-full"
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+      <p className="pointer-events-none absolute bottom-2 left-3 text-xs text-muted-foreground">
+        Scroll to zoom, drag to pan, double-click to reset
+      </p>
+    </div>
+  );
+}
+
 export function MermaidDiagram({ source }: { source: string }) {
   const { resolvedTheme } = useTheme();
   const mode: MermaidMode = resolvedTheme === "light" ? "light" : "dark";
@@ -74,7 +105,6 @@ export function MermaidDiagram({ source }: { source: string }) {
   const [state, setState] = useState<RenderState>({ status: "loading" });
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
-  const [zoom, setZoom] = useState(1);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -133,10 +163,7 @@ export function MermaidDiagram({ source }: { source: string }) {
           variant="ghost"
           size="icon"
           className={toolbarBtn}
-          onClick={() => {
-            setZoom(1);
-            setOpen(true);
-          }}
+          onClick={() => setOpen(true)}
           disabled={state.status !== "ready"}
           aria-label="Open full size"
           title="Open full size"
@@ -164,59 +191,14 @@ export function MermaidDiagram({ source }: { source: string }) {
 
       {state.status === "ready" && (
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-[min(96vw,1400px)] h-[calc(100dvh-2rem)] grid-rows-[auto_1fr] overflow-hidden">
+          <DialogContent className="inset-0 top-0 left-0 h-dvh max-h-none w-screen max-w-none translate-x-0 translate-y-0 grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 sm:top-1/2 sm:left-1/2 sm:h-[80vh] sm:max-h-[80vh] sm:w-[90vw] sm:max-w-[90vw] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border">
             <DialogHeader className="p-4 pr-12">
               <DialogTitle>{label}</DialogTitle>
               <DialogDescription className="sr-only">
-                Full size diagram. Scroll to pan, use the buttons to zoom.
+                Full size diagram. Scroll to zoom, drag to pan, double-click to reset.
               </DialogDescription>
-              <div className="flex items-center gap-1 pt-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={toolbarBtn}
-                  onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
-                  disabled={zoom <= 0.5}
-                  aria-label="Zoom out"
-                >
-                  <Minus className="size-4" />
-                </Button>
-                <span className="w-12 text-center text-xs tabular-nums text-muted-foreground" aria-live="polite">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={toolbarBtn}
-                  onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))}
-                  disabled={zoom >= 4}
-                  aria-label="Zoom in"
-                >
-                  <Plus className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={toolbarBtn}
-                  onClick={() => setZoom(1)}
-                  aria-label="Reset zoom"
-                >
-                  <RotateCcw className="size-4" />
-                </Button>
-              </div>
             </DialogHeader>
-            <div className="overflow-auto border-t border-border bg-card p-4">
-              <div
-                role="img"
-                aria-label={label}
-                className="[&_svg]:h-auto [&_svg]:!max-w-none [&_svg]:w-full"
-                style={{ width: `${zoom * 100}%` }}
-                dangerouslySetInnerHTML={{ __html: state.svg }}
-              />
-            </div>
+            <DiagramViewer svg={state.svg} />
           </DialogContent>
         </Dialog>
       )}

@@ -98,3 +98,12 @@ export function getMermaidConfig(mode: MermaidMode) {
     },
   };
 }
+
+/** Natural size of a rendered SVG from its viewBox, or null. */
+export function getSvgNaturalSize(svg: string): { width: number; height: number } | null {
+  const m = svg.match(/viewBox="[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)"/);
+  if (!m) return null;
+  const width = parseFloat(m[1]);
+  const height = parseFloat(m[2]);
+  return width > 0 && height > 0 ? { width, height } : null;
+}

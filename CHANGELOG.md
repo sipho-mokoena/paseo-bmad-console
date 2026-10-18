@@ -6,6 +6,7 @@ All notable changes to Paseo BMAD Console are documented here. The format follow
 
 ### Changed
 
+- Mermaid diagrams: the full size view no longer has zoom buttons. It is now a pan and zoom surface: the mouse wheel (or pinch) zooms around the pointer, dragging pans, a double-click or double-tap resets to a fitted view, and the keyboard works too (+, -, arrow keys, 0).
 - Epics page: search, Filter (status chips with counts) and Sort (with direction) like the Overview epic list, for epics when browsing and for stories when searching, kept in the URL (`q`, `st`, `sort`, `dir`).
 - Copy path now copies the full system path of the open document (the project folder on the server machine plus the file path) for local projects, and `<owner>/<repo>/<path>` for GitHub projects; the button title shows the same path.
 - Epic page: the View on timeline link moved into the title row as a compact Timeline button (icon only on phones), and the story page's timeline link is now a compact ghost link with an icon.

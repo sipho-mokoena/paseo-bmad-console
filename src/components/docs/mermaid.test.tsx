@@ -66,3 +66,27 @@ describe("MermaidDiagram", () => {
     expect(el.querySelector("svg")).toBeNull();
   });
 });
+
+describe("DiagramViewer", () => {
+  it("renders a focusable pan and zoom surface with no zoom buttons", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const React = await import("react");
+    const { DiagramViewer } = await import("./mermaid-diagram");
+    const svg = '<svg viewBox="0 0 400 200" width="100%"><g></g></svg>';
+    const html = renderToStaticMarkup(React.createElement(DiagramViewer, { svg }));
+    expect(html).not.toContain('aria-label="Zoom in"');
+    expect(html).not.toContain('aria-label="Zoom out"');
+    expect(html).not.toContain("<button");
+    expect(html).toContain('aria-label="Diagram viewer. Scroll to zoom, drag to pan, double-click to reset."');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain("touch-action:none");
+    expect(html).toContain("transform-origin:0 0");
+    expect(html).toContain("Scroll to zoom, drag to pan, double-click to reset");
+  });
+
+  it("reads the natural size from the viewBox", async () => {
+    const { getSvgNaturalSize } = await import("./mermaid-utils");
+    expect(getSvgNaturalSize('<svg viewBox="0 0 400 200">')).toEqual({ width: 400, height: 200 });
+    expect(getSvgNaturalSize("<svg>")).toBeNull();
+  });
+});

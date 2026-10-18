@@ -163,7 +163,7 @@ Fill in `risk` (`low`, `medium`, `high`) and `type` on every ticket. "Size by ri
 
 Write the brief, PRD, spec, architecture and UX documents into the BMAD output folder with the names in the table in practice 2. In the v6 default layout that is `planning-artifacts/`. In the folder style (what the newer BMAD skills write) it is one folder per document set: `brief-acme/`, `prd-acme/`, `spec-acme/`, `architecture-acme/`, `ux-acme/`, each with a main file of the folder's name, and extras sorted after it. For UX, `DESIGN.md` and `EXPERIENCE.md` come first, and wireframes go in `ux-acme/wireframes/`.
 
-- Draw diagrams as Mermaid fenced blocks (` ```mermaid `). They render in the Library, Specs and Design tabs in strict mode: scripts and click handlers are disabled, and a diagram with a syntax error shows the error message and the source instead of the picture.
+- Draw diagrams as Mermaid fenced blocks (` ```mermaid `). They render in the Library, Specs and Design tabs in strict mode: scripts and click handlers are disabled, and a diagram with a syntax error shows the error message and the source instead of the picture. Open full size shows a diagram you can zoom with the mouse wheel (or a pinch on a phone), drag to pan, and reset with a double-click.
 - Put images next to the Markdown file and reference them with relative paths (`![Flow](./flow.png)`). Types: svg, png, jpg, jpeg, gif, webp, up to 5 MB. Images are served for local projects only. In a GitHub project a relative image does not load in the console.
 - Keep wireframe source files (`.excalidraw`, exports) out of the main document list. Only `.md` files are classified, so put the Markdown description of each wireframe in `wireframes/` and leave the sources beside them.
 
