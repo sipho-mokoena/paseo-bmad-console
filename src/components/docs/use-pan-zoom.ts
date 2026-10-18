@@ -72,7 +72,7 @@ export function usePanZoom(
 
     const local = (clientX: number, clientY: number): Pt => {
       const r = el.getBoundingClientRect();
-      return { x: clientX - r.left, y: clientY - r.top };
+      return { x: clientX - r.left - el.clientLeft, y: clientY - r.top - el.clientTop };
     };
     const centre = (): Pt => ({ x: el.clientWidth / 2, y: el.clientHeight / 2 });
     const touched = () => {
