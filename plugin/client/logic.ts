@@ -22,12 +22,41 @@ export function statusChip(state: ConsoleState): { label: string; tone: ChipTone
   }
 }
 
+/** Headline of the status card, in plain words. */
+export function statusHeadline(state: ConsoleState): string {
+  switch (state) {
+    case "running":
+    case "external":
+      return "Console is running";
+    case "starting":
+      return "Starting the console";
+    case "stopping":
+      return "Stopping the console";
+    case "crashed":
+      return "Console stopped unexpectedly";
+    case "stopped":
+      return "Console is stopped";
+    case "not_configured":
+      return "Set up the console";
+  }
+}
+
+/** Where the bind host setting sits among the choices shown to the user. */
+export type NetworkChoice = "local" | "all" | "custom";
+
+export function networkChoice(bindHost: string): NetworkChoice {
+  const host = bindHost.trim();
+  if (host === "127.0.0.1") return "local";
+  if (host === "0.0.0.0") return "all";
+  return "custom";
+}
+
 /** Right-hand value and hint of the Status row. */
 export function statusRow(status: ConsoleStatus): { value: string; hint: string | undefined } {
   if (status.settingsError) return { value: "error", hint: status.settingsError };
   switch (status.state) {
     case "not_configured":
-      return { value: "Not configured", hint: "Choose the console folder below" };
+      return { value: "Not configured", hint: "The console folder was not found. Set it under Settings, Advanced." };
     case "running":
       return { value: "running", hint: status.pid === null ? undefined : `PID ${status.pid}` };
     case "external":

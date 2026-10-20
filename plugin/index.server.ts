@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
+import { homedir, networkInterfaces } from "node:os";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { defaultInstallDirectory, pickNetworkAddress } from "./server/detect";
 import { ProcessManager } from "./server/process-manager";
 import { createService } from "./server/service";
 import { consoleSettings, logsRpc, restartRpc, startRpc, statusRpc, stopRpc } from "./shared/console";
@@ -26,6 +28,7 @@ function realFs() {
 }
 
 export default function contribute(server: PluginServerContext) {
+  const fs = realFs();
   const manager = new ProcessManager({
     spawn: (command, args, options) => spawn(command, args, options),
     // The cast bridges react-native's AbortSignal typing and the Node one.
@@ -37,12 +40,16 @@ export default function contribute(server: PluginServerContext) {
     },
     setTimeout: (callback, ms) => setTimeout(callback, ms),
     clearTimeout: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
-    fs: realFs(),
+    fs,
     env: process.env,
     platform: process.platform,
   });
   const settings = server.registerSettings(consoleSettings);
-  const service = createService(manager, settings);
+  const detect = {
+    directory: () => defaultInstallDirectory(homedir()),
+    networkAddress: () => pickNetworkAddress(networkInterfaces()),
+  };
+  const service = createService(manager, settings, detect);
 
   server.handle(statusRpc, () => service.status());
   server.handle(startRpc, () => service.start());

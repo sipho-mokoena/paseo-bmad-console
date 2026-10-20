@@ -9,7 +9,8 @@ import { LogBuffer } from "../server/log-buffer";
 import type { ConsoleSettingsValues } from "../shared/console";
 import type { DirectoryFs } from "../server/validate-directory";
 
-export const DIR = "/work/paseo-bmad-console";
+export const DIR = "/home/test/.paseo/bmad-console";
+export const APP = `${DIR}/app`;
 
 export const baseConfig: ConsoleSettingsValues = {
   consoleDirectory: DIR,
@@ -33,10 +34,10 @@ export class FakeChild extends EventEmitter implements ChildLike {
 
 export function makeFs(files: Record<string, string | null> = {}): DirectoryFs {
   const entries: Record<string, string> = {
-    [`${DIR}/package.json`]: JSON.stringify({ name: "paseo-bmad-console" }),
-    [`${DIR}/next.config.ts`]: "export default {};",
-    [`${DIR}/node_modules/next/package.json`]: "{}",
-    [`${DIR}/.next/BUILD_ID`]: "abc",
+    [`${APP}/server.js`]: "// standalone server",
+    [`${APP}/package.json`]: JSON.stringify({ name: "paseo-bmad-console" }),
+    [`${APP}/.next/BUILD_ID`]: "abc",
+    [`${DIR}/.env`]: "DATABASE_URL=postgresql://bmad@127.0.0.1:7433/bmad\nPORT=1111\nHOSTNAME=elsewhere\n",
   };
   for (const [key, value] of Object.entries(files)) {
     if (value === null) delete entries[key];
@@ -81,7 +82,7 @@ export function makeHarness(
         const failed = new FakeChild(undefined);
         spawned.push({ command, args, options: spawnOptions, child: failed });
         queueMicrotask(() =>
-          failed.emit("error", Object.assign(new Error("spawn pnpm ENOENT"), { code: "ENOENT" })),
+          failed.emit("error", Object.assign(new Error("spawn node ENOENT"), { code: "ENOENT" })),
         );
         return failed;
       }

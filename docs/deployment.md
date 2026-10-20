@@ -227,4 +227,4 @@ The deployment this project was developed with is a folder in a home directory t
 
 ## Running from the source checkout
 
-`pnpm start` runs `next start -H 127.0.0.1 -p 7002` from a checkout that has been built. With `output: "standalone"` Next.js prints `"next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.` but the server still starts and answers (checked here on another 7xxx port). The Paseo plugin uses this mode, see [plugin.md](./plugin.md). For a real deployment use the standalone folder.
+`pnpm start` runs `next start -H 127.0.0.1 -p 7002` from a checkout that has been built. With `output: "standalone"` Next.js prints `"next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.` but the server still starts and answers (checked here on another 7xxx port). For a real deployment use the standalone folder. The Paseo plugin does not use this mode: it runs the standalone build from `~/.paseo/bmad-console`, which `pnpm deploy:local` installs (see [plugin.md](./plugin.md#install-the-console)).

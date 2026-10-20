@@ -16,6 +16,7 @@
     "dev": "next dev -H 127.0.0.1 -p 7002",
     "build": "next build",
     "start": "next start -H 127.0.0.1 -p 7002",
+    "deploy:local": "bash scripts/deploy-local.sh",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

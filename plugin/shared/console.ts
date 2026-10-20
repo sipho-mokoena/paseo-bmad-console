@@ -37,7 +37,7 @@ export function isLoopbackHost(host: string): boolean {
   return value === "localhost" || value === "::1" || value === "[::1]" || /^127\./.test(value);
 }
 
-function isWildcardHost(host: string): boolean {
+export function isWildcardHost(host: string): boolean {
   const value = host.trim();
   return value === "" || value === "0.0.0.0" || value === "::" || value === "[::]";
 }
@@ -174,6 +174,8 @@ export const consoleStatusSchema = z.object({
   port: z.number(),
   mode: z.enum(["dev", "start"]),
   bindHost: z.string(),
+  /** The console folder in use: the saved one, else the one the plugin found. */
+  directory: z.string(),
   autoStart: z.boolean(),
   urls: urlCandidatesSchema,
   /** Why the current settings cannot start the console, if they cannot. */

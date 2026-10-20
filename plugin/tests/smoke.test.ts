@@ -8,7 +8,7 @@ import type { ConsoleSettingsValues } from "../shared/console";
 /**
  * Starts the REAL console through the real process manager on a spare port.
  * Skipped unless SMOKE=1. Run by hand:
- *   SMOKE=1 SMOKE_DIR=/abs/path/to/paseo-bmad-console SMOKE_PORT=7011 npx vitest run tests/smoke.test.ts
+ *   SMOKE=1 SMOKE_DIR=/abs/path/to/install-folder SMOKE_PORT=7011 npx vitest run tests/smoke.test.ts
  */
 const enabled = process.env.SMOKE === "1";
 const dir = process.env.SMOKE_DIR ?? "";

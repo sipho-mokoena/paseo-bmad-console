@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actionsFor, hasChanges, normalizeValues, pickWorkspace, statusChip, statusRow } from "../client/logic";
+import { actionsFor, hasChanges, networkChoice, normalizeValues, pickWorkspace, statusChip, statusHeadline, statusRow } from "../client/logic";
 import { consoleSettings, type ConsoleSettingsValues, type ConsoleStatus } from "../shared/console";
 
 const defaults = consoleSettings.schema.parse({}) as ConsoleSettingsValues;
@@ -16,6 +16,7 @@ function status(patch: Partial<ConsoleStatus>): ConsoleStatus {
     port: 7002,
     mode: "dev",
     bindHost: "127.0.0.1",
+    directory: "/work/paseo-bmad-console",
     autoStart: false,
     urls: { local: "http://127.0.0.1:7002", public: null, all: [], preferred: "http://127.0.0.1:7002" },
     configError: null,
@@ -56,7 +57,7 @@ describe("statusChip and statusRow", () => {
     expect(statusRow(status({ state: "external" })).hint).toContain("outside Paseo");
     expect(statusRow(status({ state: "not_configured" }))).toEqual({
       value: "Not configured",
-      hint: "Choose the console folder below",
+      hint: "The console folder was not found. Set it under Settings, Advanced.",
     });
     expect(statusRow(status({ state: "crashed", lastExit: { code: 1, signal: null, at: 0 } })).hint).toContain("code 1");
     expect(statusRow(status({ state: "crashed", lastExit: { code: 1, signal: null, at: 0 }, crashLines: ["a", "boom"] })).hint).toContain("Last output: boom");
@@ -76,5 +77,23 @@ describe("hasChanges", () => {
     expect(hasChanges(defaults, { ...defaults, bindHost: " 127.0.0.1 " })).toBe(false);
     expect(hasChanges(defaults, { ...defaults, port: 3003 })).toBe(true);
     expect(normalizeValues({ ...defaults, publicUrl: " https://x " }).publicUrl).toBe("https://x");
+  });
+});
+
+describe("statusHeadline", () => {
+  it("describes each state in plain words", () => {
+    expect(statusHeadline("running")).toBe("Console is running");
+    expect(statusHeadline("external")).toBe("Console is running");
+    expect(statusHeadline("crashed")).toBe("Console stopped unexpectedly");
+    expect(statusHeadline("not_configured")).toBe("Set up the console");
+  });
+});
+
+describe("networkChoice", () => {
+  it("maps the bind host to a choice", () => {
+    expect(networkChoice("127.0.0.1")).toBe("local");
+    expect(networkChoice(" 0.0.0.0 ")).toBe("all");
+    expect(networkChoice("100.64.0.1")).toBe("custom");
+    expect(networkChoice("")).toBe("custom");
   });
 });

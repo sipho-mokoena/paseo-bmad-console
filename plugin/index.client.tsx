@@ -40,7 +40,7 @@ export default function contribute(client: PluginClientContext) {
     context: "workspace",
     async onSelect({ rpc, workspace, openScreen }) {
       const status = await rpc(statusRpc, {});
-      if ((status.state === "stopped" || status.state === "crashed") && status.autoStart) {
+      if (status.state === "stopped" || status.state === "crashed") {
         const started = await rpc(startRpc, {});
         if (!started.ok) throw new Error(started.error ?? "Could not start the BMAD Console.");
       }

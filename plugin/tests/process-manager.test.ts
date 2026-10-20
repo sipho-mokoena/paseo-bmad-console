@@ -6,30 +6,46 @@ import {
   MANAGED_ENV_KEYS,
   STOP_GRACE_MS,
 } from "../server/process-manager";
-import { baseConfig, DIR, makeFs, makeHarness } from "./fakes";
+import { baseConfig, APP, DIR, makeFs, makeHarness } from "./fakes";
 
 describe("start", () => {
-  it("spawns pnpm exec next dev without a shell, detached, in the console directory", async () => {
+  it("runs node server.js without a shell, detached, in the installed app folder", async () => {
     const h = makeHarness();
     const result = await h.manager.start(baseConfig);
     expect(result.ok).toBe(true);
     expect(result.alreadyRunning).toBe(false);
     expect(h.spawned).toHaveLength(1);
     const call = h.spawned[0];
-    expect(call.command).toBe("pnpm");
-    expect(call.args).toEqual(["exec", "next", "dev", "-p", "3011", "-H", "127.0.0.1"]);
+    expect(call.command).toBe("node");
+    expect(call.args).toEqual(["server.js"]);
     expect(call.options.shell).toBe(false);
     expect(call.options.detached).toBe(true);
-    expect(call.options.cwd).toBe(DIR);
+    expect(call.options.cwd).toBe(APP);
     expect(result.status.pid).toBe(call.child.pid);
     expect(result.status.state).toBe("starting");
   });
 
-  it("uses next start in start mode when a build exists", async () => {
+  it("passes the port, bind host and the .env file to the server", async () => {
     const h = makeHarness();
-    await h.manager.start({ ...baseConfig, mode: "start", bindHost: "0.0.0.0" });
-    expect(h.spawned[0].args).toEqual(["exec", "next", "start", "-p", "3011", "-H", "0.0.0.0"]);
-    expect(h.spawned[0].options.env.NODE_ENV).toBe("production");
+    await h.manager.start({ ...baseConfig, bindHost: "0.0.0.0" });
+    const env = h.spawned[0].options.env;
+    expect(env.PORT).toBe("3011");
+    expect(env.HOSTNAME).toBe("0.0.0.0");
+    expect(env.NODE_ENV).toBe("production");
+    expect(env.DATABASE_URL).toBe("postgresql://bmad@127.0.0.1:7433/bmad");
+  });
+
+  it("uses NODE_BIN from the daemon environment when set", async () => {
+    const h = makeHarness({ env: { PATH: "/usr/bin", NODE_BIN: "/opt/node/bin/node" } });
+    await h.manager.start(baseConfig);
+    expect(h.spawned[0].command).toBe("/opt/node/bin/node");
+  });
+
+  it("still starts without a .env file and says so in the log", async () => {
+    const h = makeHarness({ fs: makeFs({ [`${DIR}/.env`]: null }) });
+    const result = await h.manager.start(baseConfig);
+    expect(result.ok).toBe(true);
+    expect(h.manager.readLogs().lines.join("\n")).toMatch(/DATABASE_URL/);
   });
 
   it("reports running once the probe answers", async () => {
@@ -95,19 +111,19 @@ describe("start", () => {
     expect(h.spawned).toHaveLength(0);
   });
 
-  it("returns a clear error in start mode without a build", async () => {
-    const h = makeHarness({ fs: makeFs({ [`${DIR}/.next/BUILD_ID`]: null }) });
-    const result = await h.manager.start({ ...baseConfig, mode: "start" });
+  it("returns a clear error when the build is incomplete", async () => {
+    const h = makeHarness({ fs: makeFs({ [`${APP}/.next/BUILD_ID`]: null }) });
+    const result = await h.manager.start(baseConfig);
     expect(result.ok).toBe(false);
-    expect(result.error).toMatch(/pnpm build/);
+    expect(result.error).toMatch(/pnpm deploy:local/);
     expect(h.spawned).toHaveLength(0);
   });
 
-  it("reports a spawn failure such as a missing pnpm and leaves nothing running", async () => {
+  it("reports a spawn failure such as a missing node and leaves nothing running", async () => {
     const h = makeHarness({ failSpawn: true });
     const result = await h.manager.start(baseConfig);
     expect(result.ok).toBe(false);
-    expect(result.error).toMatch(/pnpm/);
+    expect(result.error).toMatch(/node/);
     expect(result.status.pid).toBeNull();
     expect(h.manager.isOwnedRunning()).toBe(false);
   });
@@ -115,23 +131,16 @@ describe("start", () => {
 
 describe("directory validation", () => {
   const cases: Array<[string, Record<string, string | null>, Partial<typeof baseConfig>, RegExp]> = [
-    ["empty directory", {}, { consoleDirectory: "" }, /Set the console directory/],
+    ["empty directory", {}, { consoleDirectory: "" }, /not installed/],
     ["relative path", {}, { consoleDirectory: "paseo-bmad-console" }, /absolute/],
-    ["missing directory", {}, { consoleDirectory: "/nope" }, /does not exist/],
-    ["no package.json", { [`${DIR}/package.json`]: null }, {}, /No package.json/],
-    ["invalid package.json", { [`${DIR}/package.json`]: "{" }, {}, /not valid JSON/],
+    ["missing directory", {}, { consoleDirectory: "/nope" }, /not installed in \/nope/],
+    ["no server.js", { [`${APP}/server.js`]: null }, {}, /pnpm deploy:local/],
+    ["invalid package.json", { [`${APP}/package.json`]: "{" }, {}, /not valid JSON/],
     [
       "wrong package name",
-      { [`${DIR}/package.json`]: JSON.stringify({ name: "other" }) },
+      { [`${APP}/package.json`]: JSON.stringify({ name: "other" }) },
       {},
       /not the Paseo BMAD Console/,
-    ],
-    ["no next.config.ts", { [`${DIR}/next.config.ts`]: null }, {}, /next\.config\.ts/],
-    [
-      "dependencies missing",
-      { [`${DIR}/node_modules/next/package.json`]: null },
-      {},
-      /pnpm install/,
     ],
   ];
   it.each(cases)("rejects %s", async (_name, files, override, pattern) => {
@@ -142,6 +151,20 @@ describe("directory validation", () => {
     expect(h.spawned).toHaveLength(0);
   });
 
+  it("accepts a folder that holds server.js directly", async () => {
+    const files = {
+      [`${APP}/server.js`]: null,
+      [`${APP}/.next/BUILD_ID`]: null,
+      [`${APP}/package.json`]: null,
+      [`${DIR}/server.js`]: "x",
+      [`${DIR}/.next/BUILD_ID`]: "abc",
+    };
+    const h = makeHarness({ fs: makeFs(files) });
+    const result = await h.manager.start(baseConfig);
+    expect(result.ok).toBe(true);
+    expect(h.spawned[0].options.cwd).toBe(DIR);
+  });
+
   it("reports not configured when no directory is set", async () => {
     const h = makeHarness();
     const status = await h.manager.status({ ...baseConfig, consoleDirectory: "" });
@@ -150,10 +173,10 @@ describe("directory validation", () => {
   });
 
   it("surfaces a config error in the status of a configured but invalid directory", async () => {
-    const h = makeHarness({ fs: makeFs({ [`${DIR}/next.config.ts`]: null }) });
+    const h = makeHarness({ fs: makeFs({ [`${APP}/server.js`]: null }) });
     const status = await h.manager.status(baseConfig);
     expect(status.state).toBe("stopped");
-    expect(status.configError).toMatch(/next\.config\.ts/);
+    expect(status.configError).toMatch(/pnpm deploy:local/);
   });
 
   it("rejects invalid settings before spawning", async () => {
@@ -168,47 +191,44 @@ describe("directory validation", () => {
 describe("environment", () => {
   const base = { PATH: "/usr/bin", HOME: "/h", SECRET_TOKEN: "x" };
 
-  it("adds only the allowed keys", () => {
-    const env = buildChildEnv(base, { mode: "dev", allowedDevOrigins: " a.ts.net " });
+  it("adds only the keys the plugin owns", () => {
+    const env = buildChildEnv(base, { port: 7002, bindHost: " 127.0.0.1 " });
     const added = Object.keys(env).filter((key) => !(key in base));
-    expect(added.sort()).toEqual(["ALLOWED_DEV_ORIGINS", "NODE_ENV"]);
-    expect(env.ALLOWED_DEV_ORIGINS).toBe("a.ts.net");
+    expect(added.sort()).toEqual(["HOSTNAME", "NODE_ENV", "PORT"]);
+    expect(env.HOSTNAME).toBe("127.0.0.1");
     expect(env.SECRET_TOKEN).toBe("x");
     for (const key of added) expect(MANAGED_ENV_KEYS).toContain(key);
   });
 
-  it("sets NODE_ENV by mode and never sets an auth bypass", () => {
-    const dev = buildChildEnv(base, { mode: "dev", allowedDevOrigins: "" });
-    expect(dev.NODE_ENV).toBe("development");
-    expect("DEV_BYPASS_AUTH" in dev).toBe(false);
-    const start = buildChildEnv(base, { mode: "start", allowedDevOrigins: "" });
-    expect(start.NODE_ENV).toBe("production");
-    expect("DEV_BYPASS_AUTH" in start).toBe(false);
-  });
-
-  it("removes an inherited NODE_ENV and ELECTRON_RUN_AS_NODE", () => {
-    const inherited = {
-      ...base,
-      NODE_ENV: "test",
-      ALLOWED_DEV_ORIGINS: "old",
-      ELECTRON_RUN_AS_NODE: "1",
-    };
-    const env = buildChildEnv(inherited, { mode: "start", allowedDevOrigins: "" });
-    expect("ALLOWED_DEV_ORIGINS" in env).toBe(false);
-    expect("ELECTRON_RUN_AS_NODE" in env).toBe(false);
+  it("lets the .env file add variables but not override the owned keys", () => {
+    const env = buildChildEnv(base, {
+      port: 7002,
+      bindHost: "127.0.0.1",
+      fileEnv: { DATABASE_URL: "postgresql://x", PORT: "1", HOSTNAME: "other", NODE_ENV: "development" },
+    });
+    expect(env.DATABASE_URL).toBe("postgresql://x");
+    expect(env.PORT).toBe("7002");
+    expect(env.HOSTNAME).toBe("127.0.0.1");
     expect(env.NODE_ENV).toBe("production");
   });
 
-  it("passes that env through spawn and never writes it to the logs", async () => {
-    const h = makeHarness({ env: { PATH: "/usr/bin", SECRET_TOKEN: "hunter2" } });
-    await h.manager.start({ ...baseConfig, allowedDevOrigins: "x.ts.net" });
-    const env = h.spawned[0].options.env;
-    expect(env.ALLOWED_DEV_ORIGINS).toBe("x.ts.net");
-    expect(h.manager.readLogs().lines.join("\n")).not.toContain("hunter2");
+  it("removes an inherited ELECTRON_RUN_AS_NODE and never sets an auth bypass", () => {
+    const env = buildChildEnv({ ...base, NODE_ENV: "test", ELECTRON_RUN_AS_NODE: "1" }, { port: 7002, bindHost: "127.0.0.1" });
+    expect("ELECTRON_RUN_AS_NODE" in env).toBe(false);
+    expect("DEV_BYPASS_AUTH" in env).toBe(false);
+    expect(env.NODE_ENV).toBe("production");
   });
 
-  it("builds the command with a trimmed bind host", () => {
-    expect(buildCommand("dev", 7002, " 127.0.0.1 ").args.slice(-2)).toEqual(["-H", "127.0.0.1"]);
+  it("never writes the environment to the logs", async () => {
+    const h = makeHarness({ env: { PATH: "/usr/bin", SECRET_TOKEN: "hunter2" } });
+    await h.manager.start(baseConfig);
+    expect(h.manager.readLogs().lines.join("\n")).not.toContain("hunter2");
+    expect(h.manager.readLogs().lines.join("\n")).not.toContain("postgresql://");
+  });
+
+  it("builds the command from the node binary", () => {
+    expect(buildCommand()).toEqual({ command: "node", args: ["server.js"] });
+    expect(buildCommand("/opt/node").command).toBe("/opt/node");
   });
 });
 

@@ -57,6 +57,7 @@ Then open the app, press **Add a project** and enter `owner/name` of a GitHub re
 | `pnpm dev` | `next dev -H 127.0.0.1 -p 7002` | Development server |
 | `pnpm build` | `next build` | Production build (standalone output) |
 | `pnpm start` | `next start -H 127.0.0.1 -p 7002` | Start a build from the source checkout |
+| `pnpm deploy:local` | `bash scripts/deploy-local.sh` | Build and install the build output into `~/.paseo/bmad-console` for the Paseo plugin |
 | `pnpm lint` | `eslint` | Lint |
 | `pnpm test` | `vitest run` | Run the tests once |
 | `pnpm test:watch` | `vitest` | Run the tests in watch mode |

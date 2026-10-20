@@ -12,7 +12,7 @@ describe("service", () => {
     const service = createService(h.manager, reader({ status: "ready", values: baseConfig }));
     const result = await service.start();
     expect(result.ok).toBe(true);
-    expect(h.spawned[0].args).toContain("3011");
+    expect(h.spawned[0].options.env.PORT).toBe("3011");
   });
 
   it("reports unreadable settings instead of spawning", async () => {

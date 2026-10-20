@@ -3,11 +3,11 @@ import {
   MAX_LOG_LINES,
   validateSettings,
   type ConsoleActionResult,
-  type ConsoleMode,
   type ConsoleSettingsValues,
   type ConsoleState,
   type ConsoleStatus,
 } from "../shared/console";
+import { parseEnvFile } from "./env-file";
 import { LogBuffer } from "./log-buffer";
 import { validateConsoleDirectory, type DirectoryFs } from "./validate-directory";
 
@@ -18,12 +18,8 @@ const POLL_MS = 100;
 const SPAWN_ERROR_WAIT_MS = 50;
 const CRASH_LINES = 15;
 
-/** Environment keys the manager sets or removes for the child. Nothing else is touched. */
-export const MANAGED_ENV_KEYS = [
-  "NODE_ENV",
-  "ALLOWED_DEV_ORIGINS",
-  "ELECTRON_RUN_AS_NODE",
-] as const;
+/** Environment keys the manager sets or removes for the child, whatever the `.env` file says. */
+export const MANAGED_ENV_KEYS = ["NODE_ENV", "PORT", "HOSTNAME", "ELECTRON_RUN_AS_NODE"] as const;
 
 interface StreamLike {
   on(event: "data", listener: (chunk: Buffer | string) => void): unknown;
@@ -80,30 +76,25 @@ export function probeHostFor(bindHost: string): string {
 }
 
 /**
- * The child's environment: the plugin's own env, with only the keys the console
- * reads set or cleared.
+ * The child's environment: the plugin's own env, then the console's `.env` file, then the
+ * keys the plugin owns (port, bind host, production mode).
  */
 export function buildChildEnv(
   base: NodeJS.ProcessEnv,
-  options: { mode: ConsoleMode; allowedDevOrigins: string },
+  options: { port: number; bindHost: string; fileEnv?: Record<string, string> },
 ): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...base };
+  const env: NodeJS.ProcessEnv = { ...base, ...options.fileEnv };
   for (const key of MANAGED_ENV_KEYS) delete env[key];
-  env.NODE_ENV = options.mode === "dev" ? "development" : "production";
-  const origins = options.allowedDevOrigins.trim();
-  if (origins !== "") env.ALLOWED_DEV_ORIGINS = origins;
+  env.NODE_ENV = "production";
+  env.PORT = String(options.port);
+  // The standalone server reads HOSTNAME. Shells often set it to the machine name, hence the override.
+  env.HOSTNAME = options.bindHost.trim();
   return env;
 }
 
-export function buildCommand(
-  mode: ConsoleMode,
-  port: number,
-  bindHost: string,
-): { command: string; args: string[] } {
-  return {
-    command: "pnpm",
-    args: ["exec", "next", mode === "dev" ? "dev" : "start", "-p", String(port), "-H", bindHost.trim()],
-  };
+/** The standalone server is started with plain `node server.js`; port and host go in the env. */
+export function buildCommand(nodeBin: string = "node"): { command: string; args: string[] } {
+  return { command: nodeBin, args: ["server.js"] };
 }
 
 interface Owned {
@@ -111,7 +102,6 @@ interface Owned {
   pid: number;
   startedAt: number;
   port: number;
-  mode: ConsoleMode;
   exited: boolean;
   stopping: boolean;
 }
@@ -183,7 +173,6 @@ export class ProcessManager {
   ): Promise<ConsoleStatus> {
     const owned = this.current && !this.current.exited ? this.current : null;
     const port = owned?.port ?? config.port;
-    const mode = owned?.mode ?? config.mode;
     const bindHost = config.bindHost;
     const probe = await this.probe(bindHost, port);
     const reachable = probe.kind === "up";
@@ -195,7 +184,7 @@ export class ProcessManager {
       const first = Object.values(settingsErrors)[0];
       if (first) configError = first;
       else {
-        const check = validateConsoleDirectory(config.consoleDirectory, config.mode, this.deps.fs);
+        const check = validateConsoleDirectory(config.consoleDirectory, this.deps.fs);
         if (!check.ok) configError = check.message;
       }
     }
@@ -220,8 +209,9 @@ export class ProcessManager {
       pid: owned?.pid ?? null,
       uptimeSeconds: owned ? Math.max(0, Math.floor((this.deps.now() - owned.startedAt) / 1000)) : null,
       port,
-      mode,
+      mode: "start",
       bindHost: config.bindHost.trim(),
+      directory: config.consoleDirectory.trim(),
       autoStart: config.autoStart,
       urls: buildUrlCandidates({ port, bindHost, publicUrl: config.publicUrl }),
       configError,
@@ -273,7 +263,7 @@ export class ProcessManager {
     const settingsErrors = validateSettings(config);
     const firstError = Object.values(settingsErrors)[0];
     if (firstError) return this.result(config, false, firstError);
-    const check = validateConsoleDirectory(config.consoleDirectory, config.mode, this.deps.fs);
+    const check = validateConsoleDirectory(config.consoleDirectory, this.deps.fs);
     if (!check.ok) return this.result(config, false, check.message);
 
     const probe = await this.probe(config.bindHost, config.port);
@@ -289,20 +279,26 @@ export class ProcessManager {
       );
     }
 
-    const { command, args } = buildCommand(config.mode, config.port, config.bindHost);
+    const nodeBin = this.deps.env.NODE_BIN?.trim() || "node";
+    const { command, args } = buildCommand(nodeBin);
+    const envText = this.deps.fs.readText(check.envFile);
     const env = buildChildEnv(this.deps.env, {
-      mode: config.mode,
-      allowedDevOrigins: config.allowedDevOrigins,
+      port: config.port,
+      bindHost: config.bindHost,
+      fileEnv: envText === null ? {} : parseEnvFile(envText),
     });
     this.spawnError = null;
     this.crashed = false;
     this.lastExit = null;
     this.logs.clear();
+    if (envText === null) {
+      this.logs.note(`No ${check.envFile} found. Starting without one; the console needs DATABASE_URL to work.`);
+    }
 
     let child: ChildLike;
     try {
       child = this.deps.spawn(command, args, {
-        cwd: check.directory,
+        cwd: check.appDir,
         env,
         shell: false,
         detached: true,
@@ -317,7 +313,6 @@ export class ProcessManager {
       pid: child.pid ?? -1,
       startedAt: this.deps.now(),
       port: config.port,
-      mode: config.mode,
       exited: false,
       stopping: false,
     };
@@ -340,7 +335,7 @@ export class ProcessManager {
       return this.result(config, false, this.spawnError ?? "The console process could not be started.");
     }
     this.logs.note(
-      `Started \`${command} ${args.join(" ")}\` (pid ${child.pid}, mode ${config.mode}).`,
+      `Started \`${command} ${args.join(" ")}\` (pid ${child.pid}, ${check.appDir}).`,
     );
     return this.result(config, true, null);
   }
@@ -348,7 +343,7 @@ export class ProcessManager {
   private describeSpawnError(error: unknown): string {
     const code = (error as { code?: string })?.code;
     if (code === "ENOENT") {
-      return "Could not run `pnpm`: it was not found on the Paseo daemon's PATH, or the console directory is missing.";
+      return "Could not run `node`: it was not found on the Paseo daemon's PATH. Set NODE_BIN for the daemon, or install Node.js.";
     }
     return `Could not start the console: ${error instanceof Error ? error.message : String(error)}`;
   }
